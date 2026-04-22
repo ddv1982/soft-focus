@@ -3,9 +3,19 @@ import type { SceneKey } from '../game/sceneKeys';
 export const exerciseIds = {
   phraseAnchor: 'phrase-anchor',
   movingBall: 'moving-ball',
+  breathingReset: 'breathing-reset',
+  bilateralRhythm: 'bilateral-rhythm',
+  orienting: 'orienting',
 } as const;
 
 export type ExerciseId = (typeof exerciseIds)[keyof typeof exerciseIds];
+
+export const sessionFlowIds = {
+  phrasePrompted: 'phrase-prompted',
+  directPractice: 'direct-practice',
+} as const;
+
+export type SessionFlowId = (typeof sessionFlowIds)[keyof typeof sessionFlowIds];
 
 export const movingBallPresetIds = {
   steadyCenter: 'steady-center-sweep',
@@ -19,12 +29,21 @@ export const isExerciseId = (value: string): value is ExerciseId => (
   Object.values(exerciseIds) as readonly string[]
 ).includes(value);
 
+export const isSessionFlowId = (value: string): value is SessionFlowId => (
+  Object.values(sessionFlowIds) as readonly string[]
+).includes(value);
+
+export const getSessionFlowIdForExercise = (exerciseId: ExerciseId): SessionFlowId => (
+  exerciseId === exerciseIds.phraseAnchor ? sessionFlowIds.phrasePrompted : sessionFlowIds.directPractice
+);
+
 export const isMovingBallPresetId = (value: string): value is MovingBallPresetId => (
   Object.values(movingBallPresetIds) as readonly string[]
 ).includes(value);
 
 export interface PracticeSettings {
   lowIntensityMode: boolean;
+  reducedMotionEnabled: boolean;
   gazeGuidanceEnabled: boolean;
   movingBallPresetId: MovingBallPresetId;
 }
@@ -32,6 +51,7 @@ export interface PracticeSettings {
 export interface SessionRecord {
   id: string;
   exerciseId: ExerciseId;
+  flowId: SessionFlowId;
   sceneKey: SceneKey;
   startedAt: string;
   completedAt: string | null;
@@ -43,6 +63,7 @@ export type SessionOutcome = 'completed' | 'stopped';
 export interface SessionSummary {
   id: string;
   exerciseId: ExerciseId;
+  flowId: SessionFlowId;
   phrase: string;
   outcome: SessionOutcome;
   sceneKey: SceneKey;
@@ -57,6 +78,7 @@ export type PracticePhase = 'settle' | 'phrase' | 'recovery' | 'complete';
 export interface PracticeRuntimeState {
   phrase: string;
   lowIntensityEnabled: boolean;
+  reducedMotionEnabled: boolean;
   gazeGuidanceEnabled: boolean;
   phase: PracticePhase;
   phaseIndex: number;
@@ -97,6 +119,7 @@ export const isValidPhrase = (phrase: string): boolean => {
 
 export const defaultPracticeSettings = (): PracticeSettings => ({
   lowIntensityMode: true,
+  reducedMotionEnabled: false,
   gazeGuidanceEnabled: false,
   movingBallPresetId: movingBallPresetIds.steadyCenter,
 });

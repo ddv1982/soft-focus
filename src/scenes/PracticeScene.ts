@@ -3,59 +3,25 @@ import * as Phaser from 'phaser';
 import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
 import { sceneKeys } from '../game/sceneKeys';
-import { createGazeGuidance, type GazeGuidanceController } from '../practice/gazeGuidance';
-import { createMovingBallGuidance, type MovingBallGuidanceController } from '../practice/movingBallGuidance';
-import type { PracticeConfig } from '../practice/practiceConfig';
+import type { PracticeConfig, PracticePhaseDefinition } from '../practice/practiceConfig';
 import { PracticeRunner, type PracticeRunnerSnapshot } from '../practice/practiceRunner';
+import {
+  createIdlePracticeStagePresenter,
+  loadPracticeStagePresenter,
+  type PracticeStagePresenterController,
+} from '../practice/stagePresenter';
 import { createCard } from '../ui/components/Card';
 import { createPracticeControls, getPracticeControlsLayout, type PracticeControls } from '../ui/components/PracticeControls';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { getLayoutFrame } from '../ui/layout';
 import { uiTheme } from '../ui/theme';
 
-const getPhaseLabel = (practiceConfig: PracticeConfig, phase: PracticeRunnerSnapshot['phase']): string => {
-  switch (phase) {
-    case 'settle':
-      return 'Settle';
-    case 'phrase':
-      return practiceConfig.movingBall ? 'Guided sweep' : 'Phrase practice';
-    case 'recovery':
-      return 'Recovery';
-    case 'complete':
-      return 'Complete';
-    default:
-      return 'Practice';
-  }
-};
-
-const getPhaseCopy = (practiceConfig: PracticeConfig, snapshot: PracticeRunnerSnapshot): string => {
-  if (snapshot.paused) {
-    return 'Pause and let the pace stay easy. Resume when your breathing and gaze feel settled.';
-  }
-
-  switch (snapshot.phase) {
-    case 'settle':
-      return practiceConfig.movingBall
-        ? 'Let your attention settle before the first sweep begins. Keep the effort light.'
-        : 'Let your attention settle before the phrase begins. Keep the effort light.';
-    case 'phrase':
-      if (practiceConfig.movingBall) {
-        return practiceConfig.movingBall.activeCopy;
-      }
-
-      return practiceConfig.gazeGuidance.enabled
-        ? 'Return to the phrase softly and keep the eyes easy.'
-        : 'Return to the phrase softly and keep the pace unforced.';
-    case 'recovery':
-      return 'Ease off fully for a moment and let the practice fade into stillness.';
-    case 'complete':
-      return 'This round is complete.';
-    default:
-      return '';
-  }
-};
-
 const getSurfaceAlpha = (practiceConfig: PracticeConfig): number => (practiceConfig.lowIntensity.enabled ? 0.92 : 0.98);
+
+const getPhaseDefinition = (
+  practiceConfig: PracticeConfig,
+  snapshot: PracticeRunnerSnapshot,
+): PracticePhaseDefinition | null => practiceConfig.phases[snapshot.phaseIndex] ?? null;
 
 interface PracticeSceneData {
   practiceConfig?: PracticeConfig;
@@ -82,11 +48,13 @@ export class PracticeScene extends Phaser.Scene {
 
   private controls?: PracticeControls;
 
-  private gazeGuidance?: GazeGuidanceController;
-
-  private movingBallGuidance?: MovingBallGuidanceController;
+  private stagePresenter: PracticeStagePresenterController = createIdlePracticeStagePresenter();
 
   private phraseTween?: Phaser.Tweens.Tween;
+
+  private presenterLoadId = 0;
+
+  private shuttingDown = false;
 
   constructor() {
     super(sceneKeys.practice);
@@ -118,6 +86,7 @@ export class PracticeScene extends Phaser.Scene {
     const controlsY = frame.height - uiTheme.spacing.xl - (controlsLayout.height / 2);
     const movingBallInset = cardWidth >= 900 ? uiTheme.spacing.lg : uiTheme.spacing.md;
     const footerHeight = 84;
+    this.shuttingDown = false;
 
     this.add.rectangle(
       frame.width / 2,
@@ -131,8 +100,8 @@ export class PracticeScene extends Phaser.Scene {
       x: contentCenterX,
       y: frame.contentY + uiTheme.spacing.xl,
       width: titleWidth,
-      title: practiceConfig.exercise.title,
-      subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
+      title: practiceConfig.display.title,
+      subtitle: practiceConfig.display.subtitle,
     });
 
     const cardTop = title.y + title.height + uiTheme.spacing.lg;
@@ -168,11 +137,9 @@ export class PracticeScene extends Phaser.Scene {
     this.phraseText = this.add.text(
       card.x,
       this.timerText.y + this.timerText.height + uiTheme.spacing.xl,
-      practiceConfig.exercise.requiresPhrase && practiceConfig.phrase
-        ? practiceConfig.phrase
-        : (practiceConfig.movingBall?.title ?? 'Follow the moving ball softly'),
+      practiceConfig.display.phraseText,
       {
-         color: uiTheme.colors.text,
+        color: uiTheme.colors.text,
         fontFamily: uiTheme.typography.fontFamily,
         fontSize: '28px',
         fontStyle: '600',
@@ -228,30 +195,15 @@ export class PracticeScene extends Phaser.Scene {
     });
     this.statusText.setOrigin(0.5, 1);
 
-    if (practiceConfig.movingBall) {
-      this.movingBallGuidance = createMovingBallGuidance({
-        scene: this,
-        x: card.x,
-        y: guideCenterY,
-        width: Math.max(180, stageWidth - (movingBallInset * 2)),
-        laneBandHeight: practiceConfig.movingBall.laneBandHeight,
-        laneHeights: practiceConfig.movingBall.laneHeights,
-        cycleMs: practiceConfig.movingBall.cycleMs,
-        radius: practiceConfig.movingBall.radius,
-        lowIntensity: practiceConfig.lowIntensity.enabled,
-      });
-    } else if (practiceConfig.gazeGuidance.enabled && practiceConfig.gazeGuidance.prompt) {
-      this.gazeGuidance = createGazeGuidance({
-        scene: this,
-        x: card.x,
-        y: guideCenterY,
-        width: Math.min(readableWidth, stageWidth - (movingBallInset * 2)),
-        lowIntensity: practiceConfig.lowIntensity.enabled,
-        prompt: practiceConfig.gazeGuidance.prompt,
-      });
-    }
+    void this.loadStagePresenter({
+      x: card.x,
+      y: guideCenterY,
+      stageWidth,
+      readableWidth,
+      movingBallInset,
+    });
 
-    if (!practiceConfig.lowIntensity.enabled && !practiceConfig.movingBall) {
+    if (!practiceConfig.lowIntensity.enabled && !practiceConfig.reducedMotion.enabled && practiceConfig.stagePresenter.key === 'idle') {
       this.phraseTween = this.tweens.add({
         targets: this.phraseText,
         alpha: 0.74,
@@ -273,7 +225,7 @@ export class PracticeScene extends Phaser.Scene {
       align: 'center',
     });
     overlayTitle.setOrigin(0.5, 0.5);
-    const overlayCopy = this.add.text(0, 20, practiceConfig.movingBall ? `Resume when the ${practiceConfig.movingBall.title.toLowerCase()} feels easy to follow again.` : 'Resume when the phrase feels easy to return to.', {
+    const overlayCopy = this.add.text(0, 20, practiceConfig.display.pausedOverlayCopy, {
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
@@ -303,8 +255,9 @@ export class PracticeScene extends Phaser.Scene {
     this.refreshView(this.snapshot);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.gazeGuidance?.destroy();
-      this.movingBallGuidance?.destroy();
+      this.shuttingDown = true;
+      this.stagePresenter.destroy();
+      this.stagePresenter = createIdlePracticeStagePresenter();
       this.phraseTween?.stop();
     });
   }
@@ -346,15 +299,13 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     this.snapshot = snapshot;
-    this.phaseText.setText(getPhaseLabel(this.practiceConfig, snapshot.phase));
+    const activePhase = getPhaseDefinition(this.practiceConfig, snapshot);
+    this.phaseText.setText(snapshot.phase === 'complete' ? 'Complete' : (activePhase?.label ?? 'Practice'));
     this.timerText.setText(snapshot.phase === 'complete' ? '0s' : `${snapshot.secondsRemaining}s`);
-    this.copyText.setText(getPhaseCopy(this.practiceConfig, snapshot));
-    this.statusText.setText([
-      `${this.practiceConfig.exercise.phaseLabel} • ${this.practiceConfig.exercise.title}`,
-      this.practiceConfig.movingBall
-        ? `Preset: ${this.practiceConfig.movingBall.title} • Low intensity: ${this.practiceConfig.lowIntensity.enabled ? 'On' : 'Off'}`
-        : `${this.practiceConfig.exercise.requiresPhrase && this.practiceConfig.phrase ? `Phrase: "${this.practiceConfig.phrase}" • ` : ''}Low intensity: ${this.practiceConfig.lowIntensity.enabled ? 'On' : 'Off'} • Gaze guidance: ${this.practiceConfig.gazeGuidance.enabled ? 'On' : 'Off'}`,
-    ].join('\n'));
+    this.copyText.setText(snapshot.paused
+      ? 'Pause and let the pace stay easy. Resume when your breathing and gaze feel settled.'
+      : (snapshot.phase === 'complete' ? this.practiceConfig.display.completeCopy : (activePhase?.copy ?? '')));
+    this.statusText.setText(this.practiceConfig.display.statusLines.join('\n'));
 
     if (this.phraseText) {
       this.phraseText.setAlpha(snapshot.phase === 'phrase' ? 1 : 0.82);
@@ -362,11 +313,10 @@ export class PracticeScene extends Phaser.Scene {
 
     this.controls.setPaused(snapshot.paused);
     this.pauseOverlay?.setVisible(snapshot.paused);
-    this.gazeGuidance?.setPaused(snapshot.paused);
-    this.movingBallGuidance?.setActive(snapshot.phase === 'phrase' && !snapshot.complete);
-    this.movingBallGuidance?.setPaused(snapshot.paused);
+    this.stagePresenter.setActive(Boolean(activePhase?.activatesStagePresenter) && !snapshot.complete);
+    this.stagePresenter.setPaused(snapshot.paused);
 
-    if (this.practiceConfig.lowIntensity.enabled || this.practiceConfig.movingBall) {
+    if (this.practiceConfig.lowIntensity.enabled || this.practiceConfig.reducedMotion.enabled || this.practiceConfig.stagePresenter.key !== 'idle') {
       this.phraseTween?.pause();
     } else if (snapshot.paused) {
       this.phraseTween?.pause();
@@ -377,6 +327,50 @@ export class PracticeScene extends Phaser.Scene {
     const sessionStore = getSessionStore(this);
     sessionStore.setPracticePhase(snapshot.phase, snapshot.phaseIndex, snapshot.secondsRemaining);
     sessionStore.setPracticePaused(snapshot.paused);
+  }
+
+  private async loadStagePresenter({
+    x,
+    y,
+    stageWidth,
+    readableWidth,
+    movingBallInset,
+  }: {
+    x: number;
+    y: number;
+    stageWidth: number;
+    readableWidth: number;
+    movingBallInset: number;
+  }): Promise<void> {
+    if (!this.practiceConfig) {
+      return;
+    }
+
+    const loadId = ++this.presenterLoadId;
+    const nextPresenter = await loadPracticeStagePresenter({
+      scene: this,
+      practiceConfig: this.practiceConfig,
+      x,
+      y,
+      stageWidth,
+      readableWidth,
+      movingBallInset,
+      createIdleController: createIdlePracticeStagePresenter,
+    });
+
+    if (this.shuttingDown || loadId !== this.presenterLoadId) {
+      nextPresenter.destroy();
+      return;
+    }
+
+    this.stagePresenter.destroy();
+    this.stagePresenter = nextPresenter;
+
+    if (this.snapshot) {
+      const activePhase = getPhaseDefinition(this.practiceConfig, this.snapshot);
+      this.stagePresenter.setActive(Boolean(activePhase?.activatesStagePresenter) && !this.snapshot.complete);
+      this.stagePresenter.setPaused(this.snapshot.paused);
+    }
   }
 
   private finishPractice(outcome: 'completed' | 'stopped'): void {

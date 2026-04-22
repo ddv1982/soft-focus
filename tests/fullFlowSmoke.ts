@@ -1,7 +1,13 @@
-import { getInstructionsBackScene, guidedPracticeFlow, getNextSceneKey, getPreviousSceneKey } from '../src/game/navigation.ts';
+import {
+  getInstructionsBackScene,
+  getNextSceneKey,
+  getPreviousSceneKey,
+  getSessionFlowForExercise,
+  guidedPracticeFlow,
+} from '../src/game/navigation.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
 import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { exerciseIds, movingBallPresetIds } from '../src/state/types.ts';
+import { exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { initialSceneKey } from '../src/game/sceneKeys.ts';
@@ -49,6 +55,7 @@ const runPracticeControlsScenario = (): void => {
   store.setPhrase('  steady   phrase  ');
   store.setSelectedExercise(exerciseIds.phraseAnchor);
   store.setLowIntensityMode(false);
+  store.setReducedMotionEnabled(true);
   store.setGazeGuidanceEnabled(true);
   store.updateCurrentScene(sceneKeys.entry);
   store.updateCurrentScene(sceneKeys.exerciseSelection);
@@ -59,7 +66,11 @@ const runPracticeControlsScenario = (): void => {
   const practiceConfig = store.createPracticeConfig();
   assert(practiceConfig.phrase === 'steady phrase', 'expected phrase normalization before practice begins');
   assert(practiceConfig.lowIntensity.enabled === false, 'expected low-intensity toggle to feed practice config');
+  assert(practiceConfig.reducedMotion.enabled === true, 'expected reduced-motion toggle to feed practice config');
   assert(practiceConfig.gazeGuidance.enabled === true, 'expected gaze guidance toggle to feed practice config');
+  assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
+  assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');
+  assert(practiceConfig.phases[1]?.label === 'Phrase practice', 'expected phrase-anchor config to expose phase metadata through the family contract');
   assert(practiceConfig.copy.expectationsTitle === 'What to expect in this maintenance round', 'expected maintenance instructions copy to be phase-aware');
   assert(practiceConfig.copy.reflectionPrompt.includes('maintenance round'), 'expected maintenance reflection prompt to stay phase-aware');
 
@@ -97,12 +108,16 @@ const runExerciseBranchingScenario = (): void => {
 
   store.setSelectedExercise(exerciseIds.movingBall);
   store.setLowIntensityMode(true);
+  store.setReducedMotionEnabled(true);
   store.setMovingBallPreset(movingBallPresetIds.steadyCenter);
 
   const movingBallConfig = store.createPracticeConfig();
   assert(getExerciseStartScene(exerciseIds.movingBall) === sceneKeys.instructions, 'expected moving-ball exercise to bypass phrase entry');
   assert(movingBallConfig.exercise.id === exerciseIds.movingBall, 'expected moving-ball config to reflect the selected exercise');
   assert(movingBallConfig.movingBall?.presetId === movingBallPresetIds.steadyCenter, 'expected moving-ball config to expose the selected steady preset');
+  assert(movingBallConfig.stagePresenter.key === 'moving-ball', 'expected moving-ball config to resolve the moving-ball presenter');
+  assert(movingBallConfig.capabilities.auxiliaryControl.kind === 'selector', 'expected moving-ball config to declare a selector auxiliary control');
+  assert(movingBallConfig.reducedMotion.enabled === true, 'expected moving-ball config to preserve the reduced-motion toggle');
   assert(movingBallConfig.movingBall?.laneHeights.length === 1, 'expected steady center sweep to use a single lane');
   assert(movingBallConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected moving-ball instructions copy to reflect the reset phase');
 
@@ -119,8 +134,37 @@ const runExerciseBranchingScenario = (): void => {
   const settlingMovingBallConfig = store.createPracticeConfig();
   assert(settlingMovingBallConfig.movingBall?.pattern === 'settling-step-sweep', 'expected moving-ball config to expose the settling-step pattern metadata');
   assert(getExerciseStartScene(exerciseIds.phraseAnchor) === sceneKeys.phrase, 'expected phrase-anchor exercise to require phrase entry');
+  assert(getExerciseStartScene(exerciseIds.breathingReset) === sceneKeys.instructions, 'expected breathing reset to bypass phrase entry');
+  assert(getExerciseStartScene(exerciseIds.bilateralRhythm) === sceneKeys.instructions, 'expected bilateral rhythm to bypass phrase entry');
+  assert(getExerciseStartScene(exerciseIds.orienting) === sceneKeys.instructions, 'expected orienting to bypass phrase entry');
   assert(getInstructionsBackScene(exerciseIds.phraseAnchor) === sceneKeys.phrase, 'expected phrase-anchor instructions to navigate back to phrase');
   assert(getInstructionsBackScene(exerciseIds.movingBall) === sceneKeys.exerciseSelection, 'expected moving-ball instructions to navigate back to exercise selection');
+  assert(getInstructionsBackScene(exerciseIds.breathingReset) === sceneKeys.exerciseSelection, 'expected breathing reset instructions to navigate back to exercise selection');
+  assert(getInstructionsBackScene(exerciseIds.bilateralRhythm) === sceneKeys.exerciseSelection, 'expected bilateral rhythm instructions to navigate back to exercise selection');
+  assert(getInstructionsBackScene(exerciseIds.orienting) === sceneKeys.exerciseSelection, 'expected orienting instructions to navigate back to exercise selection');
+  assert(getSessionFlowForExercise(exerciseIds.phraseAnchor).id === sessionFlowIds.phrasePrompted, 'expected phrase-anchor to use the phrase-prompted flow');
+  assert(getSessionFlowForExercise(exerciseIds.movingBall).id === sessionFlowIds.directPractice, 'expected moving-ball to use the direct-practice flow');
+
+  store.setSelectedExercise(exerciseIds.breathingReset);
+  const breathingResetConfig = store.createPracticeConfig();
+  assert(breathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected breathing reset config to resolve the breathing-reset presenter');
+  assert(breathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected breathing reset config to declare an info auxiliary control');
+  assert(breathingResetConfig.display.phraseText === 'Follow the breath softly', 'expected breathing reset to expose breathing-specific display metadata');
+  assert(breathingResetConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected breathing reset instructions copy to stay reset-aware');
+
+  store.setSelectedExercise(exerciseIds.bilateralRhythm);
+  const bilateralRhythmConfig = store.createPracticeConfig();
+  assert(bilateralRhythmConfig.stagePresenter.key === 'bilateral-rhythm', 'expected bilateral rhythm config to resolve the bilateral-rhythm presenter');
+  assert(bilateralRhythmConfig.capabilities.auxiliaryControl.kind === 'info', 'expected bilateral rhythm config to declare an info auxiliary control');
+  assert(bilateralRhythmConfig.display.phraseText === 'Follow the alternating rhythm softly', 'expected bilateral rhythm to expose rhythm-specific display metadata');
+  assert(bilateralRhythmConfig.copy.reflectionPrompt.includes('left-right rhythm'), 'expected bilateral rhythm reflection prompt to stay rhythm-aware');
+
+  store.setSelectedExercise(exerciseIds.orienting);
+  const orientingConfig = store.createPracticeConfig();
+  assert(orientingConfig.stagePresenter.key === 'orienting', 'expected orienting config to resolve the orienting presenter');
+  assert(orientingConfig.capabilities.auxiliaryControl.kind === 'info', 'expected orienting config to declare an info auxiliary control');
+  assert(orientingConfig.display.phraseText === 'Notice the wider space softly', 'expected orienting to expose orienting-specific display metadata');
+  assert(orientingConfig.copy.reflectionPrompt.includes('wider space'), 'expected orienting reflection prompt to stay orienting-aware');
 };
 
 const runReflectionAndReloadScenario = (): void => {
@@ -161,6 +205,7 @@ const runReflectionAndReloadScenario = (): void => {
   assert(rehydratedState.practice === null, 'expected practice runtime state not to persist across reloads');
   assert(latestSummary?.outcome === 'stopped', 'expected stopped outcome to persist into the recent session summary');
   assert(latestSummary?.exerciseId === exerciseIds.movingBall, 'expected selected exercise to persist into recent session summaries');
+  assert(latestSummary?.flowId === sessionFlowIds.directPractice, 'expected moving-ball summaries to persist the direct-practice flow id');
   assert(latestSummary?.phrase === '', 'expected moving-ball summaries not to carry phrase text');
   assert(
     latestSummary?.reflection === 'shoulders softened and the phrase stayed easy',

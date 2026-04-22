@@ -12,6 +12,24 @@ export const defaultMovingBallExpectations = [
   'If you lose the path for a moment, soften and rejoin it on the next pass instead of forcing precision.',
 ] as const;
 
+export const defaultBreathingResetExpectations = [
+  'Let the breath stay easy rather than deep or forced.',
+  'Follow the visual rhythm lightly and return to a softer pace if the timing feels intense.',
+  'A shorter, calmer breath is still a successful reset if it helps you settle.',
+] as const;
+
+export const defaultBilateralRhythmExpectations = [
+  'Follow the alternating left-right rhythm without forcing your pace to be perfectly exact.',
+  'Let the switch from side to side feel steady and light rather than sharp or urgent.',
+  'If the rhythm feels too activating, pause and return when the pace feels easier to follow.',
+] as const;
+
+export const defaultOrientingExpectations = [
+  'Let your gaze move through the wider space without forcing yourself to notice everything at once.',
+  'Follow the prompt lightly and pause anywhere that feels steadier or calmer.',
+  'If the scan feels too activating, stop and return to the easiest nearby anchor you can find.',
+] as const;
+
 export const defaultLowIntensityConfig = {
   label: 'Low-intensity mode',
   description: 'Keeps the pace gentle with a short settle, brief practice window, and easy recovery.',

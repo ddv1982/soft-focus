@@ -18,6 +18,45 @@ type SelectorOption = {
   summary: string;
 };
 
+const createInfoBlock = (
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  width: number,
+  label: string,
+  description: string,
+): Phaser.GameObjects.Container => {
+  const border = Number.parseInt(uiTheme.colors.border.slice(1), 16);
+  const surface = Number.parseInt(uiTheme.colors.surfaceRaised.slice(1), 16);
+
+  const title = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, {
+    color: uiTheme.colors.text,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '16px',
+    fontStyle: '600',
+  });
+  title.setOrigin(0, 0);
+
+  const body = scene.add.text((-width / 2) + uiTheme.spacing.md, title.height + uiTheme.spacing.sm, description, {
+    color: uiTheme.colors.textMuted,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '14px',
+    wordWrap: { width: width - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
+    lineSpacing: 4,
+  });
+  body.setOrigin(0, 0);
+
+  const height = body.y + body.height + uiTheme.spacing.md;
+  const background = scene.add.rectangle(0, height / 2, width, height, surface)
+    .setOrigin(0.5)
+    .setStrokeStyle(1, border, 0.9);
+
+  const container = scene.add.container(x, y, [background, title, body]);
+  container.setSize(width, height);
+
+  return container;
+};
+
 const createToggle = (
   scene: Phaser.Scene,
   x: number,
@@ -191,6 +230,7 @@ export class InstructionsScene extends Phaser.Scene {
     const savedState = sessionStore.getState();
     const { phrase, selectedExercise } = savedState;
     let lowIntensityMode = savedState.settings.lowIntensityMode;
+    let reducedMotionEnabled = savedState.settings.reducedMotionEnabled;
     let gazeGuidanceEnabled = savedState.settings.gazeGuidanceEnabled;
     const previewConfig = createPracticeConfigFromSettings(selectedExercise, phrase, savedState.settings);
 
@@ -246,12 +286,12 @@ export class InstructionsScene extends Phaser.Scene {
     phraseLabel.setOrigin(0.5, 0);
     cardContent.add(phraseLabel);
 
-    const phraseText = this.add.text(
+    const selectionText = this.add.text(
       0,
       phraseLabel.y + phraseLabel.height + uiTheme.spacing.sm,
       previewConfig.exercise.requiresPhrase
         ? (phrase ? `"${phrase}"` : 'No phrase was saved.')
-        : (previewConfig.movingBall?.title ?? previewConfig.exercise.summary),
+        : (previewConfig.movingBall?.title ?? previewConfig.display.phraseText),
       {
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
@@ -260,13 +300,13 @@ export class InstructionsScene extends Phaser.Scene {
       align: 'center',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
     });
-    phraseText.setOrigin(0.5, 0);
-    cardContent.add(phraseText);
+    selectionText.setOrigin(0.5, 0);
+    cardContent.add(selectionText);
 
-    let expectationsStartY = phraseText.y + phraseText.height + sectionSpacing;
+    let expectationsStartY = selectionText.y + selectionText.height + sectionSpacing;
 
     if (previewConfig.movingBall) {
-      const presetSummary = this.add.text(0, phraseText.y + phraseText.height + uiTheme.spacing.xs, previewConfig.movingBall.summary, {
+      const presetSummary = this.add.text(0, selectionText.y + selectionText.height + uiTheme.spacing.xs, previewConfig.movingBall.summary, {
         color: uiTheme.colors.textMuted,
         fontFamily: uiTheme.typography.fontFamily,
         fontSize: '14px',
@@ -316,35 +356,80 @@ export class InstructionsScene extends Phaser.Scene {
     );
     cardContent.add(lowIntensityToggle);
 
-    const lastBlock = previewConfig.movingBall
+    const reducedMotionToggle = createToggle(
+      this,
+      0,
+      lowIntensityToggle.y + lowIntensityToggle.height + uiTheme.spacing.md,
+      cardWidth - (uiTheme.spacing.xl * 2),
+      previewConfig.reducedMotion.label,
+      previewConfig.reducedMotion.description,
+      reducedMotionEnabled,
+      (nextValue) => {
+        reducedMotionEnabled = nextValue;
+        sessionStore.setReducedMotionEnabled(nextValue);
+      },
+    );
+    cardContent.add(reducedMotionToggle);
+
+    const auxiliaryControl = previewConfig.capabilities.auxiliaryControl;
+    const lastBlock = auxiliaryControl.kind === 'selector' && previewConfig.movingBall
       ? createOptionSelector(
         this,
         0,
-        lowIntensityToggle.y + lowIntensityToggle.height + uiTheme.spacing.md,
+        reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
         cardWidth - (uiTheme.spacing.xl * 2),
-        'Sweep preset',
+        auxiliaryControl.label,
         previewConfig.movingBall.availablePresets,
         previewConfig.movingBall.presetId,
         (nextValue) => {
           sessionStore.setMovingBallPreset(nextValue as typeof previewConfig.movingBall.presetId);
         },
       )
-      : createToggle(
+      : auxiliaryControl.kind === 'info'
+        ? createInfoBlock(
+          this,
+          0,
+          reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+          cardWidth - (uiTheme.spacing.xl * 2),
+          auxiliaryControl.label,
+          auxiliaryControl.description,
+        )
+      : auxiliaryControl.kind === 'toggle'
+        ? createToggle(
         this,
         0,
-        lowIntensityToggle.y + lowIntensityToggle.height + uiTheme.spacing.md,
+        reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
         cardWidth - (uiTheme.spacing.xl * 2),
-        previewConfig.gazeGuidance.label,
-        previewConfig.gazeGuidance.description,
+        auxiliaryControl.label,
+        auxiliaryControl.description,
         gazeGuidanceEnabled,
         (nextValue) => {
           gazeGuidanceEnabled = nextValue;
           sessionStore.setGazeGuidanceEnabled(nextValue);
         },
-      );
+      )
+        : createInfoBlock(
+          this,
+          0,
+          reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+          cardWidth - (uiTheme.spacing.xl * 2),
+          'Practice details',
+          'This practice does not expose additional controls right now.',
+        );
     cardContent.add(lastBlock);
 
-    const cardContentHeight = lastBlock.y + lastBlock.height;
+    const reducedMotionNote = this.add.text(0, lastBlock.y + lastBlock.height + uiTheme.spacing.md, `${previewConfig.capabilities.reducedMotion.title}: ${previewConfig.capabilities.reducedMotion.description}`, {
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '13px',
+      align: 'center',
+      wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
+      lineSpacing: 3,
+    });
+    reducedMotionNote.setOrigin(0.5, 0);
+    cardContent.add(reducedMotionNote);
+
+    const cardContentHeight = reducedMotionNote.y + reducedMotionNote.height;
     const availableCardContentHeight = Math.max(1, card.height - (sectionSpacing * 2));
     if (cardContentHeight > availableCardContentHeight) {
       cardContent.setScale(availableCardContentHeight / cardContentHeight);

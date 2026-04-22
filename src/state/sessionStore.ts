@@ -1,11 +1,13 @@
-import { sceneKeys, type SceneKey } from '../game/sceneKeys';
+import type { SceneKey } from '../game/sceneKeys';
 import { createSessionRepository, type SessionRepository } from '../persistence/sessionRepository';
 import { createPracticeConfig, type PracticeConfig } from '../practice/practiceConfig';
+import { isSessionFlowRestartScene, isSessionFlowStartScene } from './sessionFlow';
 
 import {
   createInitialSessionState,
   createDefaultPracticeSettings,
   exerciseIds,
+  getSessionFlowIdForExercise,
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
@@ -14,6 +16,7 @@ import {
   type PracticePhase,
   type PracticeRuntimeState,
   type PracticeSettings,
+  type SessionFlowId,
   type SessionRecord,
   type SessionState,
   type SessionSummary,
@@ -81,6 +84,10 @@ export class SessionStore {
     return this.updateSettings({ lowIntensityMode: enabled });
   }
 
+  setReducedMotionEnabled(enabled: boolean): SessionState {
+    return this.updateSettings({ reducedMotionEnabled: enabled });
+  }
+
   setGazeGuidanceEnabled(enabled: boolean): SessionState {
     return this.updateSettings({ gazeGuidanceEnabled: enabled });
   }
@@ -98,6 +105,7 @@ export class SessionStore {
       practice: {
         phrase: practiceConfig.phrase,
         lowIntensityEnabled: practiceConfig.lowIntensity.enabled,
+        reducedMotionEnabled: practiceConfig.reducedMotion.enabled,
         gazeGuidanceEnabled: practiceConfig.gazeGuidance.enabled,
         phase: 'settle',
         phaseIndex: 0,
@@ -151,10 +159,15 @@ export class SessionStore {
     return this.patchState({ practice: null });
   }
 
-  startSession(sceneKey: SceneKey, startedAt = new Date().toISOString()): SessionState {
+  startSession(
+    sceneKey: SceneKey,
+    startedAt = new Date().toISOString(),
+    flowId: SessionFlowId = getSessionFlowIdForExercise(this.state.selectedExercise),
+  ): SessionState {
     const currentSession: SessionRecord = {
       id: createSessionId(),
       exerciseId: this.state.selectedExercise ?? exerciseIds.phraseAnchor,
+      flowId,
       sceneKey,
       startedAt,
       completedAt: null,
@@ -165,28 +178,28 @@ export class SessionStore {
   }
 
   updateCurrentScene(sceneKey: SceneKey): SessionState {
-    if (!this.state.currentSession) {
-      const canStartSession = sceneKey === sceneKeys.phrase
-        || (this.state.selectedExercise === exerciseIds.movingBall && sceneKey === sceneKeys.instructions);
+    const nextFlowId = getSessionFlowIdForExercise(this.state.selectedExercise);
 
-      if (!canStartSession) {
+    if (!this.state.currentSession) {
+      if (!isSessionFlowStartScene(sceneKey, this.state.selectedExercise)) {
         return this.state;
       }
 
-      return this.startSession(sceneKey);
+      return this.startSession(sceneKey, undefined, nextFlowId);
     }
 
+    const activeFlowId = this.state.currentSession.flowId ?? nextFlowId;
     const shouldRestartSession = this.state.currentSession.completedAt
-      && (sceneKey === sceneKeys.phrase
-        || (this.state.selectedExercise === exerciseIds.movingBall && sceneKey === sceneKeys.instructions));
+      && isSessionFlowRestartScene(sceneKey, activeFlowId);
 
     if (shouldRestartSession) {
-      return this.startSession(sceneKey);
+      return this.startSession(sceneKey, undefined, nextFlowId);
     }
 
     return this.patchState({
       currentSession: {
         ...this.state.currentSession,
+        flowId: activeFlowId,
         sceneKey,
       },
     });
@@ -267,6 +280,7 @@ export class SessionStore {
     return {
       id: currentSession.id,
       exerciseId: currentSession.exerciseId,
+      flowId: currentSession.flowId,
       phrase,
       outcome: practice?.stopped ? 'stopped' : 'completed',
       sceneKey: currentSession.sceneKey,

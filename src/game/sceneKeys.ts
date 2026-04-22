@@ -10,7 +10,7 @@ export const sceneKeys = {
 
 export type SceneKey = (typeof sceneKeys)[keyof typeof sceneKeys];
 
-export const orderedSceneKeys: readonly SceneKey[] = [
+const guidedPracticeSceneKeys = [
   sceneKeys.entry,
   sceneKeys.exerciseSelection,
   sceneKeys.phrase,
@@ -19,6 +19,8 @@ export const orderedSceneKeys: readonly SceneKey[] = [
   sceneKeys.completion,
   sceneKeys.reflection,
 ];
+
+export const orderedSceneKeys: readonly SceneKey[] = [...guidedPracticeSceneKeys];
 
 export const initialSceneKey: SceneKey = sceneKeys.entry;
 

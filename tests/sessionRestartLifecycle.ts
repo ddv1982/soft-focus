@@ -1,6 +1,6 @@
 import { createSessionStore } from '../src/state/sessionStore.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
-import { exerciseIds, movingBallPresetIds } from '../src/state/types.ts';
+import { exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 
 const assert = (condition: unknown, message: string): void => {
   if (!condition) {
@@ -22,6 +22,7 @@ const runEntryToPhraseScenario = (): void => {
   const startedSession = store.getState().currentSession;
   assert(startedSession, 'expected a session to start when entering the phrase flow');
   assert(startedSession?.sceneKey === sceneKeys.phrase, 'expected the phrase scene to own the new session start');
+  assert(startedSession?.flowId === sessionFlowIds.phrasePrompted, 'expected the phrase scene to start the phrase-prompted flow');
 };
 
 const runCompletedRestartScenario = (): void => {
@@ -55,6 +56,7 @@ const runCompletedRestartScenario = (): void => {
 
   assert(restartedSession.id !== firstSessionId, 'restarting from phrase should create a new session id');
   assert(restartedSession.sceneKey === sceneKeys.phrase, 'restarted session should begin at the phrase scene');
+  assert(restartedSession.flowId === sessionFlowIds.phrasePrompted, 'phrase restart should keep the phrase-prompted flow');
   assert(restartedSession.completedAt === null, 'restarted session should not inherit completion state');
 }
 
@@ -62,6 +64,7 @@ const runStoppedRestartScenario = (): void => {
   const store = createSessionStore();
 
   store.setSelectedExercise(exerciseIds.movingBall);
+  store.setReducedMotionEnabled(true);
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
   store.updateCurrentScene(sceneKeys.exerciseSelection);
   store.updateCurrentScene(sceneKeys.instructions);
@@ -94,6 +97,8 @@ const runStoppedRestartScenario = (): void => {
   assert(restartedSession.completedAt === null, 'restarted stopped round should not inherit completion state');
   assert(restartedSession.sceneKey === sceneKeys.practice, 'new session should continue through the new practice flow');
   assert(restartedSession.exerciseId === exerciseIds.movingBall, 'restarted session should preserve the selected exercise');
+  assert(restartedSession.flowId === sessionFlowIds.directPractice, 'moving-ball restart should keep the direct-practice flow');
+  assert(store.getState().settings.reducedMotionEnabled === true, 'restarted moving-ball flow should preserve reduced-motion preference');
   assert(store.createPracticeConfig().movingBall?.presetId === movingBallPresetIds.settlingSteps, 'restarted moving-ball flow should preserve the selected preset');
 }
 

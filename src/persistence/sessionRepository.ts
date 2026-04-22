@@ -3,8 +3,10 @@ import {
   createInitialSessionState,
   createDefaultPracticeSettings,
   exerciseIds,
+  getSessionFlowIdForExercise,
   isExerciseId,
   isMovingBallPresetId,
+  isSessionFlowId,
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
@@ -33,6 +35,7 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
 
   return {
     lowIntensityMode: value.lowIntensityMode === true,
+    reducedMotionEnabled: value.reducedMotionEnabled === true,
     gazeGuidanceEnabled: value.gazeGuidanceEnabled === true,
     movingBallPresetId: typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
       ? value.movingBallPresetId
@@ -63,6 +66,13 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
     exerciseId: typeof value.exerciseId === 'string' && isExerciseId(value.exerciseId)
       ? value.exerciseId
       : exerciseIds.phraseAnchor,
+    flowId: typeof value.flowId === 'string' && isSessionFlowId(value.flowId)
+      ? value.flowId
+      : getSessionFlowIdForExercise(
+        typeof value.exerciseId === 'string' && isExerciseId(value.exerciseId)
+          ? value.exerciseId
+          : exerciseIds.phraseAnchor,
+      ),
     phrase: normalizePhrase(value.phrase),
     outcome: value.outcome,
     sceneKey: value.sceneKey,

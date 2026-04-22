@@ -2,7 +2,7 @@ import { createSessionRepository } from '../src/persistence/sessionRepository.ts
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
-import { exerciseIds, movingBallPresetIds } from '../src/state/types.ts';
+import { exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 
 const assert = (condition: unknown, message: string): void => {
   if (!condition) {
@@ -49,6 +49,7 @@ const runRehydrationScenario = (): void => {
   store.setSelectedExercise(exerciseIds.movingBall);
   store.setPhrase('  steady   phrase  ');
   store.setLowIntensityMode(false);
+  store.setReducedMotionEnabled(true);
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
   store.startSession(sceneKeys.instructions, startedAt);
   store.updateCurrentScene(sceneKeys.instructions);
@@ -64,6 +65,7 @@ const runRehydrationScenario = (): void => {
   assert(rehydratedState.phrase === 'steady phrase', 'expected phrase to rehydrate from local persistence');
   assert(rehydratedState.selectedExercise === exerciseIds.movingBall, 'expected selected exercise to rehydrate from local persistence');
   assert(rehydratedState.settings.lowIntensityMode === false, 'expected low-intensity setting to rehydrate');
+  assert(rehydratedState.settings.reducedMotionEnabled === true, 'expected reduced-motion setting to rehydrate');
   assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.settlingSteps, 'expected moving-ball preset setting to rehydrate');
   assert(rehydratedState.currentSession === null, 'expected current session not to resume after reload');
   assert(rehydratedState.practice === null, 'expected practice runtime not to resume after reload');
@@ -71,6 +73,7 @@ const runRehydrationScenario = (): void => {
 
   const [summary] = rehydratedState.recentSessionSummaries;
   assert(summary?.exerciseId === exerciseIds.movingBall, 'expected saved summary to preserve the selected exercise');
+  assert(summary?.flowId === sessionFlowIds.directPractice, 'expected saved summary to preserve the direct-practice flow');
   assert(summary?.phrase === '', 'expected moving-ball summaries to omit phrase text');
   assert(summary?.outcome === 'stopped', 'expected saved summary to preserve the stopped outcome');
   assert(summary?.durationSeconds === 5, 'expected saved summary duration in seconds');
@@ -82,6 +85,7 @@ const runGracefulFailureScenario = (): void => {
   store.setPhrase('calm focus');
   store.setSelectedExercise(exerciseIds.phraseAnchor);
   store.setLowIntensityMode(false);
+  store.setReducedMotionEnabled(true);
   store.updateCurrentScene(sceneKeys.phrase);
   store.updateCurrentScene(sceneKeys.practice);
   store.startPractice(store.createPracticeConfig());
@@ -92,6 +96,7 @@ const runGracefulFailureScenario = (): void => {
   assert(state.phrase === 'calm focus', 'expected store updates to work even when persistence fails');
   assert(state.selectedExercise === exerciseIds.phraseAnchor, 'expected selected exercise updates to survive persistence failures');
   assert(state.settings.lowIntensityMode === false, 'expected settings updates to survive persistence failures');
+  assert(state.settings.reducedMotionEnabled === true, 'expected reduced-motion updates to survive persistence failures');
   assert(state.recentSessionSummaries.length === 1, 'expected summary creation to survive persistence failures');
 };
 
@@ -101,6 +106,7 @@ const runInvalidSummarySceneKeyScenario = (): void => {
     phrase: 'steady phrase',
     settings: {
       lowIntensityMode: true,
+      reducedMotionEnabled: false,
       gazeGuidanceEnabled: false,
       movingBallPresetId: 'not-a-preset',
     },
