@@ -1,0 +1,35 @@
+@layer utilities {
+  .wellness-bg-dark {
+    background:
+      radial-gradient(circle at 18% 10%, rgba(155, 214, 223, 0.2) 0, transparent 30%),
+      radial-gradient(circle at 80% 8%, rgba(230, 164, 142, 0.12) 0, transparent 26%),
+      linear-gradient(180deg, #071927, #04111d);
+  }
+
+  .wellness-radial-glow {
+    background:
+      radial-gradient(circle at 25% 18%, rgba(155, 214, 223, 0.2) 0, transparent 28%),
+      radial-gradient(circle at 74% 22%, rgba(234, 220, 195, 0.13) 0, transparent 26%);
+  }
+
+  .wellness-reduced-motion {
+    transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+
+  .wellness-reduced-motion,
+  .wellness-button,
+  .app-shell__button {
+    transform: none !important;
+  }
+}

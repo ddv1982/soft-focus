@@ -10,7 +10,8 @@ import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } fr
 import { isValidPhrase } from '../state/types';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
-import { uiTheme } from '../ui/theme';
+import { renderOceanBackground } from '../ui/oceanBackground';
+import { hexToNumber, uiTheme } from '../ui/theme';
 
 type SelectorOption = {
   id: string;
@@ -26,8 +27,8 @@ const createInfoBlock = (
   label: string,
   description: string,
 ): Phaser.GameObjects.Container => {
-  const border = Number.parseInt(uiTheme.colors.border.slice(1), 16);
-  const surface = Number.parseInt(uiTheme.colors.surfaceRaised.slice(1), 16);
+  const border = hexToNumber(uiTheme.colors.border);
+  const surface = hexToNumber(uiTheme.colors.surfaceRaised);
 
   const title = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, {
     color: uiTheme.colors.text,
@@ -67,9 +68,9 @@ const createToggle = (
   initialValue: boolean,
   onToggle: (nextValue: boolean) => void,
 ): Phaser.GameObjects.Container => {
-  const border = Number.parseInt(uiTheme.colors.border.slice(1), 16);
-  const surface = Number.parseInt(uiTheme.colors.surfaceRaised.slice(1), 16);
-  const accent = Number.parseInt(uiTheme.colors.accent.slice(1), 16);
+  const border = hexToNumber(uiTheme.colors.border);
+  const surface = hexToNumber(uiTheme.colors.surfaceRaised);
+  const accent = hexToNumber(uiTheme.colors.accent);
   const toggleWidth = 48;
   const toggleHeight = 28;
   let value = initialValue;
@@ -95,7 +96,7 @@ const createToggle = (
     .setOrigin(0.5)
     .setStrokeStyle(1, border, 1);
 
-  const knob = scene.add.circle(0, 4, 10, Number.parseInt(uiTheme.colors.text.slice(1), 16));
+  const knob = scene.add.circle(0, 4, 10, hexToNumber(uiTheme.colors.text));
 
   const refresh = (): void => {
     track.setFillStyle(value ? accent : surface);
@@ -135,9 +136,9 @@ const createOptionSelector = (
   initialValue: string,
   onSelect: (nextValue: string) => void,
 ): Phaser.GameObjects.Container => {
-  const border = Number.parseInt(uiTheme.colors.border.slice(1), 16);
-  const surface = Number.parseInt(uiTheme.colors.surfaceRaised.slice(1), 16);
-  const accent = Number.parseInt(uiTheme.colors.accent.slice(1), 16);
+  const border = hexToNumber(uiTheme.colors.border);
+  const surface = hexToNumber(uiTheme.colors.surfaceRaised);
+  const accent = hexToNumber(uiTheme.colors.accent);
   const optionHeight = 76;
   const optionGap = uiTheme.spacing.sm;
   let value = initialValue;
@@ -234,13 +235,7 @@ export class InstructionsScene extends Phaser.Scene {
     let gazeGuidanceEnabled = savedState.settings.gazeGuidanceEnabled;
     const previewConfig = createPracticeConfigFromSettings(selectedExercise, phrase, savedState.settings);
 
-    this.add.rectangle(
-      frame.width / 2,
-      frame.height / 2,
-      frame.width,
-      frame.height,
-      Number.parseInt(uiTheme.colors.background.slice(1), 16),
-    );
+    renderOceanBackground(this, { frame });
 
     createBackButton(this, {
       x: frame.contentX,

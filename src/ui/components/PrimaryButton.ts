@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { appViewport, clampContentWidth } from '../layout';
-import { uiTheme } from '../theme';
+import { hexToNumber, uiTheme } from '../theme';
 
 export type PrimaryButtonOptions = {
   x: number;
@@ -28,9 +28,9 @@ export const createPrimaryButton = (
 ): Phaser.GameObjects.Container => {
   const { width, height } = getPrimaryButtonSize(options.width ?? 320);
   const background = scene.add
-    .rectangle(0, 0, width, height, Number.parseInt(uiTheme.colors.accent.slice(1), 16))
+    .rectangle(0, 0, width, height, hexToNumber(uiTheme.colors.accent))
     .setOrigin(0.5)
-    .setStrokeStyle(1, Number.parseInt(uiTheme.colors.border.slice(1), 16), 0.8);
+    .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.8);
 
   const label = scene.add.text(0, 0, options.label, {
     color: uiTheme.colors.accentText,
@@ -54,12 +54,12 @@ export const createPrimaryButton = (
     }
 
     container.setScale(uiTheme.motion.pressScale);
-    background.setFillStyle(Number.parseInt(uiTheme.colors.accentPressed.slice(1), 16));
+    background.setFillStyle(hexToNumber(uiTheme.colors.accentPressed));
   });
 
   const resetState = () => {
     container.setScale(1);
-    background.setFillStyle(Number.parseInt(uiTheme.colors.accent.slice(1), 16));
+    background.setFillStyle(hexToNumber(uiTheme.colors.accent));
   };
 
   background.on('pointerout', resetState);

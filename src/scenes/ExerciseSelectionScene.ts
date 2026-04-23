@@ -9,6 +9,7 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
+import { renderOceanBackground } from '../ui/oceanBackground';
 import { uiTheme } from '../ui/theme';
 
 export class ExerciseSelectionScene extends Phaser.Scene {
@@ -27,13 +28,7 @@ export class ExerciseSelectionScene extends Phaser.Scene {
     const contentCenterX = frame.contentX + (frame.contentWidth / 2);
     const cardWidth = clampContentWidth(frame.contentWidth);
 
-    this.add.rectangle(
-      frame.width / 2,
-      frame.height / 2,
-      frame.width,
-      frame.height,
-      Number.parseInt(uiTheme.colors.background.slice(1), 16),
-    ).setDepth(-20);
+    renderOceanBackground(this, { frame });
 
     createBackButton(this, {
       x: frame.contentX,

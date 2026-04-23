@@ -15,7 +15,7 @@ export const createBackButton = (
 ): Phaser.GameObjects.Container => {
   const label = options.label ?? 'Back';
   const icon = scene.add.text(0, 0, '←', {
-    color: uiTheme.colors.textMuted,
+    color: uiTheme.colors.textMutedOnDark,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
     fontStyle: '600',
@@ -23,7 +23,7 @@ export const createBackButton = (
   icon.setOrigin(0, 0.5);
 
   const text = scene.add.text(icon.width + uiTheme.spacing.xs, 0, label, {
-    color: uiTheme.colors.textMuted,
+    color: uiTheme.colors.textMutedOnDark,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '15px',
     fontStyle: '600',
@@ -40,15 +40,15 @@ export const createBackButton = (
   container.setSize(hitWidth, hitHeight);
 
   const setIdle = (): void => {
-    icon.setColor(uiTheme.colors.textMuted);
-    text.setColor(uiTheme.colors.textMuted);
+    icon.setColor(uiTheme.colors.textMutedOnDark);
+    text.setColor(uiTheme.colors.textMutedOnDark);
     container.setAlpha(0.9);
     container.setScale(1);
   };
 
   const setHover = (): void => {
-    icon.setColor(uiTheme.colors.text);
-    text.setColor(uiTheme.colors.text);
+    icon.setColor(uiTheme.colors.textOnDark);
+    text.setColor(uiTheme.colors.textOnDark);
     container.setAlpha(1);
   };
 

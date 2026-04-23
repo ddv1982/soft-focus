@@ -1,0 +1,226 @@
+@layer components {
+  .preferences-shell {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .preferences-shell__launcher,
+  .preferences-shell__button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(16, 48, 64, 0.9), rgba(6, 24, 37, 0.86));
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(1, 8, 14, 0.22);
+    backdrop-filter: blur(16px);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  }
+
+  .preferences-shell__launcher:hover,
+  .preferences-shell__button:hover {
+    border-color: rgba(155, 214, 223, 0.44);
+    transform: translateY(-1px);
+  }
+
+  .preferences-shell__panel {
+    position: relative;
+    width: min(100vw - 32px, 470px);
+    padding: 22px;
+    border-radius: 30px;
+    overflow: hidden;
+  }
+
+  .preferences-shell__panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(155, 214, 223, 0.15), transparent 36%),
+      radial-gradient(circle at 96% 6%, rgba(234, 220, 195, 0.1), transparent 32%);
+  }
+
+  .preferences-shell__panel--hidden {
+    display: none;
+  }
+
+  .preferences-shell__header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .preferences-shell__eyebrow {
+    margin: 0 0 5px;
+    color: var(--ocean-mist);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .preferences-shell__title {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.2rem;
+    line-height: 1.2;
+  }
+
+  .preferences-shell__body,
+  .preferences-shell__support {
+    position: relative;
+    margin: 14px 0 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .preferences-shell__toggles {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .preferences-shell__group {
+    position: relative;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(169, 219, 214, 0.13);
+  }
+
+  .preferences-shell__group:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .preferences-shell__group-title {
+    margin: 0;
+    color: var(--sand);
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .preferences-shell__toggle {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(169, 219, 214, 0.18);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.04));
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+  }
+
+  .preferences-shell__toggle:hover {
+    border-color: rgba(155, 214, 223, 0.38);
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .preferences-shell__toggle--disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .preferences-shell__toggle-copy {
+    display: grid;
+    gap: 4px;
+  }
+
+  .preferences-shell__toggle-title {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .preferences-shell__toggle-body {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .preferences-shell__checkbox {
+    position: absolute;
+    right: 15px;
+    top: 18px;
+    z-index: 1;
+    width: 48px;
+    height: 28px;
+    margin: 0;
+    accent-color: var(--ocean-tide);
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .preferences-shell__checkbox:disabled {
+    cursor: not-allowed;
+  }
+
+  .preferences-shell__switch {
+    flex: 0 0 auto;
+    position: relative;
+    width: 48px;
+    height: 28px;
+    margin-top: 2px;
+    border: 1px solid rgba(169, 219, 214, 0.22);
+    border-radius: 999px;
+    background: rgba(4, 17, 29, 0.72);
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.28);
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+
+  .preferences-shell__switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #f8ffff, #bde7e8);
+    box-shadow: 0 5px 12px rgba(1, 8, 14, 0.34);
+    transition: transform 180ms ease;
+  }
+
+  .preferences-shell__checkbox:checked + .preferences-shell__switch {
+    border-color: rgba(155, 214, 223, 0.6);
+    background: linear-gradient(180deg, rgba(111, 199, 209, 0.9), rgba(43, 127, 145, 0.82));
+  }
+
+  .preferences-shell__checkbox:checked + .preferences-shell__switch::after {
+    transform: translateX(20px);
+  }
+
+  .preferences-shell__checkbox:focus-visible + .preferences-shell__switch {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .preferences-shell__select {
+    min-width: 156px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid rgba(169, 219, 214, 0.28);
+    border-radius: 16px;
+    background: rgba(4, 17, 29, 0.82);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+  }
+}

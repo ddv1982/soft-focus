@@ -2,6 +2,19 @@ import type { ExerciseId } from '../state/types';
 import { getSessionFlowForExercise } from '../game/navigation';
 import { sceneKeys, type SceneKey } from '../game/sceneKeys';
 
+const domSetupSceneKeys = new Set<SceneKey>([
+  sceneKeys.entry,
+  sceneKeys.exerciseSelection,
+  sceneKeys.phrase,
+  sceneKeys.instructions,
+]);
+
+declare global {
+  interface Window {
+    __softFocusShowSetupScene?: (sceneKey: SceneKey) => void;
+  }
+}
+
 interface SessionPanelStoreLike {
   getState(): {
     selectedExercise: ExerciseId;
@@ -40,8 +53,14 @@ export const navigateToManagedScene = async (
 };
 
 export const beginNextSessionFromScene = async (game: SessionPanelGameLike, sceneKey: SceneKey): Promise<void> => {
-  await ensureManagedSceneRegistered(game, sceneKey);
   game.sessionStore.prepareForNextSession();
+
+  if (domSetupSceneKeys.has(sceneKey) && typeof window !== 'undefined' && window.__softFocusShowSetupScene) {
+    window.__softFocusShowSetupScene(sceneKey);
+    return;
+  }
+
+  await ensureManagedSceneRegistered(game, sceneKey);
   startManagedScene(game, sceneKey);
 };
 

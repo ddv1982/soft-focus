@@ -14,9 +14,10 @@ import { createCard } from '../ui/components/Card';
 import { createPracticeControls, getPracticeControlsLayout, type PracticeControls } from '../ui/components/PracticeControls';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { getLayoutFrame } from '../ui/layout';
-import { uiTheme } from '../ui/theme';
+import { renderOceanBackground } from '../ui/oceanBackground';
+import { hexToNumber, uiTheme } from '../ui/theme';
 
-const getSurfaceAlpha = (practiceConfig: PracticeConfig): number => (practiceConfig.lowIntensity.enabled ? 0.92 : 0.98);
+const getSurfaceAlpha = (practiceConfig: PracticeConfig): number => (practiceConfig.lowIntensity.enabled ? 0.82 : 0.88);
 
 const getPhaseDefinition = (
   practiceConfig: PracticeConfig,
@@ -79,7 +80,7 @@ export class PracticeScene extends Phaser.Scene {
     const cardWidth = frame.contentWidth;
     const titleWidth = Math.min(cardWidth, 980);
     const readableWidth = Math.min(cardWidth - (uiTheme.spacing.xl * 2), 760);
-    const stageOuterInset = cardWidth >= 900 ? uiTheme.spacing.lg : uiTheme.spacing.md;
+    const stageOuterInset = cardWidth >= 900 ? uiTheme.spacing.xl : uiTheme.spacing.md;
     const stageWidth = Math.max(220, cardWidth - (stageOuterInset * 2));
     const controlsWidth = Math.min(cardWidth, 760);
     const controlsLayout = getPracticeControlsLayout(controlsWidth);
@@ -88,13 +89,7 @@ export class PracticeScene extends Phaser.Scene {
     const footerHeight = 84;
     this.shuttingDown = false;
 
-    this.add.rectangle(
-      frame.width / 2,
-      frame.height / 2,
-      frame.width,
-      frame.height,
-      Number.parseInt(uiTheme.colors.background.slice(1), 16),
-    );
+    renderOceanBackground(this, { frame });
 
     const title = createScreenTitle(this, {
       x: contentCenterX,
@@ -116,11 +111,30 @@ export class PracticeScene extends Phaser.Scene {
       clampWidth: false,
     });
 
+    this.add.rectangle(
+      card.x,
+      card.y + 1,
+      cardWidth - 18,
+      1,
+      hexToNumber(uiTheme.colors.foam),
+      0.2,
+    ).setOrigin(0.5, 0);
+
+    this.add.rectangle(
+      card.x,
+      card.y + uiTheme.spacing.sm,
+      cardWidth - uiTheme.spacing.lg,
+      cardHeight - (uiTheme.spacing.lg),
+      hexToNumber(uiTheme.colors.surfaceDeep),
+      0.18,
+    ).setOrigin(0.5, 0)
+      .setStrokeStyle(1, hexToNumber(uiTheme.colors.borderMuted), 0.18);
+
     this.phaseText = this.add.text(card.x, card.y + uiTheme.spacing.xl, '', {
-      color: uiTheme.colors.accent,
+      color: uiTheme.colors.seaGlass,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
-      fontStyle: '600',
+      fontStyle: '700',
       align: 'center',
     });
     this.phaseText.setOrigin(0.5, 0);
@@ -128,8 +142,8 @@ export class PracticeScene extends Phaser.Scene {
     this.timerText = this.add.text(card.x, this.phaseText.y + this.phaseText.height + uiTheme.spacing.sm, '', {
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '40px',
-      fontStyle: '600',
+      fontSize: cardWidth < 420 ? '36px' : '44px',
+      fontStyle: '700',
       align: 'center',
     });
     this.timerText.setOrigin(0.5, 0);
@@ -139,10 +153,10 @@ export class PracticeScene extends Phaser.Scene {
       this.timerText.y + this.timerText.height + uiTheme.spacing.xl,
       practiceConfig.display.phraseText,
       {
-        color: uiTheme.colors.text,
+        color: uiTheme.colors.foam,
         fontFamily: uiTheme.typography.fontFamily,
-        fontSize: '28px',
-        fontStyle: '600',
+        fontSize: cardWidth < 420 ? '25px' : '30px',
+        fontStyle: '700',
         align: 'center',
         wordWrap: { width: readableWidth, useAdvancedWrap: true },
         lineSpacing: 8,
@@ -165,28 +179,45 @@ export class PracticeScene extends Phaser.Scene {
     const guideHeight = Math.max(132, guideBottom - guideTop);
     const guideCenterY = guideTop + (guideHeight / 2);
 
-    const guideSurface = this.add.rectangle(
+    this.add.rectangle(
+      card.x,
+      guideCenterY + 12,
+      stageWidth - 14,
+      guideHeight,
+      uiTheme.colors.shadow,
+      0.24,
+    ).setOrigin(0.5);
+
+    this.add.rectangle(
       card.x,
       guideCenterY,
       stageWidth,
       guideHeight,
-      Number.parseInt(uiTheme.colors.surfaceRaised.slice(1), 16),
-      0.26,
+      hexToNumber(uiTheme.colors.surfaceRaised),
+      0.36,
     ).setOrigin(0.5)
-      .setStrokeStyle(1, Number.parseInt(uiTheme.colors.border.slice(1), 16), 0.45);
-    guideSurface.setDepth(card.depth + 1);
+      .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.34);
+
+    this.add.rectangle(
+      card.x,
+      guideCenterY - ((guideHeight / 2) - 18),
+      stageWidth - 34,
+      1,
+      hexToNumber(uiTheme.colors.foam),
+      0.16,
+    ).setOrigin(0.5);
 
     this.add.rectangle(
       card.x,
       card.y + card.height - footerHeight,
-      cardWidth,
+      cardWidth - uiTheme.spacing.lg,
       1,
-      Number.parseInt(uiTheme.colors.border.slice(1), 16),
-      0.9,
+      hexToNumber(uiTheme.colors.border),
+      0.28,
     ).setOrigin(0.5, 0);
 
     this.statusText = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, '', {
-      color: uiTheme.colors.textMuted,
+      color: uiTheme.colors.textMutedOnDark,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       align: 'center',
@@ -214,9 +245,9 @@ export class PracticeScene extends Phaser.Scene {
       });
     }
 
-    const overlayBackground = this.add.rectangle(0, 0, Math.min(stageWidth, 680), 132, Number.parseInt(uiTheme.colors.background.slice(1), 16), 0.72)
+    const overlayBackground = this.add.rectangle(0, 0, Math.min(stageWidth, 680), 132, hexToNumber(uiTheme.colors.surface), 0.9)
       .setOrigin(0.5)
-      .setStrokeStyle(1, Number.parseInt(uiTheme.colors.border.slice(1), 16), 0.8);
+      .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.42);
     const overlayTitle = this.add.text(0, -18, 'Paused', {
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,

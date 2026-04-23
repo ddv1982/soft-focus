@@ -56,6 +56,10 @@ export class SessionStore {
     return this.state.recentSessionSummaries[0] ?? null;
   }
 
+  clearRecentSessionSummaries(): SessionState {
+    return this.patchState({ recentSessionSummaries: [] });
+  }
+
   setSelectedExercise(selectedExercise: ExerciseId): SessionState {
     return this.patchState({ selectedExercise });
   }

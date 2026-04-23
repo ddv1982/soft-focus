@@ -3,7 +3,7 @@ import * as Phaser from 'phaser';
 import { getSessionStore } from '../game/Game';
 import { sceneKeys } from '../game/sceneKeys';
 import { getLayoutFrame } from '../ui/layout';
-import { uiTheme } from '../ui/theme';
+import { renderOceanBackground } from '../ui/oceanBackground';
 
 interface CompletionSceneData {
   outcome?: 'completed' | 'stopped';
@@ -24,12 +24,6 @@ export class CompletionScene extends Phaser.Scene {
     });
     void data;
 
-    this.add.rectangle(
-      frame.width / 2,
-      frame.height / 2,
-      frame.width,
-      frame.height,
-      Number.parseInt(uiTheme.colors.background.slice(1), 16),
-    );
+    renderOceanBackground(this, { frame });
   }
 }

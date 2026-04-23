@@ -8,186 +8,21 @@ import {
   saveReflectionAndChooseAnotherExercise,
   saveReflectionAndRestart,
 } from './sessionPanelActions';
-
-const supportCopy = 'If this feels too intense, stop and return to a steadier option. Seek local support if you need more help.';
-
-const formatDuration = (durationSeconds: number | null): string => {
-  if (!durationSeconds || durationSeconds < 60) {
-    return durationSeconds === 1 ? '1 second' : `${durationSeconds ?? 0} seconds`;
-  }
-
-  const minutes = Math.floor(durationSeconds / 60);
-  const seconds = durationSeconds % 60;
-
-  if (seconds === 0) {
-    return minutes === 1 ? '1 minute' : `${minutes} minutes`;
-  }
-
-  return `${minutes}m ${seconds}s`;
-};
-
-const createOverlayRoot = (parent: HTMLElement): HTMLDivElement => {
-  const root = document.createElement('div');
-  root.className = 'session-overlay session-overlay--hidden';
-  parent.append(root);
-  return root;
-};
-
-const createPreferencesRoot = (parent: HTMLElement): HTMLDivElement => {
-  const root = document.createElement('div');
-  root.className = 'preferences-shell';
-  parent.append(root);
-  return root;
-};
-
-const createPanel = (): HTMLElement => {
-  const panel = document.createElement('section');
-  panel.className = 'session-overlay__panel';
-  return panel;
-};
-
-const createEyebrow = (text: string): HTMLParagraphElement => {
-  const eyebrow = document.createElement('p');
-  eyebrow.className = 'session-overlay__eyebrow';
-  eyebrow.textContent = text;
-  return eyebrow;
-};
-
-const createTitle = (text: string): HTMLHeadingElement => {
-  const title = document.createElement('h2');
-  title.className = 'session-overlay__title';
-  title.textContent = text;
-  return title;
-};
-
-const createBody = (text: string): HTMLParagraphElement => {
-  const body = document.createElement('p');
-  body.className = 'session-overlay__body';
-  body.textContent = text;
-  return body;
-};
-
-const createSummaryList = (lines: string[]): HTMLUListElement => {
-  const list = document.createElement('ul');
-  list.className = 'session-overlay__list';
-
-  lines.forEach((line) => {
-    const item = document.createElement('li');
-    item.textContent = line;
-    list.append(item);
-  });
-
-  return list;
-};
-
-const createPrimaryButton = (label: string, onClick: () => void): HTMLButtonElement => {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'app-shell__button';
-  button.textContent = label;
-  button.addEventListener('click', onClick);
-  return button;
-};
-
-const createSecondaryButton = (label: string, onClick: () => void): HTMLButtonElement => {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'preferences-shell__button';
-  button.textContent = label;
-  button.addEventListener('click', onClick);
-  return button;
-};
-
-const createPreferenceToggle = ({
-  label,
-  description,
-  checked,
-  disabled = false,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  disabled?: boolean;
-  onChange: (checked: boolean) => void;
-}): HTMLLabelElement => {
-  const row = document.createElement('label');
-  row.className = `preferences-shell__toggle${disabled ? ' preferences-shell__toggle--disabled' : ''}`;
-
-  const copy = document.createElement('div');
-  copy.className = 'preferences-shell__toggle-copy';
-
-  const title = document.createElement('span');
-  title.className = 'preferences-shell__toggle-title';
-  title.textContent = label;
-
-  const body = document.createElement('span');
-  body.className = 'preferences-shell__toggle-body';
-  body.textContent = description;
-
-  copy.append(title, body);
-
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.checked = checked;
-  input.disabled = disabled;
-  input.className = 'preferences-shell__checkbox';
-  input.addEventListener('change', () => {
-    onChange(input.checked);
-  });
-
-  row.append(copy, input);
-  return row;
-};
-
-const createPreferenceSelect = ({
-  label,
-  description,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  value: string;
-  options: readonly {
-    id: string;
-    title: string;
-  }[];
-  onChange: (value: string) => void;
-}): HTMLLabelElement => {
-  const row = document.createElement('label');
-  row.className = 'preferences-shell__toggle';
-
-  const copy = document.createElement('div');
-  copy.className = 'preferences-shell__toggle-copy';
-
-  const title = document.createElement('span');
-  title.className = 'preferences-shell__toggle-title';
-  title.textContent = label;
-
-  const body = document.createElement('span');
-  body.className = 'preferences-shell__toggle-body';
-  body.textContent = description;
-
-  copy.append(title, body);
-
-  const select = document.createElement('select');
-  select.className = 'preferences-shell__select';
-  options.forEach((option) => {
-    const optionElement = document.createElement('option');
-    optionElement.value = option.id;
-    optionElement.textContent = option.title;
-    optionElement.selected = option.id === value;
-    select.append(optionElement);
-  });
-  select.addEventListener('change', () => {
-    onChange(select.value);
-  });
-
-  row.append(copy, select);
-  return row;
-};
+import {
+  createBody,
+  createEyebrow,
+  createOverlayRoot,
+  createPanel,
+  createPreferenceSelect,
+  createPreferencesRoot,
+  createPreferenceToggle,
+  createPrimaryButton,
+  createSecondaryButton,
+  createSummaryList,
+  createTitle,
+  formatDuration,
+  supportCopy,
+} from './sessionPanelDom';
 
 const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => {
   const state = game.sessionStore.getState();
@@ -215,28 +50,51 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   ];
 
   const panel = createPanel();
-  panel.append(
+  const hero = document.createElement('div');
+  hero.className = 'session-overlay__hero';
+  const completionMark = document.createElement('div');
+  completionMark.className = 'session-overlay__mark';
+  completionMark.setAttribute('aria-hidden', 'true');
+  completionMark.textContent = latestSummary.outcome === 'stopped' ? 'pause' : 'ease';
+  const copy = document.createElement('div');
+  copy.className = 'session-overlay__copy';
+  copy.append(
     createEyebrow(practiceConfig.exercise.phaseLabel),
     createTitle(latestSummary.outcome === 'stopped' ? `${practiceConfig.exercise.phaseLabel} round paused early` : `${practiceConfig.exercise.phaseLabel} round complete`),
     createBody(latestSummary.outcome === 'stopped'
-      ? `You ended this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round cleanly. Take a brief breath before reflecting.`
-      : `You reached the end of this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round. Take a brief breath before reflecting.`),
-    createSummaryList(summaryLines),
-    createBody(practiceConfig.copy.completionNote),
+      ? `You ended this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round cleanly. Let your attention come back to the room before reflecting.`
+      : `You reached the end of this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round. Let the steadier parts of the round land before reflecting.`),
+  );
+  hero.append(completionMark, copy);
+
+  const summary = document.createElement('div');
+  summary.className = 'session-overlay__summary';
+  const summaryTitle = document.createElement('h3');
+  summaryTitle.className = 'session-overlay__section-title';
+  summaryTitle.textContent = 'Session notes';
+  summary.append(summaryTitle, createSummaryList(summaryLines));
+
+  const integrationNote = createBody(practiceConfig.copy.completionNote);
+  integrationNote.className = 'session-overlay__body session-overlay__body--framed';
+
+  panel.append(
+    hero,
+    summary,
+    integrationNote,
   );
 
   const support = createBody(supportCopy);
   support.className = 'session-overlay__support';
 
   const actions = document.createElement('div');
-  actions.className = 'app-shell__actions';
+  actions.className = 'app-shell__actions session-overlay__actions';
   const continueButton = createPrimaryButton('Continue to reflection', () => {
     continueToReflection(game);
   });
   const chooseAnotherButton = createSecondaryButton('Choose another exercise', () => {
     chooseAnotherExercise(game);
   });
-  const helper = createBody('Reflection is optional. Choose another exercise if you want to skip note-taking for now.');
+  const helper = createBody('Reflection is optional. Choose another exercise if you want to return to the practice shore for now.');
   helper.className = 'session-overlay__helper';
   actions.append(continueButton, chooseAnotherButton);
   panel.append(helper, actions, support);
@@ -252,15 +110,30 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   const savedReflection = state.currentSession?.reflection ?? game.sessionStore.getLatestSessionSummary()?.reflection ?? '';
 
   const panel = createPanel();
-  panel.append(
+  const hero = document.createElement('div');
+  hero.className = 'session-overlay__hero session-overlay__hero--reflection';
+  const reflectionMark = document.createElement('div');
+  reflectionMark.className = 'session-overlay__mark';
+  reflectionMark.setAttribute('aria-hidden', 'true');
+  reflectionMark.textContent = 'note';
+  const copy = document.createElement('div');
+  copy.className = 'session-overlay__copy';
+  copy.append(
     createEyebrow('Integration / Reflection'),
     createTitle('Notice what softened or stayed steady'),
     createBody(practiceConfig.copy.reflectionSubtitle),
   );
+  hero.append(reflectionMark, copy);
+  panel.append(
+    hero,
+  );
 
   const prompt = createBody(practiceConfig.copy.reflectionPrompt);
   prompt.className = 'session-overlay__prompt';
-  panel.append(prompt);
+
+  const field = document.createElement('label');
+  field.className = 'session-overlay__field';
+  field.append(prompt);
 
   const textarea = document.createElement('textarea');
   textarea.className = 'session-overlay__textarea';
@@ -282,8 +155,10 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
       : practiceConfig.copy.reflectionHelper;
   });
 
+  field.append(textarea, helper);
+
   const actions = document.createElement('div');
-  actions.className = 'app-shell__actions';
+  actions.className = 'app-shell__actions session-overlay__actions';
   const saveButton = createPrimaryButton('Save and start again', () => {
     saveReflectionAndRestart(game, textarea.value);
   });
@@ -294,10 +169,10 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
 
   const support = createBody(supportCopy);
   support.className = 'session-overlay__support';
-  const nextStepNote = createBody('Choosing another exercise saves your note and returns you to the library instead of restarting this same practice.');
+  const nextStepNote = createBody('Choosing another exercise saves your note and returns you to the practice shore instead of restarting this same practice.');
   nextStepNote.className = 'session-overlay__helper';
 
-  panel.append(textarea, helper, nextStepNote, actions, support);
+  panel.append(field, nextStepNote, actions, support);
   root.classList.remove('session-overlay--hidden');
   root.replaceChildren(panel);
   queueMicrotask(() => textarea.focus());
@@ -320,7 +195,8 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     launcher.setAttribute('aria-expanded', preferencesOpen ? 'true' : 'false');
 
     const panel = document.createElement('section');
-    panel.className = `preferences-shell__panel${preferencesOpen ? '' : ' preferences-shell__panel--hidden'}`;
+    panel.className = `preferences-shell__panel wellness-reduced-motion${preferencesOpen ? '' : ' preferences-shell__panel--hidden'}`;
+    panel.setAttribute('aria-label', 'Practice preferences');
 
     const header = document.createElement('div');
     header.className = 'preferences-shell__header';
@@ -329,20 +205,35 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     title.className = 'preferences-shell__title';
     title.textContent = 'Preferences';
 
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'preferences-shell__eyebrow';
+    eyebrow.textContent = 'Practice comfort';
+
+    const heading = document.createElement('div');
+    heading.append(eyebrow, title);
+
     const closeButton = createSecondaryButton('Close', () => {
       preferencesOpen = false;
       renderPreferences();
     });
 
-    header.append(title, closeButton);
+    header.append(heading, closeButton);
 
     const body = document.createElement('p');
     body.className = 'preferences-shell__body';
-    body.textContent = 'These settings persist locally and shape the current practice flow without changing your saved notes.';
+    body.textContent = 'These settings persist locally and shape the current practice flow without changing your saved notes or safe harbor pace.';
 
     const toggles = document.createElement('div');
     toggles.className = 'preferences-shell__toggles';
+
+    const comfortGroup = document.createElement('div');
+    comfortGroup.className = 'preferences-shell__group';
+    const comfortTitle = document.createElement('h3');
+    comfortTitle.className = 'preferences-shell__group-title';
+    comfortTitle.textContent = 'Pace and movement';
+    comfortGroup.append(comfortTitle);
     toggles.append(
+      comfortGroup,
       createPreferenceToggle({
         label: 'Low intensity',
         description: 'Keeps settle, practice, and recovery pacing gentler across the selected exercise.',
@@ -359,6 +250,17 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
           game.sessionStore.setReducedMotionEnabled(checked);
         },
       }),
+    );
+
+    const guidanceGroup = document.createElement('div');
+    guidanceGroup.className = 'preferences-shell__group';
+    const guidanceTitle = document.createElement('h3');
+    guidanceTitle.className = 'preferences-shell__group-title';
+    guidanceTitle.textContent = 'Guidance';
+    guidanceGroup.append(guidanceTitle);
+
+    toggles.append(
+      guidanceGroup,
       createPreferenceToggle({
         label: 'Gaze guidance',
         description: state.selectedExercise === exerciseIds.phraseAnchor
@@ -373,7 +275,14 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     );
 
     if (practiceConfig.breathingReset) {
+      const breathingGroup = document.createElement('div');
+      breathingGroup.className = 'preferences-shell__group';
+      const breathingTitle = document.createElement('h3');
+      breathingTitle.className = 'preferences-shell__group-title';
+      breathingTitle.textContent = 'Breathing cadence';
+      breathingGroup.append(breathingTitle);
       toggles.append(
+        breathingGroup,
         createPreferenceSelect({
           label: 'Breathing preset',
           description: `${practiceConfig.breathingReset.summary} Choose the pattern that feels easiest to follow today.`,

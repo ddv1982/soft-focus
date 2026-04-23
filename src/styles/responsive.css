@@ -1,0 +1,48 @@
+@media (max-width: 640px) {
+  .session-overlay {
+    align-items: flex-end;
+    padding: 14px;
+  }
+
+  .session-overlay__panel {
+    width: 100%;
+    max-height: calc(100vh - 28px);
+    border-radius: 30px 30px 24px 24px;
+  }
+
+  .session-overlay__hero {
+    grid-template-columns: 1fr;
+  }
+
+  .session-overlay__mark {
+    width: 58px;
+    min-height: 58px;
+  }
+
+  .session-overlay__list {
+    grid-template-columns: 1fr;
+  }
+
+  .preferences-shell {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    align-items: stretch;
+  }
+
+  .preferences-shell__launcher {
+    align-self: flex-end;
+  }
+
+  .preferences-shell__panel {
+    width: 100%;
+  }
+
+  .preferences-shell__toggle {
+    align-items: center;
+  }
+
+  .preferences-shell__select {
+    width: 100%;
+  }
+}

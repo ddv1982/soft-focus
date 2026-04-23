@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { uiTheme } from '../ui/theme';
+import { hexToNumber, uiTheme } from '../ui/theme';
 
 export interface MovingBallGuidanceController {
   setActive(active: boolean): void;
@@ -34,7 +34,7 @@ export const createMovingBallGuidance = ({
   const guideLines = laneHeights.map((laneHeight) => {
     const laneY = y + ((laneHeight - 0.5) * laneBandHeight);
 
-    return scene.add.rectangle(x, laneY, width, 2, Number.parseInt(uiTheme.colors.border.slice(1), 16), lowIntensity ? 0.18 : 0.28)
+    return scene.add.rectangle(x, laneY, width, 2, hexToNumber(uiTheme.colors.border), lowIntensity ? 0.18 : 0.28)
       .setOrigin(0.5);
   });
 
@@ -42,7 +42,7 @@ export const createMovingBallGuidance = ({
     x - (width / 2) + radius,
     y + ((laneHeights[0] - 0.5) * laneBandHeight),
     radius,
-    Number.parseInt(uiTheme.colors.accent.slice(1), 16),
+    hexToNumber(uiTheme.colors.accent),
     lowIntensity ? 0.72 : 0.9,
   );
 

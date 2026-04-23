@@ -1,0 +1,151 @@
+@layer components {
+  #app {
+    width: 100vw;
+    min-height: 100vh;
+  }
+
+  .app-runtime-shell {
+    position: relative;
+    width: 100vw;
+    min-height: 100vh;
+    background: linear-gradient(180deg, rgba(155, 214, 223, 0.08), rgba(234, 220, 195, 0.05));
+  }
+
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+  }
+
+  .wellness-glass,
+  .app-shell__card,
+  .session-overlay__panel,
+  .preferences-shell__panel {
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(13, 42, 58, 0.88), rgba(7, 25, 39, 0.78));
+    box-shadow: var(--shadow-wellness-glass);
+    backdrop-filter: blur(22px) saturate(1.15);
+  }
+
+  .app-shell__card {
+    width: min(100%, 580px);
+    padding: 30px;
+    border-radius: 30px;
+  }
+
+  .app-shell__eyebrow,
+  .session-overlay__eyebrow {
+    margin: 0 0 12px;
+    color: var(--ocean-mist);
+    font-size: 0.875rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .app-shell__title,
+  .session-overlay__title {
+    margin: 0 0 12px;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .app-shell__title {
+    font-size: clamp(2rem, 4vw, 2.7rem);
+  }
+
+  .app-shell__body,
+  .session-overlay__body,
+  .session-overlay__prompt,
+  .session-overlay__helper,
+  .session-overlay__support,
+  .preferences-shell__body,
+  .preferences-shell__support {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .app-shell__list,
+  .session-overlay__list {
+    margin: 20px 0 0;
+    padding-left: 20px;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  .app-shell__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .wellness-button,
+  .app-shell__button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 14px 18px;
+    border: 1px solid rgba(248, 255, 255, 0.16);
+    border-radius: 20px;
+    background: linear-gradient(180deg, #9ce4ea, #6fc7d1 52%, #4caab7);
+    color: #062331;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: var(--shadow-wellness-button);
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .wellness-button:hover,
+  .app-shell__button:hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .wellness-button:active,
+  .app-shell__button:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .app-shell__button:focus-visible,
+  .session-overlay__textarea:focus-visible,
+  .preferences-shell__launcher:focus-visible,
+  .preferences-shell__button:focus-visible,
+  .preferences-shell__select:focus-visible,
+  .preferences-shell__checkbox:focus-visible,
+  .wellness-focus:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .app-shell__button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+
+  .app-shell__status {
+    margin-top: 16px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .app-shell__runtime {
+    width: 100vw;
+    min-height: 100vh;
+  }
+
+  .app-shell__runtime--setup {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .app-runtime-shell--setup .preferences-shell {
+    display: flex;
+  }
+}

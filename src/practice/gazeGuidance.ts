@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { uiTheme } from '../ui/theme';
+import { hexToNumber, uiTheme } from '../ui/theme';
 
 export interface GazeGuidanceController {
   setPaused(paused: boolean): void;
@@ -16,7 +16,7 @@ interface CreateGazeGuidanceOptions {
   prompt: string;
 }
 
-const baseColor = Number.parseInt(uiTheme.colors.accent.slice(1), 16);
+const baseColor = hexToNumber(uiTheme.colors.accent);
 
 export const createGazeGuidance = ({
   scene,

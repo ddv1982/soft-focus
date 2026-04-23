@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { uiTheme } from '../theme';
+import { hexToNumber, uiTheme } from '../theme';
 
 export interface PracticeControls {
   container: Phaser.GameObjects.Container;
@@ -29,6 +29,7 @@ interface ControlButton {
   container: Phaser.GameObjects.Container;
   label: Phaser.GameObjects.Text;
   background: Phaser.GameObjects.Rectangle;
+  highlight: Phaser.GameObjects.Rectangle;
   setOnPress: (onPress: () => void) => void;
 }
 
@@ -52,14 +53,28 @@ const createControlButton = (
   width: number,
   label: string,
   onPress: () => void,
+  variant: 'primary' | 'secondary' = 'secondary',
 ): ControlButton => {
   const height = 48;
-  const background = scene.add.rectangle(0, 0, width, height, Number.parseInt(uiTheme.colors.surfaceRaised.slice(1), 16));
+  const shadow = scene.add.rectangle(0, 5, width - 8, height, uiTheme.colors.shadow, variant === 'primary' ? 0.26 : 0.16);
+  shadow.setOrigin(0.5);
+
+  const background = scene.add.rectangle(
+    0,
+    0,
+    width,
+    height,
+    hexToNumber(variant === 'primary' ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised),
+    variant === 'primary' ? 0.96 : 0.72,
+  );
   background.setOrigin(0.5);
-  background.setStrokeStyle(1, Number.parseInt(uiTheme.colors.border.slice(1), 16), 1);
+  background.setStrokeStyle(1, hexToNumber(variant === 'primary' ? uiTheme.colors.foam : uiTheme.colors.border), variant === 'primary' ? 0.28 : 0.42);
+
+  const highlight = scene.add.rectangle(0, -((height / 2) - 1), width - 18, 1, hexToNumber(uiTheme.colors.foam), variant === 'primary' ? 0.34 : 0.16);
+  highlight.setOrigin(0.5);
 
   const text = scene.add.text(0, 0, label, {
-    color: uiTheme.colors.text,
+    color: variant === 'primary' ? uiTheme.colors.accentText : uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '16px',
     fontStyle: '600',
@@ -67,7 +82,7 @@ const createControlButton = (
   });
   text.setOrigin(0.5);
 
-  const container = scene.add.container(x, 0, [background, text]);
+  const container = scene.add.container(x, 0, [shadow, background, highlight, text]);
   container.setSize(width, height);
   background.setInteractive({ useHandCursor: true });
 
@@ -94,6 +109,7 @@ const createControlButton = (
     container,
     label: text,
     background,
+    highlight,
     setOnPress,
   };
 };
@@ -115,6 +131,7 @@ export const createPracticeControls = ({
     layout.buttonWidth,
     'Pause',
     onPause,
+    'primary',
   );
   const stopButton = createControlButton(
     scene,
@@ -122,6 +139,7 @@ export const createPracticeControls = ({
     layout.buttonWidth,
     'Stop practice',
     onStop,
+    'secondary',
   );
 
   if (layout.stacked) {
@@ -144,8 +162,10 @@ export const createPracticeControls = ({
 
         onPause();
       });
-      pauseButton.background.setFillStyle(Number.parseInt((paused ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised).slice(1), 16));
+      pauseButton.background.setFillStyle(hexToNumber(paused ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised));
       pauseButton.label.setColor(paused ? uiTheme.colors.accentText : uiTheme.colors.text);
+      pauseButton.background.setAlpha(paused ? 0.96 : 0.72);
+      pauseButton.highlight.setAlpha(paused ? 0.34 : 0.16);
     },
   };
 };

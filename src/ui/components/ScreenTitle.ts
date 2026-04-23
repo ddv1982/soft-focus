@@ -17,7 +17,7 @@ export const createScreenTitle = (
 ): Phaser.GameObjects.Container => {
   const width = clampContentWidth(options.width ?? 320);
   const title = scene.add.text(0, 0, options.title, {
-    color: uiTheme.colors.text,
+    color: uiTheme.colors.textOnDark,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${uiTheme.typography.titleSize}px`,
     fontStyle: '600',
@@ -32,7 +32,7 @@ export const createScreenTitle = (
 
   if (options.subtitle) {
     const subtitle = scene.add.text(0, title.height + uiTheme.spacing.sm, options.subtitle, {
-      color: uiTheme.colors.textMuted,
+      color: uiTheme.colors.textMutedOnDark,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: `${uiTheme.typography.bodySize}px`,
       align: 'center',

@@ -58,6 +58,10 @@ export const navigateToScene = (scene: Phaser.Scene, request: NavigationRequest)
   void (async () => {
     await game.ensureSceneRegistered?.(request.to);
 
+    if (request.from && !scene.scene.isActive(request.from)) {
+      return;
+    }
+
     const sessionStore = scene.registry.get(sessionStoreRegistryKey);
 
     if (sessionStore instanceof SessionStore) {

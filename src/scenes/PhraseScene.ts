@@ -10,6 +10,7 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
+import { renderOceanBackground } from '../ui/oceanBackground';
 import { uiTheme } from '../ui/theme';
 import { isValidPhrase, normalizePhrase, phraseMinLength } from '../state/types';
 
@@ -48,13 +49,7 @@ export class PhraseScene extends Phaser.Scene {
     const savedPhrase = sessionStore.getState().phrase;
     let draftPhrase = savedPhrase;
 
-    this.add.rectangle(
-      frame.width / 2,
-      frame.height / 2,
-      frame.width,
-      frame.height,
-      Number.parseInt(uiTheme.colors.background.slice(1), 16),
-    );
+    renderOceanBackground(this, { frame });
 
     createBackButton(this, {
       x: frame.contentX,

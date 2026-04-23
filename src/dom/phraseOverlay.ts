@@ -50,19 +50,19 @@ export const createPhraseOverlay = (options: PhraseOverlayOptions): PhraseOverla
   input.style.height = '100%';
   input.style.pointerEvents = 'auto';
   input.style.padding = '0 16px';
-  input.style.border = '1px solid #2b3d59';
-  input.style.borderRadius = '18px';
-  input.style.background = 'rgba(20, 32, 51, 0.96)';
-  input.style.color = '#eef4ff';
+  input.style.border = '1px solid #8ec6c9';
+  input.style.borderRadius = '20px';
+  input.style.background = 'rgba(248, 255, 255, 0.94)';
+  input.style.color = '#0b2735';
   input.style.font = '16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
   input.style.outline = 'none';
-  input.style.boxShadow = '0 12px 30px rgba(5, 8, 16, 0.22)';
+  input.style.boxShadow = '0 12px 30px rgba(3, 16, 26, 0.16)';
 
   const setInvalid = (invalid: boolean): void => {
-    input.style.borderColor = invalid ? '#7cc6ff' : '#2b3d59';
+    input.style.borderColor = invalid ? '#e6a48e' : '#8ec6c9';
     input.style.boxShadow = invalid
-      ? '0 0 0 1px rgba(124, 198, 255, 0.45), 0 12px 30px rgba(5, 8, 16, 0.22)'
-      : '0 12px 30px rgba(5, 8, 16, 0.22)';
+      ? '0 0 0 1px rgba(230, 164, 142, 0.55), 0 12px 30px rgba(3, 16, 26, 0.16)'
+      : '0 12px 30px rgba(3, 16, 26, 0.16)';
   };
 
   input.addEventListener('input', () => {

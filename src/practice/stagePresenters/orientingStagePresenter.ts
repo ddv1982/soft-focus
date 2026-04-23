@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { uiTheme } from '../../ui/theme';
+import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
 
@@ -30,8 +30,8 @@ export const createOrientingStagePresenter = ({
   cycleMs,
   reducedMotion,
 }: CreateOrientingStagePresenterOptions): PracticeStagePresenterController => {
-  const accent = Number.parseInt(uiTheme.colors.accent.slice(1), 16);
-  const border = Number.parseInt(uiTheme.colors.border.slice(1), 16);
+  const accent = hexToNumber(uiTheme.colors.accent);
+  const border = hexToNumber(uiTheme.colors.border);
   const span = Math.max(84, Math.min(180, width * 0.3)) * reducedMotion.amplitudeScale;
 
   const guide = scene.add.rectangle(x, y, width, 2, border, 0.24).setOrigin(0.5);

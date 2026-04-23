@@ -1,3 +1,5 @@
+import './styles.css';
+
 export {};
 
 const container = document.getElementById('app');
@@ -24,17 +26,17 @@ const createBootShell = (parent: HTMLElement) => {
 
   const title = document.createElement('h1');
   title.className = 'app-shell__title';
-  title.textContent = 'Open a calmer practice space when you are ready.';
+  title.textContent = 'Step into a quiet ocean practice space.';
 
   const body = document.createElement('p');
   body.className = 'app-shell__body';
-  body.textContent = 'The guided practice runtime now loads on demand so the first screen stays lighter. You can still pause or stop whenever you need to soften the pace.';
+  body.textContent = 'Soft Focus opens like a safe shoreline: choose one gentle exercise, follow the pace that fits today, and pause or stop whenever you need more room.';
 
   const list = document.createElement('ul');
   list.className = 'app-shell__list';
   [
-    'Maintenance: phrase anchor',
-    'Reset: moving ball',
+    'Ocean-calm maintenance: phrase anchor',
+    'Reset tools: breathing, moving ball, rhythm, and orienting',
     'If motion feels too intense, stop and return to a steadier option.',
   ].forEach((item) => {
     const entry = document.createElement('li');
@@ -52,7 +54,7 @@ const createBootShell = (parent: HTMLElement) => {
 
   const statusText = document.createElement('p');
   statusText.className = 'app-shell__status';
-  statusText.textContent = 'The practice runtime stays unloaded until you open it.';
+  statusText.textContent = 'The practice runtime stays unloaded until you enter the space.';
 
   actions.append(button);
   card.append(eyebrow, title, body, list, actions, statusText);
@@ -70,19 +72,20 @@ const startSoftFocus = async (): Promise<void> => {
   }
 
   button.disabled = true;
-  button.textContent = 'Loading Soft Focus…';
-  statusText.textContent = 'Preparing the guided practice runtime.';
+  button.textContent = 'Opening Soft Focus…';
+  statusText.textContent = 'Preparing the shoreline practice space.';
 
   bootPromise = (async () => {
-    const [{ SoftFocusGame }, { mountSessionPanels }] = await Promise.all([
+    const [{ SoftFocusGame }, { mountSessionPanels }, { mountSetupShell }] = await Promise.all([
       import('./game/Game'),
       import('./shell/sessionPanels'),
+      import('./dom/setupShell'),
       document.fonts?.ready ?? Promise.resolve(),
     ]);
 
-    container.className = 'app-runtime-shell';
+    container.className = 'app-runtime-shell app-runtime-shell--setup';
     const runtimeHost = document.createElement('div');
-    runtimeHost.className = 'app-shell__runtime';
+    runtimeHost.className = 'app-shell__runtime app-shell__runtime--setup';
     container.replaceChildren(runtimeHost);
 
     const game = new SoftFocusGame(runtimeHost);
@@ -94,6 +97,13 @@ const startSoftFocus = async (): Promise<void> => {
     };
 
     refreshInputBounds();
+    mountSetupShell({
+      parent: container,
+      game,
+      runtimeHost,
+      onPracticeVisible: refreshInputBounds,
+    });
+
     window.requestAnimationFrame(() => {
       refreshInputBounds();
       window.requestAnimationFrame(refreshInputBounds);

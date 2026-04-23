@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { uiTheme } from '../../ui/theme';
+import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
 
@@ -33,8 +33,8 @@ export const createBreathingResetStagePresenter = ({
   holdAfterExhaleMs,
   reducedMotion,
 }: CreateBreathingResetStagePresenterOptions): PracticeStagePresenterController => {
-  const accent = Number.parseInt(uiTheme.colors.accent.slice(1), 16);
-  const border = Number.parseInt(uiTheme.colors.border.slice(1), 16);
+  const accent = hexToNumber(uiTheme.colors.accent);
+  const border = hexToNumber(uiTheme.colors.border);
   const ringRadius = Math.max(48, Math.min(96, width * 0.16));
   const fillRadius = ringRadius * (lowIntensity ? 0.6 : 0.54) * reducedMotion.amplitudeScale;
   const restScale = Math.max(0.9, reducedMotion.amplitudeScale);
