@@ -67,7 +67,7 @@ export class PhraseScene extends Phaser.Scene {
       y: frame.contentY + uiTheme.spacing.xl,
       width: cardWidth,
       title: 'Choose your phrase',
-      subtitle: 'Use a short phrase that feels steady and easy to return to.',
+      subtitle: 'Use a short phrase you can repeat gently when attention wanders.',
     });
 
     const { height: buttonHeight } = getPrimaryButtonSize(cardWidth);
@@ -83,7 +83,7 @@ export class PhraseScene extends Phaser.Scene {
       height: cardHeight,
     });
 
-    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, 'Enter the phrase you want to practice with in the next step.', {
+    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, 'Choose a phrase that feels steady, simple, and easy to pair with a natural breath.', {
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: `${uiTheme.typography.bodySize}px`,
@@ -115,7 +115,7 @@ export class PhraseScene extends Phaser.Scene {
     });
     helper.setOrigin(0.5, 0);
 
-    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Keep it simple. You can refine the experience later without changing today\'s phrase.', {
+    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.', {
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',

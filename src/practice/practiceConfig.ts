@@ -112,6 +112,12 @@ export type PracticeStagePresenterConfig =
     reducedMotion: PracticeReducedMotionPolicy;
   }
   | {
+    key: 'phrase-anchor';
+    phrase: string;
+    lowIntensity: boolean;
+    reducedMotion: PracticeReducedMotionPolicy;
+  }
+  | {
     key: 'gaze-guidance';
     prompt: string;
     lowIntensity: boolean;

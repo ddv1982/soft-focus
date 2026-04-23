@@ -73,8 +73,19 @@ const runPracticeControlsScenario = (): void => {
   assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
   assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');
   assert(practiceConfig.phases[1]?.label === 'Phrase practice', 'expected phrase-anchor config to expose phase metadata through the family contract');
+  assert(practiceConfig.phases[1]?.copy.includes('Notice wandering'), 'expected phrase-anchor active copy to teach noticing wandering');
   assert(practiceConfig.copy.expectationsTitle === 'What to expect in this maintenance round', 'expected maintenance instructions copy to be phase-aware');
-  assert(practiceConfig.copy.reflectionPrompt.includes('maintenance round'), 'expected maintenance reflection prompt to stay phase-aware');
+  assert(practiceConfig.copy.instructionsSubtitle.includes('notice wandering, return to the phrase, and soften'), 'expected phrase-anchor instructions to describe the anchor loop');
+  assert(practiceConfig.copy.reflectionPrompt.includes('notice, return, or soften'), 'expected maintenance reflection prompt to reinforce the anchor loop');
+
+  const unguidedStore = createSessionStore();
+  unguidedStore.setPhrase('  steady   phrase  ');
+  unguidedStore.setSelectedExercise(exerciseIds.phraseAnchor);
+  unguidedStore.setGazeGuidanceEnabled(false);
+  const unguidedPracticeConfig = unguidedStore.createPracticeConfig();
+  assert(unguidedPracticeConfig.stagePresenter.key === 'phrase-anchor', 'expected phrase-anchor config to resolve default phrase-anchor presenter when gaze guidance is off');
+  assert(unguidedPracticeConfig.stagePresenter.phrase === 'steady phrase', 'expected default phrase-anchor presenter to receive the normalized phrase');
+  assert(unguidedPracticeConfig.phases[1]?.activatesStagePresenter === true, 'expected phrase-anchor practice phase to activate default presenter');
 
   store.startPractice(practiceConfig);
   let runner = new PracticeRunner(practiceConfig);

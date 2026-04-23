@@ -78,11 +78,11 @@ const createPhraseAnchorFamilyConfig = ({
   const gazePrompt = settings.gazeGuidanceEnabled ? defaultGazeGuidanceConfig.prompt : null;
   const reducedMotion = createReducedMotionPolicy({
     title: 'Steadier phrase guidance',
-    description: lowIntensity.enabled
-      ? 'Low-intensity mode keeps the phrase practice steadier and removes extra stage motion.'
-      : 'Phrase practice keeps motion minimal even before low-intensity mode is enabled.',
+    description: settings.reducedMotionEnabled || lowIntensity.enabled
+      ? 'Reduced motion keeps the phrase practice steadier and removes extra stage motion.'
+      : 'Phrase practice uses a slow anchor cue for noticing, returning, and softening.',
     cycleMultiplier: 1,
-    amplitudeScale: lowIntensity.enabled ? 0 : 1,
+    amplitudeScale: settings.reducedMotionEnabled || lowIntensity.enabled ? 0 : 1,
   });
   const display: PracticeDisplayConfig = {
     title: exercise.title,
@@ -106,12 +106,12 @@ const createPhraseAnchorFamilyConfig = ({
     movingBall: null,
     breathingReset: null,
     copy: createSharedCopy({
-      instructionsSubtitle: 'Confirm the phrase, settle into a steady maintenance round, and use it as one of the current Soft Focus core practices.',
+      instructionsSubtitle: 'Choose a phrase that is easy to repeat. During practice, notice wandering, return to the phrase, and soften the effort.',
       instructionsSelectionLabel: 'Practice phrase',
       expectationsTitle: 'What to expect in this maintenance round',
-      completionNote: 'Continue when you are ready to note what feels worth carrying forward.',
-      reflectionSubtitle: 'Use this integration moment to notice what felt steady enough to carry forward. A short note is enough.',
-      reflectionPrompt: 'What feels worth carrying into the next maintenance round?',
+      completionNote: 'Continue when you are ready to note what helped you return without forcing it.',
+      reflectionSubtitle: 'Use this integration moment to notice what helped you come back to the phrase. A short note is enough.',
+      reflectionPrompt: 'What helped you notice, return, or soften around the phrase?',
       reflectionHelper: 'Optional. A few calm words about what felt steady is enough.',
       reflectionPlaceholder: 'A steady note for next time',
     }),
@@ -119,7 +119,7 @@ const createPhraseAnchorFamilyConfig = ({
       {
         key: 'settle',
         label: 'Settle',
-        copy: 'Let your attention settle before the phrase begins. Keep the effort light.',
+        copy: 'Let your attention settle before the phrase begins. Feel one easy point of contact with the chair, floor, or breath.',
         seconds: lowIntensity.settleSeconds,
         activatesStagePresenter: false,
       },
@@ -127,10 +127,10 @@ const createPhraseAnchorFamilyConfig = ({
         key: 'phrase',
         label: 'Phrase practice',
         copy: settings.gazeGuidanceEnabled
-          ? 'Return to the phrase softly and keep the eyes easy.'
-          : 'Return to the phrase softly and keep the pace unforced.',
+          ? 'Notice wandering, return to the phrase softly, and keep the eyes easy.'
+          : 'Repeat the phrase lightly. Notice wandering, return, and soften the effort.',
         seconds: lowIntensity.practiceSeconds,
-        activatesStagePresenter: settings.gazeGuidanceEnabled,
+        activatesStagePresenter: true,
       },
       {
         key: 'recovery',
@@ -148,7 +148,9 @@ const createPhraseAnchorFamilyConfig = ({
         reducedMotion,
       }
       : {
-        key: 'idle',
+        key: 'phrase-anchor',
+        phrase,
+        lowIntensity: lowIntensity.enabled,
         reducedMotion,
       },
     display,

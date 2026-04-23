@@ -1,9 +1,9 @@
 import { breathingPresetIds, movingBallPresetIds, type BreathingPresetId, type MovingBallPresetId } from '../state/types';
 
 export const defaultPhrasePracticeExpectations = [
-  'Settle in with a light effort and return to your phrase when attention wanders.',
-  'Keep your jaw, shoulders, and eyes soft so the session stays easy to sustain.',
-  'Pause if anything feels strained. A calm reset is part of the practice.',
+  'Use the phrase as an anchor: notice when attention wanders, then return without judging it.',
+  'Let the phrase ride with a natural breath if that feels easy, without forcing a breathing pattern.',
+  'Soften your jaw, shoulders, and eyes. Pause if the phrase starts to feel strained.',
 ] as const;
 
 export const defaultMovingBallExpectations = [
@@ -41,7 +41,7 @@ export const defaultLowIntensityConfig = {
 export const defaultGazeGuidanceConfig = {
   label: 'Gaze guidance',
   description: 'Adds a soft reminder to rest your gaze instead of tightening around the phrase.',
-  prompt: 'Let your gaze rest softly in front of you and return to the phrase without forcing it.',
+  prompt: 'Let your gaze rest softly, notice wandering, and return to the phrase without forcing it.',
 } as const;
 
 export interface MovingBallPresetDefinition {

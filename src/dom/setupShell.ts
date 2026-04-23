@@ -286,7 +286,7 @@ export const mountSetupShell = ({
   const renderPhrase = (): void => {
     const main = createElement('main', 'mx-auto flex w-full max-w-4xl flex-col gap-8 pb-12');
     main.append(createBackButton('Back to exercises', () => goTo(sceneKeys.exerciseSelection)));
-    main.append(createHeader('Phrase anchor', 'Choose a phrase with room to breathe', 'Use a short phrase that feels steady and easy to return to during practice.'));
+    main.append(createHeader('Phrase anchor', 'Choose a phrase with room to breathe', 'Use a short phrase you can repeat gently when attention wanders.'));
 
     const form = createElement('form', `${panelClass} grid gap-5 p-6 sm:p-8`);
     const label = createElement('label', 'grid gap-3');
@@ -335,7 +335,7 @@ export const mountSetupShell = ({
     });
     refresh();
 
-    const note = createElement('p', 'rounded-3xl border border-[var(--line)] bg-white/[0.04] p-5 text-sm leading-6 text-[var(--text-muted)]', 'Keep it simple. The phrase is saved locally and can be changed before practice begins.');
+    const note = createElement('p', 'rounded-3xl border border-[var(--line)] bg-white/[0.04] p-5 text-sm leading-6 text-[var(--text-muted)]', 'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.');
     form.append(label, helper, note, continueButton);
     main.append(form);
     root.replaceChildren(main);

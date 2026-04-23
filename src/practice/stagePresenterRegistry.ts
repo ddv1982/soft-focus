@@ -8,6 +8,24 @@ type StagePresenterLoader = (
 
 const idleStagePresenterLoader: StagePresenterLoader = async ({ createIdleController }) => createIdleController();
 
+const phraseAnchorStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, readableWidth }, config) => {
+  if (config.key !== 'phrase-anchor') {
+    throw new Error(`Expected phrase-anchor config, received ${config.key}`);
+  }
+
+  const { createPhraseAnchorStagePresenter } = await import('./stagePresenters/phraseAnchorStagePresenter');
+
+  return createPhraseAnchorStagePresenter({
+    scene,
+    phrase: config.phrase,
+    lowIntensity: config.lowIntensity,
+    reducedMotion: config.reducedMotion,
+    x,
+    y,
+    width: readableWidth,
+  });
+};
+
 const gazeStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth, readableWidth, movingBallInset }, config) => {
   if (config.key !== 'gaze-guidance') {
     throw new Error(`Expected gaze-guidance config, received ${config.key}`);
@@ -105,6 +123,7 @@ const orientingStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y
 
 const stagePresenterLoaders: Record<PracticeStagePresenterConfig['key'], StagePresenterLoader> = {
   idle: idleStagePresenterLoader,
+  'phrase-anchor': phraseAnchorStagePresenterLoader,
   'gaze-guidance': gazeStagePresenterLoader,
   'moving-ball': movingBallStagePresenterLoader,
   'breathing-reset': breathingResetStagePresenterLoader,
