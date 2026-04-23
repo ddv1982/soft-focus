@@ -67,6 +67,7 @@ const runPracticeControlsScenario = (): void => {
   assert(practiceConfig.phrase === 'steady phrase', 'expected phrase normalization before practice begins');
   assert(practiceConfig.lowIntensity.enabled === false, 'expected low-intensity toggle to feed practice config');
   assert(practiceConfig.reducedMotion.enabled === true, 'expected reduced-motion toggle to feed practice config');
+  assert(practiceConfig.reducedMotion.label === 'Reduced motion', 'expected reduced-motion metadata to expose a user-facing label');
   assert(practiceConfig.gazeGuidance.enabled === true, 'expected gaze guidance toggle to feed practice config');
   assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
   assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');

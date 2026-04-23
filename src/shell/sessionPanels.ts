@@ -1,5 +1,6 @@
 import type { SoftFocusGame } from '../game/Game';
 import { sceneKeys, type SceneKey } from '../game/sceneKeys';
+import { getSessionFlowForExercise } from '../game/navigation';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import { exerciseIds, normalizeReflection, reflectionMaxLength } from '../state/types';
 
@@ -28,6 +29,13 @@ const navigateToManagedScene = (game: SoftFocusGame, sceneKey: SceneKey, data?: 
 const createOverlayRoot = (parent: HTMLElement): HTMLDivElement => {
   const root = document.createElement('div');
   root.className = 'session-overlay session-overlay--hidden';
+  parent.append(root);
+  return root;
+};
+
+const createPreferencesRoot = (parent: HTMLElement): HTMLDivElement => {
+  const root = document.createElement('div');
+  root.className = 'preferences-shell';
   parent.append(root);
   return root;
 };
@@ -79,6 +87,57 @@ const createPrimaryButton = (label: string, onClick: () => void): HTMLButtonElem
   button.textContent = label;
   button.addEventListener('click', onClick);
   return button;
+};
+
+const createSecondaryButton = (label: string, onClick: () => void): HTMLButtonElement => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'preferences-shell__button';
+  button.textContent = label;
+  button.addEventListener('click', onClick);
+  return button;
+};
+
+const createPreferenceToggle = ({
+  label,
+  description,
+  checked,
+  disabled = false,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}): HTMLLabelElement => {
+  const row = document.createElement('label');
+  row.className = `preferences-shell__toggle${disabled ? ' preferences-shell__toggle--disabled' : ''}`;
+
+  const copy = document.createElement('div');
+  copy.className = 'preferences-shell__toggle-copy';
+
+  const title = document.createElement('span');
+  title.className = 'preferences-shell__toggle-title';
+  title.textContent = label;
+
+  const body = document.createElement('span');
+  body.className = 'preferences-shell__toggle-body';
+  body.textContent = description;
+
+  copy.append(title, body);
+
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  input.disabled = disabled;
+  input.className = 'preferences-shell__checkbox';
+  input.addEventListener('change', () => {
+    onChange(input.checked);
+  });
+
+  row.append(copy, input);
+  return row;
 };
 
 const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => {
@@ -174,10 +233,8 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   const saveButton = createPrimaryButton('Save and start again', () => {
     game.sessionStore.saveReflection(textarea.value);
     game.sessionStore.prepareForNextSession();
-    navigateToManagedScene(
-      game,
-      game.sessionStore.getState().selectedExercise === exerciseIds.movingBall ? sceneKeys.instructions : sceneKeys.phrase,
-    );
+    const restartSceneKey = getSessionFlowForExercise(game.sessionStore.getState().selectedExercise).restartSceneKey;
+    navigateToManagedScene(game, restartSceneKey);
   });
   actions.append(saveButton);
 
@@ -192,6 +249,79 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
 
 export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): (() => void) => {
   const root = createOverlayRoot(parent);
+  const preferencesRoot = createPreferencesRoot(parent);
+  let preferencesOpen = false;
+
+  const renderPreferences = (): void => {
+    const state = game.sessionStore.getState();
+
+    const launcher = createSecondaryButton('Preferences', () => {
+      preferencesOpen = !preferencesOpen;
+      renderPreferences();
+    });
+    launcher.classList.add('preferences-shell__launcher');
+    launcher.setAttribute('aria-expanded', preferencesOpen ? 'true' : 'false');
+
+    const panel = document.createElement('section');
+    panel.className = `preferences-shell__panel${preferencesOpen ? '' : ' preferences-shell__panel--hidden'}`;
+
+    const header = document.createElement('div');
+    header.className = 'preferences-shell__header';
+
+    const title = document.createElement('h2');
+    title.className = 'preferences-shell__title';
+    title.textContent = 'Preferences';
+
+    const closeButton = createSecondaryButton('Close', () => {
+      preferencesOpen = false;
+      renderPreferences();
+    });
+
+    header.append(title, closeButton);
+
+    const body = document.createElement('p');
+    body.className = 'preferences-shell__body';
+    body.textContent = 'These settings persist locally and shape the current practice flow without changing your saved notes.';
+
+    const toggles = document.createElement('div');
+    toggles.className = 'preferences-shell__toggles';
+    toggles.append(
+      createPreferenceToggle({
+        label: 'Low intensity',
+        description: 'Keeps settle, practice, and recovery pacing gentler across the selected exercise.',
+        checked: state.settings.lowIntensityMode,
+        onChange: (checked) => {
+          game.sessionStore.setLowIntensityMode(checked);
+        },
+      }),
+      createPreferenceToggle({
+        label: 'Reduced motion',
+        description: 'Uses gentler family-specific motion settings so animated reset practices feel slower and smaller.',
+        checked: state.settings.reducedMotionEnabled,
+        onChange: (checked) => {
+          game.sessionStore.setReducedMotionEnabled(checked);
+        },
+      }),
+      createPreferenceToggle({
+        label: 'Gaze guidance',
+        description: state.selectedExercise === exerciseIds.phraseAnchor
+          ? 'Adds a soft gaze reminder during phrase anchor rounds.'
+          : 'Gaze guidance currently applies only to phrase anchor rounds.',
+        checked: state.settings.gazeGuidanceEnabled,
+        disabled: state.selectedExercise !== exerciseIds.phraseAnchor,
+        onChange: (checked) => {
+          game.sessionStore.setGazeGuidanceEnabled(checked);
+        },
+      }),
+    );
+
+    const support = document.createElement('p');
+    support.className = 'preferences-shell__support';
+    support.textContent = supportCopy;
+
+    panel.append(header, body, toggles, support);
+    preferencesRoot.replaceChildren(launcher, panel);
+  };
 
   const render = (): void => {
     const state = game.sessionStore.getState();
@@ -212,10 +342,15 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
   };
 
   render();
-  const unsubscribe = game.sessionStore.subscribe(render);
+  renderPreferences();
+  const unsubscribe = game.sessionStore.subscribe(() => {
+    render();
+    renderPreferences();
+  });
 
   return () => {
     unsubscribe();
     root.remove();
+    preferencesRoot.remove();
   };
 };

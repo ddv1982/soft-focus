@@ -217,6 +217,115 @@
         font-size: 0.95rem;
       }
 
+      .preferences-shell {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 12px;
+      }
+
+      .preferences-shell__launcher,
+      .preferences-shell__button {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 12px 16px;
+        border: 1px solid rgba(124, 198, 255, 0.2);
+        border-radius: 16px;
+        background: rgba(20, 32, 51, 0.92);
+        color: #eef4ff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .preferences-shell__launcher:focus-visible,
+      .preferences-shell__button:focus-visible,
+      .preferences-shell__checkbox:focus-visible {
+        outline: 3px solid rgba(124, 198, 255, 0.4);
+        outline-offset: 3px;
+      }
+
+      .preferences-shell__panel {
+        width: min(100vw - 32px, 420px);
+        padding: 20px;
+        border-radius: 22px;
+        border: 1px solid rgba(124, 198, 255, 0.18);
+        background: rgba(20, 32, 51, 0.96);
+        box-shadow: 0 24px 64px rgba(5, 8, 16, 0.4);
+      }
+
+      .preferences-shell__panel--hidden {
+        display: none;
+      }
+
+      .preferences-shell__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .preferences-shell__title {
+        margin: 0;
+        font-size: 1.2rem;
+        line-height: 1.2;
+      }
+
+      .preferences-shell__body,
+      .preferences-shell__support {
+        margin: 14px 0 0;
+        color: #d7e5fb;
+        font-size: 0.95rem;
+        line-height: 1.55;
+      }
+
+      .preferences-shell__toggles {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .preferences-shell__toggle {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(124, 198, 255, 0.12);
+        background: rgba(11, 18, 32, 0.88);
+      }
+
+      .preferences-shell__toggle--disabled {
+        opacity: 0.65;
+      }
+
+      .preferences-shell__toggle-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .preferences-shell__toggle-title {
+        color: #eef4ff;
+        font-weight: 600;
+      }
+
+      .preferences-shell__toggle-body {
+        color: #aab9d3;
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .preferences-shell__checkbox {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+      }
+
       canvas {
         display: block;
       }

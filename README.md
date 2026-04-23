@@ -36,6 +36,7 @@ The app persists the selected exercise, phrase (when used), settings, and recent
   - explicit CSS minification with `lightningcss`
   - lazy loading of the Phaser runtime from the launch shell
   - lazy loading of exercise-stage presenter adapters inside the practice runtime
+  - a shell-owned preferences panel for low intensity, reduced motion, and gaze guidance
   - shell-owned completion and reflection panels rendered outside the Phaser runtime
   - family capability metadata drives instructions UI and reduced-motion guidance across practices
   - a raised chunk warning limit that matches the current lazy-loaded runtime budget while follow-up refactors keep reducing the runtime payload
@@ -54,8 +55,9 @@ The app persists the selected exercise, phrase (when used), settings, and recent
 1. Start the app with `bun run dev`.
 2. On the launch shell, confirm the DOM-first screen renders and the `Open Soft Focus` button is keyboard-focusable.
 3. Activate `Open Soft Focus` and confirm the Phaser practice runtime loads.
-4. On `Entry`, press `Choose your exercise` and confirm the app moves to `Exercise Selection`.
-5. On `Exercise Selection`, confirm the screen labels `Phrase anchor` as `Maintenance`, `Moving ball` as `Reset`, and shows `Integration / Reflection` as a calm note about the current closing step.
+4. Open the shell-owned `Preferences` panel and confirm low intensity, reduced motion, and gaze guidance can be adjusted there.
+5. On `Entry`, press `Choose your exercise` and confirm the app moves to `Exercise Selection`.
+6. On `Exercise Selection`, confirm the screen labels `Phrase anchor` as `Maintenance`, `Moving ball` as `Reset`, and shows `Integration / Reflection` as a calm note about the current closing step.
 
 ### Phrase anchor path
 
