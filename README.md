@@ -47,7 +47,7 @@ The app persists the selected exercise, phrase (when used), settings, and recent
 - `bun run typecheck`: run the TypeScript compiler without emitting files.
 - `bun run smoke:test`: run focused TypeScript smoke validations for scene flow, persistence, and restart behavior.
 - `bun run e2e:install`: download the local Chromium binary for Playwright into `.playwright-browsers`.
-- `bun run e2e:test`: run the browser end-to-end coverage for breathing preset persistence and post-session return flow.
+- `bun run e2e:test`: run the browser end-to-end coverage for breathing preset persistence, preferences persistence, reflection save/restart, and post-session return flow.
 - CI runs the same validation path on pushes and pull requests to `main`: `bun install --frozen-lockfile`, `bun run validate`, Playwright Chromium install, then `bun run e2e:test`.
 - `bun run build`: typecheck and produce a production bundle.
 - `bun run validate`: run broad validation across typecheck, smoke tests, and production build.
@@ -112,3 +112,4 @@ The app persists the selected exercise, phrase (when used), settings, and recent
 - `tests/fullFlowSmoke.ts` checks scene registration order, exercise-aware flow sequencing, practice control behavior, reflection save behavior, and reload persistence for both exercise paths.
 - `tests/sessionPersistence.ts` validates persistence sanitization and graceful storage failures.
 - `tests/sessionRestartLifecycle.ts` validates session restart behavior for completed and stopped rounds.
+- `e2e/breathing-reset.spec.ts` and `e2e/session-shell.spec.ts` validate the live shell around preferences, completion, reflection, and choose-another-exercise navigation.

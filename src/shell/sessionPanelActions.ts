@@ -21,40 +21,47 @@ export interface SessionPanelGameLike {
   ensureSceneRegistered?: (sceneKey: SceneKey) => Promise<void>;
 }
 
-export const navigateToManagedScene = (game: SessionPanelGameLike, sceneKey: SceneKey, data?: object): void => {
-  if (!game.ensureSceneRegistered) {
-    game.sessionStore.updateCurrentScene(sceneKey);
-    game.scene.start(sceneKey, data);
-    return;
-  }
-
-  void (async () => {
-    await game.ensureSceneRegistered?.(sceneKey);
-    game.sessionStore.updateCurrentScene(sceneKey);
-    game.scene.start(sceneKey, data);
-  })();
+const ensureManagedSceneRegistered = async (game: SessionPanelGameLike, sceneKey: SceneKey): Promise<void> => {
+  await game.ensureSceneRegistered?.(sceneKey);
 };
 
-export const beginNextSessionFromScene = (game: SessionPanelGameLike, sceneKey: SceneKey): void => {
+const startManagedScene = (game: SessionPanelGameLike, sceneKey: SceneKey, data?: object): void => {
+  game.sessionStore.updateCurrentScene(sceneKey);
+  game.scene.start(sceneKey, data);
+};
+
+export const navigateToManagedScene = async (
+  game: SessionPanelGameLike,
+  sceneKey: SceneKey,
+  data?: object,
+): Promise<void> => {
+  await ensureManagedSceneRegistered(game, sceneKey);
+  startManagedScene(game, sceneKey, data);
+};
+
+export const beginNextSessionFromScene = async (game: SessionPanelGameLike, sceneKey: SceneKey): Promise<void> => {
+  await ensureManagedSceneRegistered(game, sceneKey);
   game.sessionStore.prepareForNextSession();
-  navigateToManagedScene(game, sceneKey);
+  startManagedScene(game, sceneKey);
 };
 
-export const continueToReflection = (game: SessionPanelGameLike): void => {
-  navigateToManagedScene(game, sceneKeys.reflection);
-};
+export const continueToReflection = (game: SessionPanelGameLike): Promise<void> => (
+  navigateToManagedScene(game, sceneKeys.reflection)
+);
 
-export const chooseAnotherExercise = (game: SessionPanelGameLike): void => {
-  beginNextSessionFromScene(game, sceneKeys.exerciseSelection);
-};
+export const chooseAnotherExercise = (game: SessionPanelGameLike): Promise<void> => (
+  beginNextSessionFromScene(game, sceneKeys.exerciseSelection)
+);
 
-export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection: string): void => {
+export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection: string): Promise<void> => {
   game.sessionStore.saveReflection(reflection);
   const restartSceneKey = getSessionFlowForExercise(game.sessionStore.getState().selectedExercise).restartSceneKey;
-  beginNextSessionFromScene(game, restartSceneKey);
+
+  return beginNextSessionFromScene(game, restartSceneKey);
 };
 
-export const saveReflectionAndChooseAnotherExercise = (game: SessionPanelGameLike, reflection: string): void => {
+export const saveReflectionAndChooseAnotherExercise = (game: SessionPanelGameLike, reflection: string): Promise<void> => {
   game.sessionStore.saveReflection(reflection);
-  chooseAnotherExercise(game);
+
+  return chooseAnotherExercise(game);
 };

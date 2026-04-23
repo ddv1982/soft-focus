@@ -15,11 +15,13 @@ const assert = (condition: unknown, message: string): void => {
 
 const createFakeGame = (selectedExercise = exerciseIds.breathingReset) => {
   const calls: {
+    ensuredScenes: string[];
     prepared: number;
     savedReflection: string[];
     updatedScenes: string[];
     startedScenes: string[];
   } = {
+    ensuredScenes: [],
     prepared: 0,
     savedReflection: [],
     updatedScenes: [],
@@ -44,56 +46,63 @@ const createFakeGame = (selectedExercise = exerciseIds.breathingReset) => {
         calls.startedScenes.push(sceneKey);
       },
     },
+    ensureSceneRegistered: async (sceneKey: string) => {
+      calls.ensuredScenes.push(sceneKey);
+    },
   };
 
   return { game, calls };
 };
 
-const runChooseAnotherExerciseScenario = (): void => {
+const runChooseAnotherExerciseScenario = async (): Promise<void> => {
   const { game, calls } = createFakeGame();
 
-  chooseAnotherExercise(game);
+  await chooseAnotherExercise(game);
 
+  assert(calls.ensuredScenes[0] === sceneKeys.exerciseSelection, 'expected choose-another-exercise to register exercise selection before navigation');
   assert(calls.prepared === 1, 'expected choose-another-exercise to clear the finished session');
   assert(calls.updatedScenes[0] === sceneKeys.exerciseSelection, 'expected choose-another-exercise to update the managed scene to exercise selection');
   assert(calls.startedScenes[0] === sceneKeys.exerciseSelection, 'expected choose-another-exercise to start the exercise selection scene');
 };
 
-const runContinueToReflectionScenario = (): void => {
+const runContinueToReflectionScenario = async (): Promise<void> => {
   const { game, calls } = createFakeGame();
 
-  continueToReflection(game);
+  await continueToReflection(game);
 
+  assert(calls.ensuredScenes[0] === sceneKeys.reflection, 'expected continue-to-reflection to register reflection before navigation');
   assert(calls.prepared === 0, 'expected continue-to-reflection not to clear the session yet');
   assert(calls.updatedScenes[0] === sceneKeys.reflection, 'expected continue-to-reflection to update the managed scene to reflection');
   assert(calls.startedScenes[0] === sceneKeys.reflection, 'expected continue-to-reflection to start the reflection scene');
 };
 
-const runSaveAndRestartScenario = (): void => {
+const runSaveAndRestartScenario = async (): Promise<void> => {
   const { game, calls } = createFakeGame(exerciseIds.breathingReset);
 
-  saveReflectionAndRestart(game, '  calm breath  ');
+  await saveReflectionAndRestart(game, '  calm breath  ');
 
   assert(calls.savedReflection[0] === '  calm breath  ', 'expected save-and-restart to persist the current note before navigation');
+  assert(calls.ensuredScenes[0] === sceneKeys.instructions, 'expected save-and-restart to register the direct-practice restart scene before clearing the session');
   assert(calls.prepared === 1, 'expected save-and-restart to clear the finished session');
   assert(calls.updatedScenes[0] === sceneKeys.instructions, 'expected breathing reset restart to return to instructions');
   assert(calls.startedScenes[0] === sceneKeys.instructions, 'expected breathing reset restart to start the instructions scene');
 };
 
-const runSaveAndChooseAnotherScenario = (): void => {
+const runSaveAndChooseAnotherScenario = async (): Promise<void> => {
   const { game, calls } = createFakeGame(exerciseIds.movingBall);
 
-  saveReflectionAndChooseAnotherExercise(game, 'ready to switch');
+  await saveReflectionAndChooseAnotherExercise(game, 'ready to switch');
 
   assert(calls.savedReflection[0] === 'ready to switch', 'expected save-and-choose-another to persist the note first');
+  assert(calls.ensuredScenes[0] === sceneKeys.exerciseSelection, 'expected save-and-choose-another to register exercise selection before clearing the session');
   assert(calls.prepared === 1, 'expected save-and-choose-another to clear the finished session');
   assert(calls.updatedScenes[0] === sceneKeys.exerciseSelection, 'expected save-and-choose-another to update to exercise selection');
   assert(calls.startedScenes[0] === sceneKeys.exerciseSelection, 'expected save-and-choose-another to start exercise selection');
 };
 
-runChooseAnotherExerciseScenario();
-runContinueToReflectionScenario();
-runSaveAndRestartScenario();
-runSaveAndChooseAnotherScenario();
+await runChooseAnotherExerciseScenario();
+await runContinueToReflectionScenario();
+await runSaveAndRestartScenario();
+await runSaveAndChooseAnotherScenario();
 
 console.log('session panel actions validation passed');
