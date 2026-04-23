@@ -1,6 +1,6 @@
 {
   "name": "soft-focus",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
   "type": "module",
   "packageManager": "bun@1.3.13",
