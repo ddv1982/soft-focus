@@ -75,7 +75,7 @@ const runPracticeControlsScenario = (): void => {
   assert(practiceConfig.phases[1]?.label === 'Phrase practice', 'expected phrase-anchor config to expose phase metadata through the family contract');
   assert(practiceConfig.phases[1]?.copy.includes('Notice wandering'), 'expected phrase-anchor active copy to teach noticing wandering');
   assert(practiceConfig.copy.expectationsTitle === 'What to expect in this maintenance round', 'expected maintenance instructions copy to be phase-aware');
-  assert(practiceConfig.copy.instructionsSubtitle.includes('notice wandering, return to the phrase, and soften'), 'expected phrase-anchor instructions to describe the anchor loop');
+  assert(practiceConfig.copy.instructionsSubtitle.includes('relaxed breath'), 'expected phrase-anchor instructions to describe relaxed breathing support');
   assert(practiceConfig.copy.reflectionPrompt.includes('notice, return, or soften'), 'expected maintenance reflection prompt to reinforce the anchor loop');
 
   const unguidedStore = createSessionStore();
@@ -86,6 +86,7 @@ const runPracticeControlsScenario = (): void => {
   assert(unguidedPracticeConfig.stagePresenter.key === 'phrase-anchor', 'expected phrase-anchor config to resolve default phrase-anchor presenter when gaze guidance is off');
   assert(unguidedPracticeConfig.stagePresenter.phrase === 'steady phrase', 'expected default phrase-anchor presenter to receive the normalized phrase');
   assert(unguidedPracticeConfig.phases[1]?.activatesStagePresenter === true, 'expected phrase-anchor practice phase to activate default presenter');
+  assert(unguidedPracticeConfig.phases[1]?.copy.includes('easy breath'), 'expected unguided phrase-anchor copy to pair phrase repetition with easy breathing');
 
   store.startPractice(practiceConfig);
   let runner = new PracticeRunner(practiceConfig);

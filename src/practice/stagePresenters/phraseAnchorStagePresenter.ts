@@ -14,21 +14,6 @@ interface CreatePhraseAnchorStagePresenterOptions {
   reducedMotion: PracticeReducedMotionPolicy;
 }
 
-const cueSteps = [
-  {
-    label: 'Notice',
-    helper: 'Mind wandered',
-  },
-  {
-    label: 'Return',
-    helper: 'Phrase again',
-  },
-  {
-    label: 'Soften',
-    helper: 'Less effort',
-  },
-] as const;
-
 const getDisplayPhrase = (phrase: string): string => {
   if (phrase.length <= 36) {
     return phrase;
@@ -50,12 +35,13 @@ export const createPhraseAnchorStagePresenter = ({
   const border = hexToNumber(uiTheme.colors.border);
   const motionEnabled = !lowIntensity && reducedMotion.amplitudeScale > 0;
   const readableWidth = Math.min(width, 680);
-  const phraseCardWidth = Math.min(readableWidth, 460);
-  const cueCardWidth = Math.min(132, readableWidth / 3.35);
-  const cueCardHeight = 46;
+  const phraseCardWidth = Math.min(readableWidth, 500);
   const displayPhrase = getDisplayPhrase(phrase);
+  const haloRadius = Math.max(70, Math.min(112, readableWidth * 0.18));
+  const haloRestScale = motionEnabled ? 0.92 : 1;
+  const haloInhaleScale = lowIntensity ? 1.02 : 1.18;
 
-  const title = scene.add.text(x, y - 58, 'Phrase anchor loop', {
+  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase with relaxed breathing', {
     color: uiTheme.colors.seaGlass,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
@@ -64,11 +50,15 @@ export const createPhraseAnchorStagePresenter = ({
   });
   title.setOrigin(0.5);
 
-  const phrasePanel = scene.add.rectangle(x, y - 28, phraseCardWidth, 66, accent, lowIntensity ? 0.08 : 0.12)
+  const halo = scene.add.circle(x, y, haloRadius, accent, lowIntensity ? 0.05 : 0.08)
+    .setStrokeStyle(2, accent, lowIntensity ? 0.2 : 0.34);
+  const innerGlow = scene.add.circle(x, y, haloRadius * 0.68, accent, lowIntensity ? 0.06 : 0.1);
+
+  const phrasePanel = scene.add.rectangle(x, y, phraseCardWidth, 72, accent, lowIntensity ? 0.1 : 0.14)
     .setOrigin(0.5)
     .setStrokeStyle(1, border, lowIntensity ? 0.18 : 0.28);
 
-  const phrasePreview = scene.add.text(x, y - 37, `“${displayPhrase}”`, {
+  const phrasePreview = scene.add.text(x, y - 10, `“${displayPhrase}”`, {
     color: uiTheme.colors.foam,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
@@ -78,7 +68,7 @@ export const createPhraseAnchorStagePresenter = ({
   });
   phrasePreview.setOrigin(0.5);
 
-  const phraseHint = scene.add.text(x, y - 7, 'Repeat softly with a natural breath if that helps.', {
+  const phraseHint = scene.add.text(x, y + 18, 'Let the phrase ride the breath.', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '12px',
@@ -87,60 +77,56 @@ export const createPhraseAnchorStagePresenter = ({
   });
   phraseHint.setOrigin(0.5);
 
-  const stepSpacing = Math.min(150, readableWidth / 3.25);
-  const stepObjects = cueSteps.map(({ label: stepLabel, helper }, index) => {
-    const stepX = x + ((index - 1) * stepSpacing);
-    const card = scene.add.rectangle(stepX, y + 38, cueCardWidth, cueCardHeight, accent, 0.07)
-      .setOrigin(0.5)
-      .setStrokeStyle(1, border, 0.2);
-    const label = scene.add.text(stepX, y + 30, stepLabel, {
-      color: uiTheme.colors.foam,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '13px',
-      fontStyle: '700',
-      align: 'center',
-    });
-    label.setOrigin(0.5);
-    const helperLabel = scene.add.text(stepX, y + 48, helper, {
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '11px',
-      align: 'center',
-    });
-    helperLabel.setOrigin(0.5);
-
-    return { card, label, helperLabel };
+  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Breathe in softly', {
+    color: uiTheme.colors.textMuted,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '14px',
+    fontStyle: '600',
+    align: 'center',
   });
+  breathLabel.setOrigin(0.5);
+
+  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Return to the phrase on an easy exhale.', {
+    color: uiTheme.colors.textMuted,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '13px',
+    align: 'center',
+    wordWrap: { width: readableWidth, useAdvancedWrap: true },
+  });
+  returnLabel.setOrigin(0.5);
 
   let active = false;
   let paused = false;
-  let activeStep = 1;
   const alphaVisible = lowIntensity ? 0.78 : 0.92;
-  let phraseTween: Phaser.Tweens.Tween | null = null;
-  const stepTimer = motionEnabled
-    ? scene.time.addEvent({
-      delay: 3600,
-      loop: true,
-      callback: () => {
-        if (!active || paused) {
-          return;
-        }
-
-        activeStep = (activeStep + 1) % cueSteps.length;
-        applyState();
-      },
-    })
-    : null;
+  let breathTween: Phaser.Tweens.TweenChain | null = null;
 
   if (motionEnabled) {
-    phraseTween = scene.tweens.add({
-      targets: [phrasePanel, phrasePreview],
-      scale: 1.035,
-      duration: 3000,
-      ease: 'Sine.InOut',
-      yoyo: true,
-      repeat: -1,
+    breathTween = scene.tweens.chain({
+      targets: [halo, innerGlow],
+      loop: -1,
       paused: true,
+      tweens: [
+        {
+          scaleX: haloInhaleScale,
+          scaleY: haloInhaleScale,
+          duration: 3600,
+          ease: 'Sine.InOut',
+          onStart: () => {
+            breathLabel.setText('Breathe in softly');
+            returnLabel.setText('Let the phrase arrive without forcing it.');
+          },
+        },
+        {
+          scaleX: haloRestScale,
+          scaleY: haloRestScale,
+          duration: 4800,
+          ease: 'Sine.Out',
+          onStart: () => {
+            breathLabel.setText('Easy exhale');
+            returnLabel.setText('Return to the phrase and soften the effort.');
+          },
+        },
+      ],
     });
   }
 
@@ -149,25 +135,23 @@ export const createPhraseAnchorStagePresenter = ({
     const shouldRun = active && !paused && motionEnabled;
 
     title.setAlpha(visibleAlpha);
+    halo.setAlpha(active ? (lowIntensity ? 0.5 : 0.74) : 0.16);
+    innerGlow.setAlpha(active ? (lowIntensity ? 0.24 : 0.36) : 0.1);
     phrasePanel.setAlpha(active ? (lowIntensity ? 0.55 : 0.78) : 0.2);
     phrasePreview.setAlpha(active ? 1 : 0.42);
     phraseHint.setAlpha(active ? 0.72 : 0.26);
+    breathLabel.setAlpha(active ? 0.9 : 0.28);
+    returnLabel.setAlpha(active ? 0.72 : 0.24);
 
-    stepObjects.forEach(({ card, label, helperLabel }, index) => {
-      const isActiveStep = active && index === activeStep;
-      card.setAlpha(isActiveStep ? (lowIntensity ? 0.52 : 0.7) : active ? 0.2 : 0.08);
-      card.setScale(isActiveStep ? 1.04 : 1);
-      label.setAlpha(isActiveStep ? 1 : active ? 0.62 : 0.24);
-      helperLabel.setAlpha(isActiveStep ? 0.86 : active ? 0.48 : 0.2);
-    });
-
-    if (phraseTween) {
-      phraseTween.paused = !shouldRun;
+    if (breathTween) {
+      breathTween.paused = !shouldRun;
     }
 
     if (!shouldRun) {
-      phrasePanel.setScale(1);
-      phrasePreview.setScale(1);
+      halo.setScale(1);
+      innerGlow.setScale(1);
+      breathLabel.setText('Natural breath');
+      returnLabel.setText('Let the phrase arrive and soften around it.');
     }
   }
 
@@ -175,8 +159,14 @@ export const createPhraseAnchorStagePresenter = ({
 
   return {
     setActive(nextActive: boolean): void {
+      const wasActive = active;
       active = nextActive;
-      activeStep = motionEnabled ? activeStep : 1;
+
+      if (active && !wasActive && breathTween) {
+        breathTween.restart();
+        breathTween.paused = paused;
+      }
+
       applyState();
     },
     setPaused(nextPaused: boolean): void {
@@ -184,17 +174,15 @@ export const createPhraseAnchorStagePresenter = ({
       applyState();
     },
     destroy(): void {
-      phraseTween?.stop();
-      stepTimer?.remove(false);
+      breathTween?.stop();
       title.destroy();
+      halo.destroy();
+      innerGlow.destroy();
       phrasePanel.destroy();
       phrasePreview.destroy();
       phraseHint.destroy();
-      stepObjects.forEach(({ card, label, helperLabel }) => {
-        card.destroy();
-        label.destroy();
-        helperLabel.destroy();
-      });
+      breathLabel.destroy();
+      returnLabel.destroy();
     },
   };
 };

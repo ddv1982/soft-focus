@@ -79,8 +79,8 @@ const createPhraseAnchorFamilyConfig = ({
   const reducedMotion = createReducedMotionPolicy({
     title: 'Steadier phrase guidance',
     description: settings.reducedMotionEnabled || lowIntensity.enabled
-      ? 'Reduced motion keeps the phrase practice steadier and removes extra stage motion.'
-      : 'Phrase practice uses a slow anchor cue for noticing, returning, and softening.',
+      ? 'Reduced motion keeps the phrase practice steadier and removes the breathing pulse motion.'
+      : 'Phrase practice uses a slow breathing halo so the phrase can ride an easy breath.',
     cycleMultiplier: 1,
     amplitudeScale: settings.reducedMotionEnabled || lowIntensity.enabled ? 0 : 1,
   });
@@ -106,7 +106,7 @@ const createPhraseAnchorFamilyConfig = ({
     movingBall: null,
     breathingReset: null,
     copy: createSharedCopy({
-      instructionsSubtitle: 'Choose a phrase that is easy to repeat. During practice, notice wandering, return to the phrase, and soften the effort.',
+      instructionsSubtitle: 'Choose a phrase that is easy to repeat. During practice, let it ride a relaxed breath, notice wandering, and return softly.',
       instructionsSelectionLabel: 'Practice phrase',
       expectationsTitle: 'What to expect in this maintenance round',
       completionNote: 'Continue when you are ready to note what helped you return without forcing it.',
@@ -128,7 +128,7 @@ const createPhraseAnchorFamilyConfig = ({
         label: 'Phrase practice',
         copy: settings.gazeGuidanceEnabled
           ? 'Notice wandering, return to the phrase softly, and keep the eyes easy.'
-          : 'Repeat the phrase lightly. Notice wandering, return, and soften the effort.',
+          : 'Repeat the phrase lightly with an easy breath. Notice wandering, return, and soften the effort.',
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },
