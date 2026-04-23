@@ -7,7 +7,7 @@ import {
 } from '../src/game/navigation.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
 import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { initialSceneKey } from '../src/game/sceneKeys.ts';
@@ -147,11 +147,49 @@ const runExerciseBranchingScenario = (): void => {
   assert(getSessionFlowForExercise(exerciseIds.movingBall).id === sessionFlowIds.directPractice, 'expected moving-ball to use the direct-practice flow');
 
   store.setSelectedExercise(exerciseIds.breathingReset);
+  store.setLowIntensityMode(false);
+  store.setBreathingPreset(breathingPresetIds.longExhale);
   const breathingResetConfig = store.createPracticeConfig();
   assert(breathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected breathing reset config to resolve the breathing-reset presenter');
   assert(breathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected breathing reset config to declare an info auxiliary control');
-  assert(breathingResetConfig.display.phraseText === 'Follow the breath softly', 'expected breathing reset to expose breathing-specific display metadata');
+  assert(breathingResetConfig.breathingReset?.presetId === breathingPresetIds.longExhale, 'expected breathing reset config to preserve the selected breathing preset');
+  assert(breathingResetConfig.display.phraseText === 'Long exhale (4 in / 6 out)', 'expected breathing reset to expose breathing-specific display metadata');
+  assert(breathingResetConfig.stagePresenter.inhaleMs === 4000, 'expected breathing reset config to use a four-second inhale cue');
+  assert(breathingResetConfig.stagePresenter.exhaleMs === 6000, 'expected breathing reset config to use a six-second exhale cue');
+  assert(breathingResetConfig.capabilities.auxiliaryControl.description.includes('4 in / 6 out'), 'expected breathing reset guidance to describe the inhale and exhale cue');
   assert(breathingResetConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected breathing reset instructions copy to stay reset-aware');
+
+  store.setBreathingPreset(breathingPresetIds.gentleExhale);
+  const gentlerBreathingResetConfig = store.createPracticeConfig();
+  assert(gentlerBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected gentler breathing reset config to keep the breathing presenter');
+  assert(gentlerBreathingResetConfig.stagePresenter.inhaleMs === 3000, 'expected gentle-exhale breathing reset to shorten the inhale cue');
+  assert(gentlerBreathingResetConfig.stagePresenter.exhaleMs === 4000, 'expected gentle-exhale breathing reset to shorten the exhale cue');
+  assert(gentlerBreathingResetConfig.display.phraseText === 'Gentle exhale (3 in / 4 out)', 'expected gentle-exhale breathing reset to expose the gentler cadence');
+  assert(gentlerBreathingResetConfig.capabilities.auxiliaryControl.description.includes('3 in / 4 out'), 'expected gentle-exhale breathing guidance to describe the gentler cue');
+
+  store.setBreathingPreset(breathingPresetIds.coherent);
+  const coherentBreathingResetConfig = store.createPracticeConfig();
+  assert(coherentBreathingResetConfig.stagePresenter.inhaleMs === 5000, 'expected coherent breathing reset to use a five-second inhale cue');
+  assert(coherentBreathingResetConfig.stagePresenter.exhaleMs === 5000, 'expected coherent breathing reset to use a five-second exhale cue');
+  assert(coherentBreathingResetConfig.display.phraseText === 'Coherent (5 in / 5 out)', 'expected coherent breathing reset to expose the balanced cadence');
+  assert(coherentBreathingResetConfig.capabilities.auxiliaryControl.description.includes('balanced 5 in / 5 out rhythm'), 'expected coherent breathing guidance to describe the balanced cadence');
+
+  store.setBreathingPreset(breathingPresetIds.box);
+  const boxBreathingResetConfig = store.createPracticeConfig();
+  assert(boxBreathingResetConfig.stagePresenter.inhaleMs === 4000, 'expected box breathing reset to use a four-second inhale cue');
+  assert(boxBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 4000, 'expected box breathing reset to use a four-second inhale hold');
+  assert(boxBreathingResetConfig.stagePresenter.exhaleMs === 4000, 'expected box breathing reset to use a four-second exhale cue');
+  assert(boxBreathingResetConfig.stagePresenter.holdAfterExhaleMs === 4000, 'expected box breathing reset to use a four-second exhale hold');
+  assert(boxBreathingResetConfig.display.phraseText === 'Box (4 in / 4 hold / 4 out / 4 hold)', 'expected box breathing reset to expose the equal-phase cadence');
+  assert(boxBreathingResetConfig.capabilities.auxiliaryControl.description.includes('box-breathing rhythm'), 'expected box breathing guidance to describe the held cadence');
+
+  store.setBreathingPreset(breathingPresetIds.cyclicSighing);
+  const cyclicSighingResetConfig = store.createPracticeConfig();
+  assert(cyclicSighingResetConfig.stagePresenter.inhaleMs === 2000, 'expected cyclic sighing reset to use a two-second first inhale cue');
+  assert(cyclicSighingResetConfig.stagePresenter.inhaleTopUpMs === 1000, 'expected cyclic sighing reset to use a short top-up inhale');
+  assert(cyclicSighingResetConfig.stagePresenter.exhaleMs === 6000, 'expected cyclic sighing reset to use a long exhale cue');
+  assert(cyclicSighingResetConfig.display.phraseText === 'Cyclic sighing (2 in / 1 top-up / 6 out)', 'expected cyclic sighing reset to expose the double-inhale cadence');
+  assert(cyclicSighingResetConfig.capabilities.auxiliaryControl.description.includes('cyclic sighing rhythm'), 'expected cyclic sighing guidance to describe the double-inhale cadence');
 
   store.setSelectedExercise(exerciseIds.bilateralRhythm);
   const bilateralRhythmConfig = store.createPracticeConfig();
@@ -187,11 +225,11 @@ const runReflectionAndReloadScenario = (): void => {
   store.updateCurrentScene(sceneKeys.reflection);
   store.saveReflection('  shoulders softened and the phrase stayed easy  ');
   store.prepareForNextSession();
-  store.updateCurrentScene(sceneKeys.instructions);
+  store.updateCurrentScene(sceneKeys.exerciseSelection);
 
   const restartedState = store.getState();
-  assert(restartedState.currentSession?.completedAt === null, 'expected reflection restart to begin a fresh session');
-  assert(restartedState.currentSession?.sceneKey === sceneKeys.instructions, 'expected reflection restart to return to instructions for moving-ball practice');
+  assert(restartedState.currentSession === null, 'expected exercise selection return to clear the finished session');
+  assert(restartedState.selectedExercise === exerciseIds.movingBall, 'expected exercise selection return to preserve the previously selected exercise');
   assert(store.createPracticeConfig().movingBall?.presetId === movingBallPresetIds.multiHeight, 'expected restart to preserve the selected moving-ball preset');
 
   const rehydratedStore = createSessionStore(undefined, createSessionRepository(storage));
@@ -214,9 +252,30 @@ const runReflectionAndReloadScenario = (): void => {
   );
 };
 
+const runBreathingSelectionReturnScenario = (): void => {
+  const store = createSessionStore();
+
+  store.setSelectedExercise(exerciseIds.breathingReset);
+  store.updateCurrentScene(sceneKeys.exerciseSelection);
+  store.updateCurrentScene(sceneKeys.instructions);
+  store.updateCurrentScene(sceneKeys.practice);
+  store.startPractice(store.createPracticeConfig());
+  store.completeSession('2026-04-22T12:10:00.000Z');
+  store.clearPractice();
+  store.updateCurrentScene(sceneKeys.completion);
+  store.saveReflection('Breath stayed easy');
+  store.prepareForNextSession();
+  store.updateCurrentScene(sceneKeys.exerciseSelection);
+
+  const state = store.getState();
+  assert(state.currentSession === null, 'expected breathing reset to return cleanly to exercise selection after finishing');
+  assert(state.selectedExercise === exerciseIds.breathingReset, 'expected returning to exercise selection to preserve the last breathing selection');
+};
+
 assertSceneFlow();
 runPracticeControlsScenario();
 runExerciseBranchingScenario();
 runReflectionAndReloadScenario();
+runBreathingSelectionReturnScenario();
 
 console.log('full guided flow smoke validation passed');

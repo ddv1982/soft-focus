@@ -1,8 +1,13 @@
 import type { SoftFocusGame } from '../game/Game';
-import { sceneKeys, type SceneKey } from '../game/sceneKeys';
-import { getSessionFlowForExercise } from '../game/navigation';
+import { sceneKeys } from '../game/sceneKeys';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
-import { exerciseIds, normalizeReflection, reflectionMaxLength } from '../state/types';
+import { exerciseIds, normalizeReflection, reflectionMaxLength, type BreathingPresetId } from '../state/types';
+import {
+  chooseAnotherExercise,
+  continueToReflection,
+  saveReflectionAndChooseAnotherExercise,
+  saveReflectionAndRestart,
+} from './sessionPanelActions';
 
 const supportCopy = 'If this feels too intense, stop and return to a steadier option. Seek local support if you need more help.';
 
@@ -19,11 +24,6 @@ const formatDuration = (durationSeconds: number | null): string => {
   }
 
   return `${minutes}m ${seconds}s`;
-};
-
-const navigateToManagedScene = (game: SoftFocusGame, sceneKey: SceneKey, data?: object): void => {
-  game.sessionStore.updateCurrentScene(sceneKey);
-  game.scene.start(sceneKey, data);
 };
 
 const createOverlayRoot = (parent: HTMLElement): HTMLDivElement => {
@@ -140,6 +140,55 @@ const createPreferenceToggle = ({
   return row;
 };
 
+const createPreferenceSelect = ({
+  label,
+  description,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  options: readonly {
+    id: string;
+    title: string;
+  }[];
+  onChange: (value: string) => void;
+}): HTMLLabelElement => {
+  const row = document.createElement('label');
+  row.className = 'preferences-shell__toggle';
+
+  const copy = document.createElement('div');
+  copy.className = 'preferences-shell__toggle-copy';
+
+  const title = document.createElement('span');
+  title.className = 'preferences-shell__toggle-title';
+  title.textContent = label;
+
+  const body = document.createElement('span');
+  body.className = 'preferences-shell__toggle-body';
+  body.textContent = description;
+
+  copy.append(title, body);
+
+  const select = document.createElement('select');
+  select.className = 'preferences-shell__select';
+  options.forEach((option) => {
+    const optionElement = document.createElement('option');
+    optionElement.value = option.id;
+    optionElement.textContent = option.title;
+    optionElement.selected = option.id === value;
+    select.append(optionElement);
+  });
+  select.addEventListener('change', () => {
+    onChange(select.value);
+  });
+
+  row.append(copy, select);
+  return row;
+};
+
 const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => {
   const state = game.sessionStore.getState();
   const latestSummary = game.sessionStore.getLatestSessionSummary();
@@ -182,10 +231,15 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   const actions = document.createElement('div');
   actions.className = 'app-shell__actions';
   const continueButton = createPrimaryButton('Continue to reflection', () => {
-    navigateToManagedScene(game, sceneKeys.reflection);
+    continueToReflection(game);
   });
-  actions.append(continueButton);
-  panel.append(actions, support);
+  const chooseAnotherButton = createSecondaryButton('Choose another exercise', () => {
+    chooseAnotherExercise(game);
+  });
+  const helper = createBody('Reflection is optional. Choose another exercise if you want to skip note-taking for now.');
+  helper.className = 'session-overlay__helper';
+  actions.append(continueButton, chooseAnotherButton);
+  panel.append(helper, actions, support);
 
   root.classList.remove('session-overlay--hidden');
   root.replaceChildren(panel);
@@ -231,17 +285,19 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   const actions = document.createElement('div');
   actions.className = 'app-shell__actions';
   const saveButton = createPrimaryButton('Save and start again', () => {
-    game.sessionStore.saveReflection(textarea.value);
-    game.sessionStore.prepareForNextSession();
-    const restartSceneKey = getSessionFlowForExercise(game.sessionStore.getState().selectedExercise).restartSceneKey;
-    navigateToManagedScene(game, restartSceneKey);
+    saveReflectionAndRestart(game, textarea.value);
   });
-  actions.append(saveButton);
+  const chooseAnotherButton = createSecondaryButton('Save and choose another exercise', () => {
+    saveReflectionAndChooseAnotherExercise(game, textarea.value);
+  });
+  actions.append(saveButton, chooseAnotherButton);
 
   const support = createBody(supportCopy);
   support.className = 'session-overlay__support';
+  const nextStepNote = createBody('Choosing another exercise saves your note and returns you to the library instead of restarting this same practice.');
+  nextStepNote.className = 'session-overlay__helper';
 
-  panel.append(textarea, helper, actions, support);
+  panel.append(textarea, helper, nextStepNote, actions, support);
   root.classList.remove('session-overlay--hidden');
   root.replaceChildren(panel);
   queueMicrotask(() => textarea.focus());
@@ -254,6 +310,7 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
 
   const renderPreferences = (): void => {
     const state = game.sessionStore.getState();
+    const practiceConfig = createPracticeConfigFromSettings(state.selectedExercise, state.phrase, state.settings);
 
     const launcher = createSecondaryButton('Preferences', () => {
       preferencesOpen = !preferencesOpen;
@@ -314,6 +371,20 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
         },
       }),
     );
+
+    if (practiceConfig.breathingReset) {
+      toggles.append(
+        createPreferenceSelect({
+          label: 'Breathing preset',
+          description: `${practiceConfig.breathingReset.summary} Choose the pattern that feels easiest to follow today.`,
+          value: practiceConfig.breathingReset.presetId,
+          options: practiceConfig.breathingReset.availablePresets,
+          onChange: (nextValue) => {
+            game.sessionStore.setBreathingPreset(nextValue as BreathingPresetId);
+          },
+        }),
+      );
+    }
 
     const support = document.createElement('p');
     support.className = 'preferences-shell__support';

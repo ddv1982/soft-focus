@@ -11,6 +11,7 @@ import {
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  type BreathingPresetId,
   type ExerciseId,
   type MovingBallPresetId,
   type PracticePhase,
@@ -94,6 +95,10 @@ export class SessionStore {
 
   setMovingBallPreset(movingBallPresetId: MovingBallPresetId): SessionState {
     return this.updateSettings({ movingBallPresetId });
+  }
+
+  setBreathingPreset(breathingPresetId: BreathingPresetId): SessionState {
+    return this.updateSettings({ breathingPresetId });
   }
 
   createPracticeConfig(): PracticeConfig {

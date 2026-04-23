@@ -25,6 +25,16 @@ export const movingBallPresetIds = {
 
 export type MovingBallPresetId = (typeof movingBallPresetIds)[keyof typeof movingBallPresetIds];
 
+export const breathingPresetIds = {
+  gentleExhale: 'gentle-exhale-3-4',
+  longExhale: 'long-exhale-4-6',
+  coherent: 'coherent-5-5',
+  box: 'box-4-4-4-4',
+  cyclicSighing: 'cyclic-sighing-2-1-6',
+} as const;
+
+export type BreathingPresetId = (typeof breathingPresetIds)[keyof typeof breathingPresetIds];
+
 export const isExerciseId = (value: string): value is ExerciseId => (
   Object.values(exerciseIds) as readonly string[]
 ).includes(value);
@@ -41,11 +51,16 @@ export const isMovingBallPresetId = (value: string): value is MovingBallPresetId
   Object.values(movingBallPresetIds) as readonly string[]
 ).includes(value);
 
+export const isBreathingPresetId = (value: string): value is BreathingPresetId => (
+  Object.values(breathingPresetIds) as readonly string[]
+).includes(value);
+
 export interface PracticeSettings {
   lowIntensityMode: boolean;
   reducedMotionEnabled: boolean;
   gazeGuidanceEnabled: boolean;
   movingBallPresetId: MovingBallPresetId;
+  breathingPresetId: BreathingPresetId;
 }
 
 export interface SessionRecord {
@@ -122,6 +137,7 @@ export const defaultPracticeSettings = (): PracticeSettings => ({
   reducedMotionEnabled: false,
   gazeGuidanceEnabled: false,
   movingBallPresetId: movingBallPresetIds.steadyCenter,
+  breathingPresetId: breathingPresetIds.longExhale,
 });
 
 export const createDefaultPracticeSettings = (): PracticeSettings => defaultPracticeSettings();

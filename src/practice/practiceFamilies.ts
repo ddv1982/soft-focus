@@ -2,17 +2,20 @@ import type { PracticeSettings } from '../state/types';
 
 import type { ExerciseDefinition } from './exercises';
 import {
+  breathingPresetCatalog,
   defaultBilateralRhythmExpectations,
   defaultBreathingResetExpectations,
   defaultGazeGuidanceConfig,
   defaultMovingBallExpectations,
   defaultOrientingExpectations,
   defaultPhrasePracticeExpectations,
+  getBreathingPresetDefinition,
   getMovingBallPresetDefinition,
   movingBallPresetCatalog,
 } from './defaultPracticeConfig';
 import type {
   PracticeAuxiliaryControl,
+  PracticeBreathingConfig,
   PracticeCapabilities,
   PracticeConfig,
   PracticeCopyConfig,
@@ -101,6 +104,7 @@ const createPhraseAnchorFamilyConfig = ({
       prompt: gazePrompt,
     },
     movingBall: null,
+    breathingReset: null,
     copy: createSharedCopy({
       instructionsSubtitle: 'Confirm the phrase, settle into a steady maintenance round, and use it as one of the current Soft Focus core practices.',
       instructionsSelectionLabel: 'Practice phrase',
@@ -206,6 +210,7 @@ const createMovingBallFamilyConfig = ({
       prompt: null,
     },
     movingBall,
+    breathingReset: null,
     copy: createSharedCopy({
       instructionsSubtitle: 'Keep the pace gentle, choose the visual reset preset that feels easiest to settle into today, and begin when your eyes feel easy.',
       instructionsSelectionLabel: 'Selected reset practice',
@@ -260,21 +265,48 @@ const createBreathingResetFamilyConfig = ({
   lowIntensity,
   settings,
 }: PracticeFamilyBuilderInput): PracticeFamilyConfig => {
+  const breathingPreset = getBreathingPresetDefinition(settings.breathingPresetId);
+  const {
+    inhaleMs,
+    inhaleTopUpMs,
+    holdAfterInhaleMs,
+    exhaleMs,
+    holdAfterExhaleMs,
+  } = breathingPreset;
+  const cadenceLabel = breathingPreset.pattern === 'box'
+    ? `${Math.round(inhaleMs / 1000)} in / ${Math.round((holdAfterInhaleMs ?? 0) / 1000)} hold / ${Math.round(exhaleMs / 1000)} out / ${Math.round((holdAfterExhaleMs ?? 0) / 1000)} hold`
+    : breathingPreset.pattern === 'cyclic-sighing'
+      ? `${Math.round(inhaleMs / 1000)} in / ${Math.round((inhaleTopUpMs ?? 0) / 1000)} top-up / ${Math.round(exhaleMs / 1000)} out`
+      : `${Math.round(inhaleMs / 1000)} in / ${Math.round(exhaleMs / 1000)} out`;
+  const breathingReset: PracticeBreathingConfig = {
+    enabled: true,
+    presetId: breathingPreset.id,
+    title: breathingPreset.title,
+    summary: breathingPreset.summary,
+    activeCopy: breathingPreset.activeCopy,
+    availablePresets: breathingPresetCatalog.map(({ id, title, summary }) => ({ id, title, summary })),
+    pattern: breathingPreset.pattern,
+    inhaleMs: breathingPreset.inhaleMs,
+    inhaleTopUpMs: breathingPreset.inhaleTopUpMs,
+    holdAfterInhaleMs: breathingPreset.holdAfterInhaleMs,
+    exhaleMs: breathingPreset.exhaleMs,
+    holdAfterExhaleMs: breathingPreset.holdAfterExhaleMs,
+  };
   const reducedMotion = createReducedMotionPolicy({
     title: 'Softer breathing pulse',
-    description: 'Reduced motion slows the breathing cycle and keeps the pulse smaller so the rhythm feels easier to follow.',
-    cycleMultiplier: settings.reducedMotionEnabled ? 1.24 : 1,
-    amplitudeScale: settings.reducedMotionEnabled ? 0.82 : 1,
+    description: 'Reduced motion keeps the visual cue smaller and only slightly slower so the breath pattern stays recognizable.',
+    cycleMultiplier: settings.reducedMotionEnabled ? 1.06 : 1,
+    amplitudeScale: settings.reducedMotionEnabled ? 0.84 : 1,
   });
   const display: PracticeDisplayConfig = {
     title: exercise.title,
     subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
-    phraseText: 'Follow the breath softly',
+    phraseText: `${breathingPreset.title} (${cadenceLabel})`,
     pausedOverlayCopy: 'Resume when the breathing rhythm feels easy to follow again.',
     completeCopy: 'This round is complete.',
     statusLines: [
       `${exercise.phaseLabel} • ${exercise.title}`,
-      `Low intensity: ${lowIntensity.enabled ? 'On' : 'Off'} • Reduced motion: ${settings.reducedMotionEnabled ? 'On' : 'Off'} • Gaze guidance: Off for breathing reset`,
+      `Breath cue: ${breathingPreset.title} • ${cadenceLabel} • Low intensity: ${lowIntensity.enabled ? 'On' : 'Off'} • Reduced motion: ${settings.reducedMotionEnabled ? 'On' : 'Off'}`,
     ],
   };
 
@@ -288,14 +320,21 @@ const createBreathingResetFamilyConfig = ({
       prompt: null,
     },
     movingBall: null,
+    breathingReset,
     copy: createSharedCopy({
-      instructionsSubtitle: 'Let the breath stay natural, follow a gentle visual pace, and choose the calmer rhythm if you need less motion.',
+      instructionsSubtitle: breathingPreset.pattern === 'balanced'
+        ? `Let the breath stay natural, follow the balanced ${cadenceLabel} pace, and keep both phases easy instead of trying to take a bigger breath.`
+        : breathingPreset.pattern === 'box'
+          ? `Let the breath stay natural, follow the equal ${cadenceLabel} pace, and keep the holds gentle enough that they do not feel strained.`
+          : breathingPreset.pattern === 'cyclic-sighing'
+            ? `Let the breath stay natural, follow the ${cadenceLabel} pattern, and keep the second inhale small before a long, easy exhale.`
+        : `Let the breath stay natural, follow the ${cadenceLabel} visual pace, and keep the breath smaller instead of deeper if you need less effort.`,
       instructionsSelectionLabel: 'Selected reset practice',
       expectationsTitle: 'What to expect in this reset round',
-      completionNote: 'Continue when you are ready to note what helped your breathing settle.',
+      completionNote: 'Continue when you are ready to note what helped the inhale stay easy or the exhale stay softer.',
       reflectionSubtitle: 'Use this integration moment to notice what softened or steadied in your breathing. A short note is enough.',
-      reflectionPrompt: 'What helped your breathing settle or feel easier this round?',
-      reflectionHelper: 'Optional. A few calm words about what softened or steadied is enough.',
+      reflectionPrompt: 'What helped your breathing stay easy or let the exhale soften this round?',
+      reflectionHelper: 'Optional. A few calm words about what kept the breath easy is enough.',
       reflectionPlaceholder: 'A breathing note for next time',
     }),
     phases: [
@@ -309,7 +348,7 @@ const createBreathingResetFamilyConfig = ({
       {
         key: 'phrase',
         label: 'Breathing rhythm',
-        copy: 'Follow the visual breath softly and let each exhale stay unforced.',
+        copy: breathingPreset.activeCopy,
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },
@@ -323,7 +362,12 @@ const createBreathingResetFamilyConfig = ({
     ],
     stagePresenter: {
       key: 'breathing-reset',
-      cycleMs: 4200,
+      pattern: breathingPreset.pattern,
+      inhaleMs,
+      inhaleTopUpMs,
+      holdAfterInhaleMs,
+      exhaleMs,
+      holdAfterExhaleMs,
       lowIntensity: lowIntensity.enabled,
       reducedMotion,
     },
@@ -331,7 +375,13 @@ const createBreathingResetFamilyConfig = ({
     capabilities: createCapabilities({
       kind: 'info',
       label: 'Breathing rhythm',
-      description: 'This reset uses a gentle visual breath cycle. Keep the inhale easy and let the exhale soften without forcing a deeper breath.',
+      description: breathingPreset.pattern === 'balanced'
+        ? `This reset uses a balanced ${cadenceLabel} rhythm. Keep the breath natural, avoid breath holds, and let both phases stay quiet and even.`
+        : breathingPreset.pattern === 'box'
+          ? `This reset uses a box-breathing rhythm of ${cadenceLabel}. Keep the holds gentle and shorten them if they start to feel effortful.`
+          : breathingPreset.pattern === 'cyclic-sighing'
+            ? `This reset uses a cyclic sighing rhythm of ${cadenceLabel}. Take a normal inhale, add a small top-up inhale, and let the long exhale soften without forcing it.`
+        : `This reset uses a ${cadenceLabel} rhythm with a longer exhale. Keep the breath natural, avoid breath holds, and make it smaller instead of deeper if you start to strain.`,
     }, reducedMotion),
     reducedMotion: createReducedMotionConfig(settings.reducedMotionEnabled, reducedMotion),
   };
@@ -371,6 +421,7 @@ const createBilateralRhythmFamilyConfig = ({
       prompt: null,
     },
     movingBall: null,
+    breathingReset: null,
     copy: createSharedCopy({
       instructionsSubtitle: 'Follow a gentle left-right rhythm, keep the pace light, and choose the calmer timing if you need less stimulation.',
       instructionsSelectionLabel: 'Selected reset practice',
@@ -454,6 +505,7 @@ const createOrientingFamilyConfig = ({
       prompt: null,
     },
     movingBall: null,
+    breathingReset: null,
     copy: createSharedCopy({
       instructionsSubtitle: 'Let your attention widen gently, follow a calm orienting prompt, and stop anywhere that feels steadier.',
       instructionsSelectionLabel: 'Selected reset practice',

@@ -372,7 +372,7 @@ export class InstructionsScene extends Phaser.Scene {
     cardContent.add(reducedMotionToggle);
 
     const auxiliaryControl = previewConfig.capabilities.auxiliaryControl;
-    const lastBlock = auxiliaryControl.kind === 'selector' && previewConfig.movingBall
+    const presetSelector = auxiliaryControl.kind === 'selector' && previewConfig.movingBall
       ? createOptionSelector(
         this,
         0,
@@ -385,20 +385,39 @@ export class InstructionsScene extends Phaser.Scene {
           sessionStore.setMovingBallPreset(nextValue as typeof previewConfig.movingBall.presetId);
         },
       )
-      : auxiliaryControl.kind === 'info'
-        ? createInfoBlock(
+      : previewConfig.breathingReset
+        ? createOptionSelector(
           this,
           0,
           reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
           cardWidth - (uiTheme.spacing.xl * 2),
-          auxiliaryControl.label,
-          auxiliaryControl.description,
+          'Breathing preset',
+          previewConfig.breathingReset.availablePresets,
+          previewConfig.breathingReset.presetId,
+          (nextValue) => {
+            sessionStore.setBreathingPreset(nextValue as typeof previewConfig.breathingReset.presetId);
+          },
         )
+        : null;
+
+    if (presetSelector) {
+      cardContent.add(presetSelector);
+    }
+
+    const lastBlock = auxiliaryControl.kind === 'info'
+      ? createInfoBlock(
+        this,
+        0,
+        (presetSelector ?? reducedMotionToggle).y + (presetSelector ?? reducedMotionToggle).height + uiTheme.spacing.md,
+        cardWidth - (uiTheme.spacing.xl * 2),
+        auxiliaryControl.label,
+        auxiliaryControl.description,
+      )
       : auxiliaryControl.kind === 'toggle'
         ? createToggle(
         this,
         0,
-        reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+        (presetSelector ?? reducedMotionToggle).y + (presetSelector ?? reducedMotionToggle).height + uiTheme.spacing.md,
         cardWidth - (uiTheme.spacing.xl * 2),
         auxiliaryControl.label,
         auxiliaryControl.description,
@@ -411,7 +430,7 @@ export class InstructionsScene extends Phaser.Scene {
         : createInfoBlock(
           this,
           0,
-          reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+          (presetSelector ?? reducedMotionToggle).y + (presetSelector ?? reducedMotionToggle).height + uiTheme.spacing.md,
           cardWidth - (uiTheme.spacing.xl * 2),
           'Practice details',
           'This practice does not expose additional controls right now.',

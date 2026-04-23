@@ -1,4 +1,12 @@
+export {};
+
 const container = document.getElementById('app');
+
+declare global {
+  interface Window {
+    __softFocusGame?: import('./game/Game').SoftFocusGame;
+  }
+}
 
 if (!container) {
   throw new Error('Expected #app container to exist.');
@@ -78,6 +86,7 @@ const startSoftFocus = async (): Promise<void> => {
     container.replaceChildren(runtimeHost);
 
     const game = new SoftFocusGame(runtimeHost);
+    window.__softFocusGame = game;
     mountSessionPanels(container, game);
 
     const refreshInputBounds = (): void => {

@@ -1,4 +1,4 @@
-import { movingBallPresetIds, type MovingBallPresetId } from '../state/types';
+import { breathingPresetIds, movingBallPresetIds, type BreathingPresetId, type MovingBallPresetId } from '../state/types';
 
 export const defaultPhrasePracticeExpectations = [
   'Settle in with a light effort and return to your phrase when attention wanders.',
@@ -13,9 +13,9 @@ export const defaultMovingBallExpectations = [
 ] as const;
 
 export const defaultBreathingResetExpectations = [
-  'Let the breath stay easy rather than deep or forced.',
-  'Follow the visual rhythm lightly and return to a softer pace if the timing feels intense.',
-  'A shorter, calmer breath is still a successful reset if it helps you settle.',
+  'Let the breath stay easy, quiet, and natural rather than deep or forced.',
+  'Follow the visual rhythm lightly with an easy inhale and a slightly longer exhale.',
+  'If the timing feels too long, keep the breath smaller and return to your natural pace.',
 ] as const;
 
 export const defaultBilateralRhythmExpectations = [
@@ -55,6 +55,19 @@ export interface MovingBallPresetDefinition {
   lowIntensityCycleMs: number;
   laneBandHeight: number;
   radius: number;
+}
+
+export interface BreathingPresetDefinition {
+  id: BreathingPresetId;
+  title: string;
+  summary: string;
+  activeCopy: string;
+  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing';
+  inhaleMs: number;
+  inhaleTopUpMs: number | null;
+  holdAfterInhaleMs: number | null;
+  exhaleMs: number;
+  holdAfterExhaleMs: number | null;
 }
 
 export const movingBallPresetCatalog: readonly MovingBallPresetDefinition[] = [
@@ -98,4 +111,71 @@ export const movingBallPresetCatalog: readonly MovingBallPresetDefinition[] = [
 
 export const getMovingBallPresetDefinition = (presetId: MovingBallPresetId): MovingBallPresetDefinition => (
   movingBallPresetCatalog.find((preset) => preset.id === presetId) ?? movingBallPresetCatalog[0]
+);
+
+export const breathingPresetCatalog: readonly BreathingPresetDefinition[] = [
+  {
+    id: breathingPresetIds.gentleExhale,
+    title: 'Gentle exhale',
+    summary: 'A smaller 3-in / 4-out rhythm for an easier, lighter reset.',
+    activeCopy: 'Let the inhale stay easy and the softer exhale taper out without forcing extra depth.',
+    pattern: 'extended-exhale',
+    inhaleMs: 3000,
+    inhaleTopUpMs: null,
+    holdAfterInhaleMs: null,
+    exhaleMs: 4000,
+    holdAfterExhaleMs: null,
+  },
+  {
+    id: breathingPresetIds.longExhale,
+    title: 'Long exhale',
+    summary: 'A calming 4-in / 6-out rhythm with a noticeably longer exhale.',
+    activeCopy: 'Follow the inhale easily and let the longer exhale soften the pace of the round.',
+    pattern: 'extended-exhale',
+    inhaleMs: 4000,
+    inhaleTopUpMs: null,
+    holdAfterInhaleMs: null,
+    exhaleMs: 6000,
+    holdAfterExhaleMs: null,
+  },
+  {
+    id: breathingPresetIds.coherent,
+    title: 'Coherent',
+    summary: 'A balanced 5-in / 5-out rhythm near six breaths per minute.',
+    activeCopy: 'Keep both phases even and quiet so the breath feels steady instead of effortful.',
+    pattern: 'balanced',
+    inhaleMs: 5000,
+    inhaleTopUpMs: null,
+    holdAfterInhaleMs: null,
+    exhaleMs: 5000,
+    holdAfterExhaleMs: null,
+  },
+  {
+    id: breathingPresetIds.box,
+    title: 'Box',
+    summary: 'A structured 4-in / 4-hold / 4-out / 4-hold rhythm for equal-phase focus.',
+    activeCopy: 'Move through each inhale, hold, exhale, and empty pause evenly without rushing the transitions.',
+    pattern: 'box',
+    inhaleMs: 4000,
+    inhaleTopUpMs: null,
+    holdAfterInhaleMs: 4000,
+    exhaleMs: 4000,
+    holdAfterExhaleMs: 4000,
+  },
+  {
+    id: breathingPresetIds.cyclicSighing,
+    title: 'Cyclic sighing',
+    summary: 'A double inhale followed by a long exhale, modeled as 2 in / 1 top-up / 6 out.',
+    activeCopy: 'Take one easy inhale, add a small top-up breath, then let the long exhale taper out slowly.',
+    pattern: 'cyclic-sighing',
+    inhaleMs: 2000,
+    inhaleTopUpMs: 1000,
+    holdAfterInhaleMs: null,
+    exhaleMs: 6000,
+    holdAfterExhaleMs: null,
+  },
+] as const;
+
+export const getBreathingPresetDefinition = (presetId: BreathingPresetId): BreathingPresetDefinition => (
+  breathingPresetCatalog.find((preset) => preset.id === presetId) ?? breathingPresetCatalog[0]
 );

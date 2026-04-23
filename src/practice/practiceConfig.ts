@@ -1,4 +1,4 @@
-import type { ExerciseId, MovingBallPresetId, PracticeSettings, SessionState } from '../state/types';
+import type { BreathingPresetId, ExerciseId, MovingBallPresetId, PracticeSettings, SessionState } from '../state/types';
 
 import { defaultLowIntensityConfig } from './defaultPracticeConfig';
 import { getExerciseDefinition } from './exercises';
@@ -50,6 +50,25 @@ export interface PracticeMovingBallConfig {
   cycleMs: number;
   laneBandHeight: number;
   radius: number;
+}
+
+export interface PracticeBreathingConfig {
+  enabled: boolean;
+  presetId: BreathingPresetId;
+  title: string;
+  summary: string;
+  activeCopy: string;
+  availablePresets: readonly {
+    id: BreathingPresetId;
+    title: string;
+    summary: string;
+  }[];
+  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing';
+  inhaleMs: number;
+  inhaleTopUpMs: number | null;
+  holdAfterInhaleMs: number | null;
+  exhaleMs: number;
+  holdAfterExhaleMs: number | null;
 }
 
 export interface PracticeReducedMotionPolicy {
@@ -106,7 +125,12 @@ export type PracticeStagePresenterConfig =
   }
   | {
     key: 'breathing-reset';
-    cycleMs: number;
+    pattern: PracticeBreathingConfig['pattern'];
+    inhaleMs: number;
+    inhaleTopUpMs: number | null;
+    holdAfterInhaleMs: number | null;
+    exhaleMs: number;
+    holdAfterExhaleMs: number | null;
     lowIntensity: boolean;
     reducedMotion: PracticeReducedMotionPolicy;
   }
@@ -141,6 +165,7 @@ export interface PracticeFamilyConfig {
     prompt: string | null;
   };
   movingBall: PracticeMovingBallConfig | null;
+  breathingReset: PracticeBreathingConfig | null;
   copy: PracticeCopyConfig;
   phases: readonly PracticePhaseDefinition[];
   stagePresenter: PracticeStagePresenterConfig;
@@ -169,6 +194,7 @@ export interface PracticeConfig {
     prompt: string | null;
   };
   movingBall: PracticeMovingBallConfig | null;
+  breathingReset: PracticeBreathingConfig | null;
   copy: PracticeCopyConfig;
   phases: readonly PracticePhaseDefinition[];
   stagePresenter: PracticeStagePresenterConfig;
@@ -197,6 +223,7 @@ export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pic
     lowIntensity,
     gazeGuidance: familyConfig.gazeGuidance,
     movingBall: familyConfig.movingBall,
+    breathingReset: familyConfig.breathingReset,
     copy: familyConfig.copy,
     phases: familyConfig.phases,
     stagePresenter: familyConfig.stagePresenter,

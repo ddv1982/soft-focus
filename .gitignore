@@ -1,5 +1,8 @@
 node_modules/
 dist/
+.playwright-browsers/
+test-results/
+playwright-report/
 .flow/
 .flow-validation/
 .tmp-session-validation/

@@ -2,6 +2,7 @@ import { isSceneKey } from '../game/sceneKeys';
 import {
   createInitialSessionState,
   createDefaultPracticeSettings,
+  isBreathingPresetId,
   exerciseIds,
   getSessionFlowIdForExercise,
   isExerciseId,
@@ -40,6 +41,9 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
     movingBallPresetId: typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
       ? value.movingBallPresetId
       : createDefaultPracticeSettings().movingBallPresetId,
+    breathingPresetId: typeof value.breathingPresetId === 'string' && isBreathingPresetId(value.breathingPresetId)
+      ? value.breathingPresetId
+      : createDefaultPracticeSettings().breathingPresetId,
   };
 };
 

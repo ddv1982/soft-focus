@@ -15,7 +15,6 @@ The current Soft Focus core toolkit surfaces two live practice phases:
 Planned next reset tools for Soft Focus:
 
 - `Bilateral tapping`
-- `Orienting`
 
 Current flow:
 
@@ -30,7 +29,7 @@ The app persists the selected exercise, phrase (when used), settings, and recent
 ## Runtime and tooling posture
 
 - Package manager: `bun`
-- Recommended Node version for tooling/CI: `22.12+`
+- Recommended Node version for tooling/CI: `24.14.1`
 - Current build strategy:
   - explicit Vite client minification with `oxc`
   - explicit CSS minification with `lightningcss`
@@ -47,6 +46,9 @@ The app persists the selected exercise, phrase (when used), settings, and recent
 - `bun run dev`: start the local Vite app.
 - `bun run typecheck`: run the TypeScript compiler without emitting files.
 - `bun run smoke:test`: run focused TypeScript smoke validations for scene flow, persistence, and restart behavior.
+- `bun run e2e:install`: download the local Chromium binary for Playwright into `.playwright-browsers`.
+- `bun run e2e:test`: run the browser end-to-end coverage for breathing preset persistence and post-session return flow.
+- CI runs the same validation path on pushes and pull requests to `main`: `bun install --frozen-lockfile`, `bun run validate`, Playwright Chromium install, then `bun run e2e:test`.
 - `bun run build`: typecheck and produce a production bundle.
 - `bun run validate`: run broad validation across typecheck, smoke tests, and production build.
 
@@ -85,8 +87,9 @@ The app persists the selected exercise, phrase (when used), settings, and recent
 20. Return to `Exercise Selection` and choose `Breathing reset`.
 21. Confirm the app skips `Phrase` and moves directly to `Instructions`.
 22. On `Instructions`, confirm the screen frames the practice as a reset, shows a breathing-specific guidance block, and still lets you toggle `Low-intensity mode` and `Reduced motion`.
-23. Start practice and confirm the breathing presenter uses a gentle visual rhythm during the active practice phase and pauses/resumes cleanly.
-24. Continue through the shell-owned completion and reflection panels, confirm the copy stays breathing-aware, save an optional note, and confirm restart returns to the breathing-reset path without requiring a phrase.
+23. Use the breathing preset selector to switch between `Gentle exhale (3 in / 4 out)`, `Long exhale (4 in / 6 out)`, `Coherent (5 in / 5 out)`, `Box (4 in / 4 hold / 4 out / 4 hold)`, and `Cyclic sighing (2 in / 1 top-up / 6 out)`, then confirm the breathing cue copy updates.
+24. Start practice and confirm the breathing presenter uses the selected visual rhythm during the active practice phase and pauses/resumes cleanly.
+25. Continue through the shell-owned completion and reflection panels, confirm the copy stays breathing-aware, and confirm you can either restart the same practice or choose another exercise from the shell panel without getting stuck.
 
 ### Bilateral-rhythm path
 

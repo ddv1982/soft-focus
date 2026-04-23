@@ -244,6 +244,7 @@
 
       .preferences-shell__launcher:focus-visible,
       .preferences-shell__button:focus-visible,
+      .preferences-shell__select:focus-visible,
       .preferences-shell__checkbox:focus-visible {
         outline: 3px solid rgba(124, 198, 255, 0.4);
         outline-offset: 3px;
@@ -324,6 +325,17 @@
         width: 20px;
         height: 20px;
         margin-top: 2px;
+      }
+
+      .preferences-shell__select {
+        min-width: 156px;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid rgba(124, 198, 255, 0.2);
+        border-radius: 14px;
+        background: rgba(11, 18, 32, 0.92);
+        color: #eef4ff;
+        font: inherit;
       }
 
       canvas {
