@@ -1,115 +1,42 @@
 # Soft Focus
 
-Soft Focus is a small guided-practice prototype with a lighter DOM-first launch shell and an on-demand Phaser runtime for the active practice stage.
+Soft Focus is a small guided-practice app for short, quiet attention resets. It offers simple visual and written cues, then gives you a place to pause, finish, and reflect.
 
-The current Soft Focus core toolkit surfaces two live practice phases:
+Soft Focus is not a medical tool, a diagnosis tool, or a substitute for care from a qualified professional. It does not make health claims. It is meant to support brief personal practice in a calm, low-pressure way.
 
-- `Maintenance`: `Phrase anchor`
-- `Reset`: `Moving ball`
-- `Reset`: `Breathing reset`
-- `Reset`: `Bilateral rhythm`
-- `Reset`: `Orienting`
+## Practices
 
-`Integration / Reflection` currently appears as the closing reflection step after practice.
+- **Phrase Anchor**: choose a short phrase and return to it as a steady point of attention.
+- **Moving Ball**: follow a slow visual sweep with optional gaze guidance.
+- **Breathing Reset**: use a paced breathing cue with gentle preset rhythms.
+- **Bilateral Rhythm**: follow a simple left-right rhythm.
+- **Orienting**: look around slowly and notice what is present in the space around you.
+- **Completion / Reflection**: close a round, optionally write a short note, and decide what to do next.
 
-Planned next reset tools for Soft Focus:
+## Preferences
 
-- `Bilateral tapping`
+Soft Focus includes a few preferences for making practice feel less intense:
 
-Current flow:
+- **Low intensity** softens the presentation where available.
+- **Reduced motion** uses calmer movement or guidance where available.
+- **Gaze guidance** can be adjusted for practices that use visual following.
 
-- `Entry -> Exercise Selection -> Phrase -> Instructions -> Practice -> Completion -> Reflection` for the phrase-anchor exercise
-- `Entry -> Exercise Selection -> Instructions -> Practice -> Completion -> Reflection` for the moving-ball exercise
-- `Entry -> Exercise Selection -> Instructions -> Practice -> Completion -> Reflection` for the breathing-reset exercise
-- `Entry -> Exercise Selection -> Instructions -> Practice -> Completion -> Reflection` for the bilateral-rhythm exercise
-- `Entry -> Exercise Selection -> Instructions -> Practice -> Completion -> Reflection` for the orienting exercise
+## Recent Results
 
-The app persists the selected exercise, phrase (when used), settings, and recent session summaries locally.
+Recent results and reflections are saved locally on your device in this browser. They are not sent to a server by this app.
 
-## Runtime and tooling posture
+You can clear saved recent results from the **Recent results** area.
 
-- Package manager: `bun`
-- Recommended Node version for tooling/CI: `24.14.1`
-- Current build strategy:
-  - explicit Vite client minification with `oxc`
-  - explicit CSS minification with `lightningcss`
-  - lazy loading of the Phaser runtime from the launch shell
-  - lazy loading of exercise-stage presenter adapters inside the practice runtime
-  - a shell-owned preferences panel for low intensity, reduced motion, and gaze guidance
-  - shell-owned completion and reflection panels rendered outside the Phaser runtime
-  - family capability metadata drives instructions UI and reduced-motion guidance across practices
-  - a raised chunk warning limit that matches the current lazy-loaded runtime budget while follow-up refactors keep reducing the runtime payload
+## Run Locally
 
-## Scripts
+Soft Focus uses Bun.
 
-- `bun install`: install dependencies and maintain `bun.lock`.
-- `bun run dev`: start the local Vite app.
-- `bun run typecheck`: run the TypeScript compiler without emitting files.
-- `bun run smoke:test`: run focused TypeScript smoke validations for scene flow, persistence, and restart behavior.
-- `bun run e2e:install`: download the local Chromium binary for Playwright into `.playwright-browsers`.
-- `bun run e2e:test`: run the browser end-to-end coverage for breathing preset persistence, preferences persistence, reflection save/restart, and post-session return flow.
-- CI runs the same validation path on pushes and pull requests to `main`: `bun install --frozen-lockfile`, `bun run validate`, Playwright Chromium install, then `bun run e2e:test`.
-- `bun run build`: typecheck and produce a production bundle.
-- `bun run validate`: run broad validation across typecheck, smoke tests, and production build.
-
-## Manual Smoke Path
-
-1. Start the app with `bun run dev`.
-2. On the launch shell, confirm the DOM-first screen renders and the `Open Soft Focus` button is keyboard-focusable.
-3. Activate `Open Soft Focus` and confirm the Phaser practice runtime loads.
-4. Open the shell-owned `Preferences` panel and confirm low intensity, reduced motion, and gaze guidance can be adjusted there.
-5. On `Entry`, press `Choose your exercise` and confirm the app moves to `Exercise Selection`.
-6. On `Exercise Selection`, confirm the screen labels `Phrase anchor` as `Maintenance`, `Moving ball` as `Reset`, and shows `Integration / Reflection` as a calm note about the current closing step.
-
-### Phrase anchor path
-
-6. Choose `Phrase anchor`.
-7. On `Phrase`, enter a short phrase, verify invalid text disables the continue button, then continue.
-8. On `Instructions`, verify the saved phrase is shown and toggle `Low-intensity mode` and `Gaze guidance`.
-9. Also verify the `Reduced motion` preference is available and updates the guidance copy for gentler pacing.
-10. Start practice and verify the `Pause`, `Resume`, and `Stop` controls behave as expected.
-11. Allow one run to finish and confirm the app reaches a shell-owned completion panel with maintenance-oriented summary copy.
-12. Continue to reflection, confirm the shell-owned `Integration / Reflection` panel uses a maintenance-oriented prompt, enter a short note, and save.
-13. Confirm the app returns to `Phrase` with the previous phrase still available for the next round.
-
-### Moving-ball path
-
-14. Return to `Exercise Selection` and choose `Moving ball`.
-15. Confirm the app skips `Phrase` and moves directly to `Instructions`.
-16. On `Instructions`, verify the selected preset is shown, toggle `Low-intensity mode`, toggle `Reduced motion`, and switch between the available moving-ball sweep presets.
-17. Start practice and confirm the moving ball stays still during `Settle`, uses the selected sweep pattern only during the active practice phase, and pauses/resumes cleanly.
-18. Let one run finish or stop it early, continue through the shell-owned completion and reflection panels, confirm the copy stays reset-aware, save an optional note, and confirm restart returns to the moving-ball path with the selected preset still active.
-
-19. Reload the page and confirm the launch shell appears again, then reopen Soft Focus and confirm the selected exercise, phrase/settings where applicable, and the latest completed or stopped summary still appear after reload, while any in-progress practice state does not resume.
-
-### Breathing-reset path
-
-20. Return to `Exercise Selection` and choose `Breathing reset`.
-21. Confirm the app skips `Phrase` and moves directly to `Instructions`.
-22. On `Instructions`, confirm the screen frames the practice as a reset, shows a breathing-specific guidance block, and still lets you toggle `Low-intensity mode` and `Reduced motion`.
-23. Use the breathing preset selector to switch between `Gentle exhale (3 in / 4 out)`, `Long exhale (4 in / 6 out)`, `Coherent (5 in / 5 out)`, `Box (4 in / 4 hold / 4 out / 4 hold)`, and `Cyclic sighing (2 in / 1 top-up / 6 out)`, then confirm the breathing cue copy updates.
-24. Start practice and confirm the breathing presenter uses the selected visual rhythm during the active practice phase and pauses/resumes cleanly.
-25. Continue through the shell-owned completion and reflection panels, confirm the copy stays breathing-aware, and confirm you can either restart the same practice or choose another exercise from the shell panel without getting stuck.
-
-### Bilateral-rhythm path
-
-25. Return to `Exercise Selection` and choose `Bilateral rhythm`.
-26. Confirm the app skips `Phrase` and moves directly to `Instructions`.
-27. On `Instructions`, confirm the screen frames the practice as a reset, shows an alternating-rhythm guidance block, and still lets you toggle `Low-intensity mode` and `Reduced motion`.
-28. Start practice and confirm the presenter alternates left-right with a steady rhythm during the active practice phase and pauses/resumes cleanly.
-29. Continue through the shell-owned completion and reflection panels, confirm the copy stays rhythm-aware, save an optional note, and confirm restart returns to the bilateral-rhythm path without requiring a phrase.
-
-### Orienting path
-
-30. Return to `Exercise Selection` and choose `Orienting`.
-31. Confirm the app skips `Phrase` and moves directly to `Instructions`.
-32. On `Instructions`, confirm the screen frames the practice as a reset, shows an orienting guidance block, and still lets you toggle `Low-intensity mode` and `Reduced motion`.
-33. Start practice and confirm the presenter guides a wider orienting scan during the active practice phase and pauses/resumes cleanly.
-34. Continue through the shell-owned completion and reflection panels, confirm the copy stays orienting-aware, save an optional note, and confirm restart returns to the orienting path without requiring a phrase.
-
-## Validation Notes
-
-- `tests/fullFlowSmoke.ts` checks scene registration order, exercise-aware flow sequencing, practice control behavior, reflection save behavior, and reload persistence for both exercise paths.
-- `tests/sessionPersistence.ts` validates persistence sanitization and graceful storage failures.
-- `tests/sessionRestartLifecycle.ts` validates session restart behavior for completed and stopped rounds.
-- `e2e/breathing-reset.spec.ts` and `e2e/session-shell.spec.ts` validate the live shell around preferences, completion, reflection, and choose-another-exercise navigation.
+- `bun install`: install dependencies.
+- `bun run dev`: start the local development server.
+- `bun run build`: typecheck and create a production build.
+- `bun run preview`: preview the production build locally.
+- `bun run typecheck`: run TypeScript checks.
+- `bun run smoke:test`: run focused smoke checks.
+- `bun run validate`: run typecheck, smoke checks, and a production build.
+- `bun run e2e:install`: install the local Chromium browser used by Playwright.
+- `bun run e2e:test`: run Playwright end-to-end tests.
