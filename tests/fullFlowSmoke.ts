@@ -10,6 +10,7 @@ import { getExerciseStartScene } from '../src/practice/exercises.ts';
 import { breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
+import { resolveMovingBallStagePresenterLayout } from '../src/practice/stagePresenters/movingBallStagePresenter.ts';
 import { initialSceneKey } from '../src/game/sceneKeys.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
@@ -127,7 +128,20 @@ const runExerciseBranchingScenario = (): void => {
   const variedMovingBallConfig = store.createPracticeConfig();
   assert(variedMovingBallConfig.movingBall?.presetId === movingBallPresetIds.multiHeight, 'expected multi-height preset selection to carry into practice config');
   assert(variedMovingBallConfig.movingBall?.laneHeights.length === 3, 'expected moving-ball config to expose multi-height lanes for the multi-height preset');
+  assert(variedMovingBallConfig.movingBall?.laneHeights[0] === 0.78, 'expected multi-height preset to begin in a lower visual lane');
+  assert(variedMovingBallConfig.movingBall?.laneHeights[1] === 0.5, 'expected multi-height preset to include a middle visual lane');
+  assert(variedMovingBallConfig.movingBall?.laneHeights[2] === 0.22, 'expected multi-height preset to include an eye-level visual lane');
+  assert(variedMovingBallConfig.movingBall?.laneBandHeight === 260, 'expected multi-height preset to use a taller vertical band');
   assert(variedMovingBallConfig.movingBall?.pattern === 'multi-height-sweep', 'expected moving-ball config to expose multi-height motion metadata');
+  const reducedMotionMultiHeightLayout = resolveMovingBallStagePresenterLayout({
+    width: 640,
+    laneBandHeight: variedMovingBallConfig.movingBall?.laneBandHeight ?? 0,
+    cycleMs: variedMovingBallConfig.movingBall?.cycleMs ?? 0,
+    radius: variedMovingBallConfig.movingBall?.radius ?? 0,
+    reducedMotion: variedMovingBallConfig.reducedMotion.policy,
+  });
+  assert(reducedMotionMultiHeightLayout.laneBandHeight < 260, 'expected reduced motion to shorten the taller multi-height vertical band');
+  assert(reducedMotionMultiHeightLayout.laneBandHeight === 202.8, 'expected reduced motion to apply the same amplitude scale vertically');
   assert(variedMovingBallConfig.copy.reflectionPrompt.includes('settle, reset'), 'expected reset reflection prompt to stay phase-aware');
 
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
@@ -195,6 +209,8 @@ const runExerciseBranchingScenario = (): void => {
   const bilateralRhythmConfig = store.createPracticeConfig();
   assert(bilateralRhythmConfig.stagePresenter.key === 'bilateral-rhythm', 'expected bilateral rhythm config to resolve the bilateral-rhythm presenter');
   assert(bilateralRhythmConfig.capabilities.auxiliaryControl.kind === 'info', 'expected bilateral rhythm config to declare an info auxiliary control');
+  assert(bilateralRhythmConfig.capabilities.auxiliaryControl.description.includes('visual left-right rhythm'), 'expected bilateral rhythm guidance to clarify the visual cue');
+  assert(bilateralRhythmConfig.phases[1]?.copy.includes('No sound is used'), 'expected bilateral rhythm active copy to clarify that sound is not used');
   assert(bilateralRhythmConfig.display.phraseText === 'Follow the alternating rhythm softly', 'expected bilateral rhythm to expose rhythm-specific display metadata');
   assert(bilateralRhythmConfig.copy.reflectionPrompt.includes('left-right rhythm'), 'expected bilateral rhythm reflection prompt to stay rhythm-aware');
 

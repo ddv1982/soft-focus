@@ -86,13 +86,13 @@ export const movingBallPresetCatalog: readonly MovingBallPresetDefinition[] = [
   {
     id: movingBallPresetIds.multiHeight,
     title: 'Multi-height sweep',
-    summary: 'A gentle reset that glides through low, middle, and high lanes.',
-    activeCopy: 'Follow the ball softly as it rises and settles through different heights without forcing precision.',
+    summary: 'A gentle reset that glides through lower, middle, and eye-level lanes.',
+    activeCopy: 'Follow the ball softly through the lower, middle, and eye-level lanes without forcing precision.',
     pattern: 'multi-height-sweep',
-    laneHeights: [0.34, 0.5, 0.66],
+    laneHeights: [0.78, 0.5, 0.22],
     cycleMs: 2400,
     lowIntensityCycleMs: 3200,
-    laneBandHeight: 136,
+    laneBandHeight: 260,
     radius: 14,
   },
   {

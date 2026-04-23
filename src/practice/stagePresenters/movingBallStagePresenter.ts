@@ -14,22 +14,59 @@ interface CreateMovingBallStagePresenterOptions {
   movingBall: NonNullable<PracticeConfig['movingBall']>;
 }
 
-export const createMovingBallStagePresenter = ({
-  scene,
-  x,
-  y,
+interface ResolveMovingBallStagePresenterLayoutOptions {
+  width: number;
+  laneBandHeight: number;
+  cycleMs: number;
+  radius: number;
+  reducedMotion: PracticeReducedMotionPolicy;
+}
+
+export const resolveMovingBallStagePresenterLayout = ({
   width,
-  lowIntensity,
+  laneBandHeight,
+  cycleMs,
+  radius,
   reducedMotion,
-  movingBall,
-}: CreateMovingBallStagePresenterOptions): PracticeStagePresenterController => createMovingBallGuidance({
-  scene,
-  x,
-  y,
+}: ResolveMovingBallStagePresenterLayoutOptions): {
+  width: number;
+  laneBandHeight: number;
+  cycleMs: number;
+  radius: number;
+} => ({
   width: Math.max(180, width * reducedMotion.amplitudeScale),
-  laneBandHeight: movingBall.laneBandHeight,
-  laneHeights: movingBall.laneHeights,
-  cycleMs: Math.round(movingBall.cycleMs * reducedMotion.cycleMultiplier),
-  radius: Math.max(10, movingBall.radius * reducedMotion.amplitudeScale),
-  lowIntensity,
+  laneBandHeight: laneBandHeight * reducedMotion.amplitudeScale,
+  cycleMs: Math.round(cycleMs * reducedMotion.cycleMultiplier),
+  radius: Math.max(10, radius * reducedMotion.amplitudeScale),
 });
+
+export const createMovingBallStagePresenter = (options: CreateMovingBallStagePresenterOptions): PracticeStagePresenterController => {
+  const {
+    scene,
+    x,
+    y,
+    width,
+    lowIntensity,
+    reducedMotion,
+    movingBall,
+  } = options;
+  const layout = resolveMovingBallStagePresenterLayout({
+    width,
+    laneBandHeight: movingBall.laneBandHeight,
+    cycleMs: movingBall.cycleMs,
+    radius: movingBall.radius,
+    reducedMotion,
+  });
+
+  return createMovingBallGuidance({
+    scene,
+    x,
+    y,
+    lowIntensity,
+    width: layout.width,
+    laneBandHeight: layout.laneBandHeight,
+    laneHeights: movingBall.laneHeights,
+    cycleMs: layout.cycleMs,
+    radius: layout.radius,
+  });
+};

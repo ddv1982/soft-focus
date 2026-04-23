@@ -423,7 +423,7 @@ const createBilateralRhythmFamilyConfig = ({
     movingBall: null,
     breathingReset: null,
     copy: createSharedCopy({
-      instructionsSubtitle: 'Follow a gentle left-right rhythm, keep the pace light, and choose the calmer timing if you need less stimulation.',
+      instructionsSubtitle: 'Follow a gentle visual left-right rhythm, or pair it with your own soft left-right tapping. This practice does not use sound.',
       instructionsSelectionLabel: 'Selected reset practice',
       expectationsTitle: 'What to expect in this reset round',
       completionNote: 'Continue when you are ready to note what helped the rhythm feel easier to follow.',
@@ -443,7 +443,7 @@ const createBilateralRhythmFamilyConfig = ({
       {
         key: 'phrase',
         label: 'Alternating rhythm',
-        copy: 'Follow the left-right rhythm softly and let the pace stay unforced.',
+        copy: 'Follow the visible left-right pulse softly, or tap along gently if that feels easier. No sound is used.',
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },
@@ -465,7 +465,7 @@ const createBilateralRhythmFamilyConfig = ({
     capabilities: createCapabilities({
       kind: 'info',
       label: 'Alternating rhythm',
-      description: 'This reset uses a left-right rhythm. Let the shift from side to side feel steady and light instead of quick or exact.',
+      description: 'This reset uses a visual left-right rhythm, with optional self-tapping if you want a physical cue. It does not use sound.',
     }, reducedMotion),
     reducedMotion: createReducedMotionConfig(settings.reducedMotionEnabled, reducedMotion),
   };
