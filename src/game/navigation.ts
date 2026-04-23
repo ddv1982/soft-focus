@@ -53,14 +53,19 @@ const assertRegisteredSceneKey = (scene: Phaser.Scene, sceneKey: SceneKey): void
 
 export const navigateToScene = (scene: Phaser.Scene, request: NavigationRequest): void => {
   assertRegisteredSceneKey(scene, request.to);
+  const game = scene.game as { ensureSceneRegistered?: (sceneKey: SceneKey) => Promise<void> };
 
-  const sessionStore = scene.registry.get(sessionStoreRegistryKey);
+  void (async () => {
+    await game.ensureSceneRegistered?.(request.to);
 
-  if (sessionStore instanceof SessionStore) {
-    sessionStore.updateCurrentScene(request.to);
-  }
+    const sessionStore = scene.registry.get(sessionStoreRegistryKey);
 
-  scene.scene.start(request.to, request.data);
+    if (sessionStore instanceof SessionStore) {
+      sessionStore.updateCurrentScene(request.to);
+    }
+
+    scene.scene.start(request.to, request.data);
+  })();
 };
 
 export const navigateForward = (scene: Phaser.Scene, currentSceneKey: SceneKey, data?: object): SceneKey | null => {

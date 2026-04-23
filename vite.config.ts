@@ -13,5 +13,18 @@ export default defineConfig({
     minify: 'oxc',
     cssMinify: 'lightningcss',
     chunkSizeWarningLimit: 1600,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'phaser',
+              test: /node_modules[\\/]phaser/,
+              priority: 20,
+            },
+          ],
+        },
+      },
+    },
   },
 });
