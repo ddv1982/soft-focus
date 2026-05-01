@@ -30,20 +30,22 @@ interface PersistedSessionState {
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 const sanitizeSettings = (value: unknown): PracticeSettings => {
+  const defaults = createDefaultPracticeSettings();
+
   if (!isRecord(value)) {
-    return createDefaultPracticeSettings();
+    return defaults;
   }
 
   return {
-    lowIntensityMode: value.lowIntensityMode === true,
-    reducedMotionEnabled: value.reducedMotionEnabled === true,
-    gazeGuidanceEnabled: value.gazeGuidanceEnabled === true,
+    lowIntensityMode: typeof value.lowIntensityMode === 'boolean' ? value.lowIntensityMode : defaults.lowIntensityMode,
+    reducedMotionEnabled: typeof value.reducedMotionEnabled === 'boolean' ? value.reducedMotionEnabled : defaults.reducedMotionEnabled,
+    gazeGuidanceEnabled: typeof value.gazeGuidanceEnabled === 'boolean' ? value.gazeGuidanceEnabled : defaults.gazeGuidanceEnabled,
     movingBallPresetId: typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
       ? value.movingBallPresetId
-      : createDefaultPracticeSettings().movingBallPresetId,
+      : defaults.movingBallPresetId,
     breathingPresetId: typeof value.breathingPresetId === 'string' && isBreathingPresetId(value.breathingPresetId)
       ? value.breathingPresetId
-      : createDefaultPracticeSettings().breathingPresetId,
+      : defaults.breathingPresetId,
   };
 };
 
@@ -51,6 +53,15 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
   if (!isRecord(value)) {
     return null;
   }
+
+  const durationSeconds = value.durationSeconds;
+  const hasValidDuration = durationSeconds === null
+    || (
+      typeof durationSeconds === 'number'
+      && Number.isFinite(durationSeconds)
+      && durationSeconds >= 0
+      && Number.isInteger(durationSeconds)
+    );
 
   if (
     typeof value.id !== 'string'
@@ -60,7 +71,7 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
     || !isSceneKey(value.sceneKey)
     || typeof value.startedAt !== 'string'
     || typeof value.completedAt !== 'string'
-    || (value.durationSeconds !== null && typeof value.durationSeconds !== 'number')
+    || !hasValidDuration
   ) {
     return null;
   }
@@ -82,7 +93,7 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
     sceneKey: value.sceneKey,
     startedAt: value.startedAt,
     completedAt: value.completedAt,
-    durationSeconds: value.durationSeconds,
+    durationSeconds: durationSeconds as number | null,
     reflection: typeof value.reflection === 'string' ? normalizeReflection(value.reflection) : '',
   };
 };

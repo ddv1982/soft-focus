@@ -27,7 +27,7 @@ export const createGazeStagePresenter = ({
     scene,
     x,
     y,
-    width: width * reducedMotion.amplitudeScale,
+    width: Math.max(240, width * (reducedMotion.amplitudeScale || 1)),
     lowIntensity: lowIntensity || reducedMotion.amplitudeScale === 0,
     prompt,
   });

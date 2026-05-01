@@ -72,8 +72,11 @@ export const mountSetupShell = ({
 
   let currentSceneKey: SetupScreenKey = sceneKeys.entry;
   let phraseDraft = game.sessionStore.getState().phrase;
+  let setupNavigationToken = 0;
+  let practiceStartInFlight = false;
 
   const showSetup = (sceneKey: SetupSceneKey): void => {
+    setupNavigationToken += 1;
     currentSceneKey = sceneKey;
     stopActiveScenes(game);
     parent.classList.add('app-runtime-shell--setup');
@@ -84,6 +87,7 @@ export const mountSetupShell = ({
   };
 
   const showPracticeRuntime = (): void => {
+    setupNavigationToken += 1;
     root.hidden = true;
     parent.classList.remove('app-runtime-shell--setup');
     runtimeHost.classList.remove('app-shell__runtime--setup');
@@ -100,6 +104,7 @@ export const mountSetupShell = ({
   };
 
   const goToHistory = (): void => {
+    setupNavigationToken += 1;
     currentSceneKey = 'history';
     stopActiveScenes(game);
     parent.classList.add('app-runtime-shell--setup');
@@ -138,10 +143,41 @@ export const mountSetupShell = ({
   };
 
   const startPractice = async (): Promise<void> => {
-    const practiceConfig = game.sessionStore.createPracticeConfig();
-    showPracticeRuntime();
-    await game.ensureSceneRegistered(sceneKeys.practice);
-    game.scene.start(sceneKeys.practice, { practiceConfig });
+    if (practiceStartInFlight) {
+      return;
+    }
+
+    const navigationToken = setupNavigationToken;
+
+    practiceStartInFlight = true;
+    renderInstructions();
+
+    try {
+      await game.ensureSceneRegistered(sceneKeys.practice);
+
+      if (navigationToken !== setupNavigationToken || currentSceneKey !== sceneKeys.instructions) {
+        return;
+      }
+
+      const practiceConfig = game.sessionStore.createPracticeConfig();
+      showPracticeRuntime();
+      game.scene.start(sceneKeys.practice, { practiceConfig });
+    } catch (error) {
+      if (navigationToken === setupNavigationToken && currentSceneKey === sceneKeys.instructions) {
+        parent.classList.add('app-runtime-shell--setup');
+        runtimeHost.classList.add('app-shell__runtime--setup');
+        root.hidden = false;
+        renderInstructions();
+      }
+
+      console.error('Soft Focus could not start practice.', error);
+    } finally {
+      practiceStartInFlight = false;
+
+      if (!root.hidden && currentSceneKey === sceneKeys.instructions) {
+        renderInstructions();
+      }
+    }
   };
 
   const renderEntry = (): void => {
@@ -433,7 +469,8 @@ export const mountSetupShell = ({
     const startButton = createButton('Start practice', primaryButtonClass, () => {
       void startPractice();
     });
-    startButton.disabled = !canStartPractice;
+    startButton.disabled = !canStartPractice || practiceStartInFlight;
+    startButton.textContent = practiceStartInFlight ? 'Starting practice…' : 'Start practice';
     startButton.dataset.autofocus = 'true';
     settings.append(startButton);
 
@@ -490,10 +527,17 @@ export const mountSetupShell = ({
       }
       game.sessionStore.updateCurrentScene(sceneKey);
       showSetup(sceneKey);
+      const navigationToken = setupNavigationToken;
       void game.ensureSceneRegistered(sceneKey).then(() => {
+        if (navigationToken !== setupNavigationToken || currentSceneKey !== sceneKey) {
+          return;
+        }
+
         stopActiveScenes(game, sceneKey);
         game.scene.start(sceneKey);
         game.sessionStore.updateCurrentScene(sceneKey);
+      }).catch((error) => {
+        console.error('Soft Focus could not show setup scene.', error);
       });
     }
   };

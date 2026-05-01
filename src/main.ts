@@ -93,6 +93,13 @@ const startSoftFocus = async (): Promise<void> => {
     mountSessionPanels(container, game);
 
     const refreshInputBounds = (): void => {
+      const width = runtimeHost.clientWidth || window.innerWidth;
+      const height = runtimeHost.clientHeight || window.innerHeight;
+
+      if (width > 0 && height > 0) {
+        game.scale.resize(width, height);
+      }
+
       game.scale.updateBounds();
     };
 
@@ -117,7 +124,7 @@ const startSoftFocus = async (): Promise<void> => {
     button.disabled = false;
     button.textContent = 'Open Soft Focus';
     statusText.textContent = 'Soft Focus could not load. Please try again.';
-    throw error;
+    console.error('Soft Focus failed to load.', error);
   });
 
   return bootPromise;

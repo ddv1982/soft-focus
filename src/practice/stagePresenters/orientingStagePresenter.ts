@@ -68,6 +68,8 @@ export const createOrientingStagePresenter = ({
             : x;
       const haloScale = stepIndex === 3 ? 1.4 * reducedMotion.amplitudeScale : 1;
 
+      scene.tweens.killTweensOf([anchor, focusHalo]);
+
       scene.tweens.add({
         targets: [anchor, focusHalo],
         x: targetX,
@@ -98,6 +100,10 @@ export const createOrientingStagePresenter = ({
     promptText.setAlpha(visible ? 1 : 0.32);
     guide.setAlpha(visible ? 0.24 : 0.08);
     stepTween.paused = !shouldRun;
+
+    if (!shouldRun) {
+      scene.tweens.killTweensOf([anchor, focusHalo]);
+    }
   };
 
   applyState();
@@ -113,6 +119,7 @@ export const createOrientingStagePresenter = ({
     },
     destroy(): void {
       stepTween.stop();
+      scene.tweens.killTweensOf([anchor, focusHalo]);
       guide.destroy();
       anchor.destroy();
       focusHalo.destroy();

@@ -378,16 +378,28 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     const loadId = ++this.presenterLoadId;
-    const nextPresenter = await loadPracticeStagePresenter({
-      scene: this,
-      practiceConfig: this.practiceConfig,
-      x,
-      y,
-      stageWidth,
-      readableWidth,
-      movingBallInset,
-      createIdleController: createIdlePracticeStagePresenter,
-    });
+    let nextPresenter: PracticeStagePresenterController;
+
+    try {
+      nextPresenter = await loadPracticeStagePresenter({
+        scene: this,
+        practiceConfig: this.practiceConfig,
+        x,
+        y,
+        stageWidth,
+        readableWidth,
+        movingBallInset,
+        createIdleController: createIdlePracticeStagePresenter,
+      });
+    } catch (error) {
+      console.error('Soft Focus could not load the practice stage presenter.', error);
+
+      if (this.shuttingDown || loadId !== this.presenterLoadId) {
+        return;
+      }
+
+      nextPresenter = createIdlePracticeStagePresenter();
+    }
 
     if (this.shuttingDown || loadId !== this.presenterLoadId) {
       nextPresenter.destroy();

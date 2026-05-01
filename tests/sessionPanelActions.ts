@@ -1,5 +1,5 @@
 import { sceneKeys } from '../src/game/sceneKeys.ts';
-import { exerciseIds } from '../src/state/types.ts';
+import { exerciseIds, type ExerciseId } from '../src/state/types.ts';
 import {
   chooseAnotherExercise,
   continueToReflection,
@@ -7,13 +7,13 @@ import {
   saveReflectionAndRestart,
 } from '../src/shell/sessionPanelActions.ts';
 
-const assert = (condition: unknown, message: string): void => {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
-};
+}
 
-const createFakeGame = (selectedExercise = exerciseIds.breathingReset) => {
+const createFakeGame = (selectedExercise: ExerciseId = exerciseIds.breathingReset) => {
   const calls: {
     ensuredScenes: string[];
     prepared: number;

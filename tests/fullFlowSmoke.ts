@@ -15,11 +15,11 @@ import { initialSceneKey } from '../src/game/sceneKeys.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
 
-const assert = (condition: unknown, message: string): void => {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
-};
+}
 
 class MemoryStorage implements StorageLike {
   private readonly items = new Map<string, string>();
@@ -123,12 +123,15 @@ const runExerciseBranchingScenario = (): void => {
   store.setSelectedExercise(exerciseIds.movingBall);
   store.setLowIntensityMode(true);
   store.setReducedMotionEnabled(true);
+  store.setGazeGuidanceEnabled(true);
   store.setMovingBallPreset(movingBallPresetIds.steadyCenter);
 
   const movingBallConfig = store.createPracticeConfig();
   assert(getExerciseStartScene(exerciseIds.movingBall) === sceneKeys.instructions, 'expected moving-ball exercise to bypass phrase entry');
   assert(movingBallConfig.exercise.id === exerciseIds.movingBall, 'expected moving-ball config to reflect the selected exercise');
   assert(movingBallConfig.movingBall?.presetId === movingBallPresetIds.steadyCenter, 'expected moving-ball config to expose the selected steady preset');
+  assert(movingBallConfig.movingBall?.cycleMs === 3000, 'expected low-intensity moving-ball config to use the gentler preset speed');
+  assert(movingBallConfig.gazeGuidance.enabled === false, 'expected moving-ball practice to disable gaze guidance even when the global preference is on');
   assert(movingBallConfig.stagePresenter.key === 'moving-ball', 'expected moving-ball config to resolve the moving-ball presenter');
   assert(movingBallConfig.capabilities.auxiliaryControl.kind === 'selector', 'expected moving-ball config to declare a selector auxiliary control');
   assert(movingBallConfig.reducedMotion.enabled === true, 'expected moving-ball config to preserve the reduced-motion toggle');
@@ -182,12 +185,14 @@ const runExerciseBranchingScenario = (): void => {
   assert(breathingResetConfig.display.phraseText === 'Long exhale (4 in / 6 out)', 'expected breathing reset to expose breathing-specific display metadata');
   assert(breathingResetConfig.stagePresenter.inhaleMs === 4000, 'expected breathing reset config to use a four-second inhale cue');
   assert(breathingResetConfig.stagePresenter.exhaleMs === 6000, 'expected breathing reset config to use a six-second exhale cue');
+  assert(breathingResetConfig.reducedMotion.policy.cycleMultiplier === 1, 'expected reduced-motion breathing to preserve the displayed breath cadence');
   assert(breathingResetConfig.capabilities.auxiliaryControl.description.includes('4 in / 6 out'), 'expected breathing reset guidance to describe the inhale and exhale cue');
   assert(breathingResetConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected breathing reset instructions copy to stay reset-aware');
 
   store.setBreathingPreset(breathingPresetIds.gentleExhale);
   const gentlerBreathingResetConfig = store.createPracticeConfig();
   assert(gentlerBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected gentler breathing reset config to keep the breathing presenter');
+  assert(gentlerBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected gentler breathing reset config to declare an info auxiliary control');
   assert(gentlerBreathingResetConfig.stagePresenter.inhaleMs === 3000, 'expected gentle-exhale breathing reset to shorten the inhale cue');
   assert(gentlerBreathingResetConfig.stagePresenter.exhaleMs === 4000, 'expected gentle-exhale breathing reset to shorten the exhale cue');
   assert(gentlerBreathingResetConfig.display.phraseText === 'Gentle exhale (3 in / 4 out)', 'expected gentle-exhale breathing reset to expose the gentler cadence');
@@ -195,6 +200,8 @@ const runExerciseBranchingScenario = (): void => {
 
   store.setBreathingPreset(breathingPresetIds.coherent);
   const coherentBreathingResetConfig = store.createPracticeConfig();
+  assert(coherentBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected coherent breathing reset config to keep the breathing presenter');
+  assert(coherentBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected coherent breathing reset config to declare an info auxiliary control');
   assert(coherentBreathingResetConfig.stagePresenter.inhaleMs === 5000, 'expected coherent breathing reset to use a five-second inhale cue');
   assert(coherentBreathingResetConfig.stagePresenter.exhaleMs === 5000, 'expected coherent breathing reset to use a five-second exhale cue');
   assert(coherentBreathingResetConfig.display.phraseText === 'Coherent (5 in / 5 out)', 'expected coherent breathing reset to expose the balanced cadence');
@@ -202,6 +209,8 @@ const runExerciseBranchingScenario = (): void => {
 
   store.setBreathingPreset(breathingPresetIds.box);
   const boxBreathingResetConfig = store.createPracticeConfig();
+  assert(boxBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected box breathing reset config to keep the breathing presenter');
+  assert(boxBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected box breathing reset config to declare an info auxiliary control');
   assert(boxBreathingResetConfig.stagePresenter.inhaleMs === 4000, 'expected box breathing reset to use a four-second inhale cue');
   assert(boxBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 4000, 'expected box breathing reset to use a four-second inhale hold');
   assert(boxBreathingResetConfig.stagePresenter.exhaleMs === 4000, 'expected box breathing reset to use a four-second exhale cue');
@@ -211,6 +220,8 @@ const runExerciseBranchingScenario = (): void => {
 
   store.setBreathingPreset(breathingPresetIds.cyclicSighing);
   const cyclicSighingResetConfig = store.createPracticeConfig();
+  assert(cyclicSighingResetConfig.stagePresenter.key === 'breathing-reset', 'expected cyclic sighing reset config to keep the breathing presenter');
+  assert(cyclicSighingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected cyclic sighing reset config to declare an info auxiliary control');
   assert(cyclicSighingResetConfig.stagePresenter.inhaleMs === 2000, 'expected cyclic sighing reset to use a two-second first inhale cue');
   assert(cyclicSighingResetConfig.stagePresenter.inhaleTopUpMs === 1000, 'expected cyclic sighing reset to use a short top-up inhale');
   assert(cyclicSighingResetConfig.stagePresenter.exhaleMs === 6000, 'expected cyclic sighing reset to use a long exhale cue');

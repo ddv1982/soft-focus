@@ -30,7 +30,7 @@ const createSessionId = (): string => {
     return crypto.randomUUID();
   }
 
-  return `session-${Date.now()}`;
+  return `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
 export class SessionStore {
@@ -61,7 +61,15 @@ export class SessionStore {
   }
 
   setSelectedExercise(selectedExercise: ExerciseId): SessionState {
-    return this.patchState({ selectedExercise });
+    const shouldClearSession = Boolean(
+      this.state.currentSession
+      && this.state.currentSession.exerciseId !== selectedExercise,
+    );
+
+    return this.patchState({
+      selectedExercise,
+      ...(shouldClearSession ? { currentSession: null, practice: null } : {}),
+    });
   }
 
   subscribe(listener: SessionStoreListener): () => void {
@@ -110,15 +118,17 @@ export class SessionStore {
   }
 
   startPractice(practiceConfig: PracticeConfig): SessionState {
+    const initialPhase = practiceConfig.phases[0];
+
     return this.patchState({
       practice: {
         phrase: practiceConfig.phrase,
         lowIntensityEnabled: practiceConfig.lowIntensity.enabled,
         reducedMotionEnabled: practiceConfig.reducedMotion.enabled,
         gazeGuidanceEnabled: practiceConfig.gazeGuidance.enabled,
-        phase: 'settle',
+        phase: initialPhase?.key ?? 'settle',
         phaseIndex: 0,
-        secondsRemaining: practiceConfig.lowIntensity.settleSeconds,
+        secondsRemaining: initialPhase?.seconds ?? 0,
         paused: false,
         stopped: false,
       },

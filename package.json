@@ -9,13 +9,15 @@
   },
   "scripts": {
     "dev": "vite",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "smoke:test": "node --import tsx tests/fullFlowSmoke.ts && node --import tsx tests/sessionPersistence.ts && node --import tsx tests/sessionRestartLifecycle.ts && node --import tsx tests/sessionPanelActions.ts",
     "build": "bun run typecheck && vite build",
     "validate": "bun run typecheck && bun run smoke:test && vite build",
+    "validate:full": "bun run validate && bun run e2e:test",
     "preview": "vite preview",
     "e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install chromium",
-    "e2e:test": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright test"
+    "e2e:test": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright test",
+    "e2e": "bun run e2e:install && bun run e2e:test"
   },
   "dependencies": {
     "phaser": "^4.0.0"

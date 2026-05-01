@@ -18,20 +18,10 @@ interface PracticePhaseDefinition {
 
 const toMilliseconds = (seconds: number): number => Math.max(0, seconds * 1000);
 
-const getPhaseDefinitions = (practiceConfig: PracticeConfig): PracticePhaseDefinition[] => [
-  {
-    key: 'settle',
-    seconds: practiceConfig.lowIntensity.settleSeconds,
-  },
-  {
-    key: 'phrase',
-    seconds: practiceConfig.lowIntensity.practiceSeconds,
-  },
-  {
-    key: 'recovery',
-    seconds: practiceConfig.lowIntensity.recoverySeconds,
-  },
-];
+const getPhaseDefinitions = (practiceConfig: PracticeConfig): PracticePhaseDefinition[] => practiceConfig.phases.map(({ key, seconds }) => ({
+  key,
+  seconds,
+}));
 
 export class PracticeRunner {
   private readonly phases: PracticePhaseDefinition[];

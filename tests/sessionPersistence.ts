@@ -4,11 +4,11 @@ import { sceneKeys } from '../src/game/sceneKeys.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
 import { breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 
-const assert = (condition: unknown, message: string): void => {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
-};
+}
 
 class MemoryStorage implements StorageLike {
   private readonly items = new Map<string, string>();
@@ -171,9 +171,86 @@ const runInvalidSummarySceneKeyScenario = (): void => {
   assert(rehydratedState.recentSessionSummaries.length === 0, 'expected invalid recent summary scene keys to be dropped during rehydration');
 };
 
+const runPartialSettingsFallbackScenario = (): void => {
+  const storage = new MemoryStorage();
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.phraseAnchor,
+    phrase: 'steady phrase',
+    settings: {},
+    recentSessionSummaries: [],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.settings.lowIntensityMode === true, 'expected missing persisted low-intensity setting to preserve the app default');
+  assert(rehydratedState.settings.reducedMotionEnabled === false, 'expected missing persisted reduced-motion setting to preserve the app default');
+  assert(rehydratedState.settings.gazeGuidanceEnabled === false, 'expected missing persisted gaze-guidance setting to preserve the app default');
+  assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.steadyCenter, 'expected missing persisted moving-ball preset to preserve the app default');
+  assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.longExhale, 'expected missing persisted breathing preset to preserve the app default');
+};
+
+const runInvalidSummaryDurationScenario = (): void => {
+  const storage = new MemoryStorage();
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    phrase: 'steady phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [{
+      id: 'bad-duration',
+      exerciseId: exerciseIds.phraseAnchor,
+      phrase: 'steady phrase',
+      outcome: 'completed',
+      sceneKey: sceneKeys.completion,
+      startedAt: '2026-04-22T10:00:00.000Z',
+      completedAt: '2026-04-22T10:00:05.000Z',
+      durationSeconds: -5,
+    }],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.recentSessionSummaries.length === 0, 'expected invalid negative summary durations to be dropped during rehydration');
+};
+
+const runFractionalSummaryDurationScenario = (): void => {
+  const storage = new MemoryStorage();
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    phrase: 'steady phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [{
+      id: 'fractional-duration',
+      exerciseId: exerciseIds.phraseAnchor,
+      phrase: 'steady phrase',
+      outcome: 'completed',
+      sceneKey: sceneKeys.completion,
+      startedAt: '2026-04-22T10:00:00.000Z',
+      completedAt: '2026-04-22T10:00:05.000Z',
+      durationSeconds: 1.5,
+    }],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.recentSessionSummaries.length === 0, 'expected fractional summary durations to be dropped during rehydration');
+};
+
 runRehydrationScenario();
 runGracefulFailureScenario();
 runClearRecentSessionSummariesScenario();
 runInvalidSummarySceneKeyScenario();
+runPartialSettingsFallbackScenario();
+runInvalidSummaryDurationScenario();
+runFractionalSummaryDurationScenario();
 
 console.log('session persistence validation passed');

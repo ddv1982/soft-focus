@@ -185,7 +185,7 @@ const createMovingBallFamilyConfig = ({
     availablePresets: movingBallPresetCatalog.map(({ id, title, summary }) => ({ id, title, summary })),
     pattern: movingBallPreset.pattern,
     laneHeights: movingBallPreset.laneHeights,
-    cycleMs: movingBallPreset.cycleMs,
+    cycleMs: lowIntensity.enabled ? movingBallPreset.lowIntensityCycleMs : movingBallPreset.cycleMs,
     laneBandHeight: movingBallPreset.laneBandHeight,
     radius: movingBallPreset.radius,
   };
@@ -208,7 +208,7 @@ const createMovingBallFamilyConfig = ({
     expectations: defaultMovingBallExpectations,
     gazeGuidance: {
       ...defaultGazeGuidanceConfig,
-      enabled: settings.gazeGuidanceEnabled,
+      enabled: false,
       prompt: null,
     },
     movingBall,
@@ -296,8 +296,8 @@ const createBreathingResetFamilyConfig = ({
   };
   const reducedMotion = createReducedMotionPolicy({
     title: 'Softer breathing pulse',
-    description: 'Reduced motion keeps the visual cue smaller and only slightly slower so the breath pattern stays recognizable.',
-    cycleMultiplier: settings.reducedMotionEnabled ? 1.06 : 1,
+    description: 'Reduced motion keeps the visual cue smaller while preserving the selected breath cadence.',
+    cycleMultiplier: 1,
     amplitudeScale: settings.reducedMotionEnabled ? 0.84 : 1,
   });
   const display: PracticeDisplayConfig = {
