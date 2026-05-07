@@ -1,6 +1,7 @@
 import type { SoftFocusGame } from '../game/Game';
 import { sceneKeys, type SceneKey } from '../game/sceneKeys';
 import { getInstructionsBackScene } from '../game/navigation';
+import { reportOperatorError } from '../observability/operatorErrors';
 import { exerciseCatalog, getExerciseDefinition, getExerciseStartScene, upcomingExercisePhases, upcomingResetTools } from '../practice/exercises';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import {
@@ -170,7 +171,7 @@ export const mountSetupShell = ({
         renderInstructions();
       }
 
-      console.error('Soft Focus could not start practice.', error);
+      reportOperatorError('Soft Focus could not start practice.', error);
     } finally {
       practiceStartInFlight = false;
 
@@ -537,7 +538,7 @@ export const mountSetupShell = ({
         game.scene.start(sceneKey);
         game.sessionStore.updateCurrentScene(sceneKey);
       }).catch((error) => {
-        console.error('Soft Focus could not show setup scene.', error);
+        reportOperatorError('Soft Focus could not show setup scene.', error);
       });
     }
   };

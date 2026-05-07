@@ -3,6 +3,7 @@ import * as Phaser from 'phaser';
 import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
 import { sceneKeys } from '../game/sceneKeys';
+import { reportOperatorError } from '../observability/operatorErrors';
 import type { PracticeConfig, PracticePhaseDefinition } from '../practice/practiceConfig';
 import { PracticeRunner, type PracticeRunnerSnapshot } from '../practice/practiceRunner';
 import {
@@ -392,7 +393,7 @@ export class PracticeScene extends Phaser.Scene {
         createIdleController: createIdlePracticeStagePresenter,
       });
     } catch (error) {
-      console.error('Soft Focus could not load the practice stage presenter.', error);
+      reportOperatorError('Soft Focus could not load the practice stage presenter.', error);
 
       if (this.shuttingDown || loadId !== this.presenterLoadId) {
         return;

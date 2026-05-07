@@ -1,4 +1,5 @@
 import './styles.css';
+import { reportOperatorError } from './observability/operatorErrors';
 
 export {};
 
@@ -124,7 +125,7 @@ const startSoftFocus = async (): Promise<void> => {
     button.disabled = false;
     button.textContent = 'Open Soft Focus';
     statusText.textContent = 'Soft Focus could not load. Please try again.';
-    console.error('Soft Focus failed to load.', error);
+    reportOperatorError('Soft Focus failed to load.', error);
   });
 
   return bootPromise;

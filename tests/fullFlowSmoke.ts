@@ -13,6 +13,7 @@ import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { resolveMovingBallStagePresenterLayout } from '../src/practice/stagePresenters/movingBallStagePresenter.ts';
 import { initialSceneKey } from '../src/game/sceneKeys.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
+import { reportOperatorError } from '../src/observability/operatorErrors.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -311,10 +312,31 @@ const runBreathingSelectionReturnScenario = (): void => {
   assert(state.selectedExercise === exerciseIds.breathingReset, 'expected returning to exercise selection to preserve the last breathing selection');
 };
 
+const runOperatorErrorReportingScenario = (): void => {
+  const originalConsoleError = console.error;
+  const calls: unknown[][] = [];
+  const error = new Error('presenter import failed');
+
+  console.error = (...args: unknown[]): void => {
+    calls.push(args);
+  };
+
+  try {
+    reportOperatorError('Soft Focus could not load the practice stage presenter.', error);
+  } finally {
+    console.error = originalConsoleError;
+  }
+
+  assert(calls.length === 1, 'expected operator error reporting to emit one error-level report');
+  assert(calls[0]?.[0] === 'Soft Focus could not load the practice stage presenter.', 'expected operator error reporting to preserve the message');
+  assert(calls[0]?.[1] === error, 'expected operator error reporting to preserve the original error context');
+};
+
 assertSceneFlow();
 runPracticeControlsScenario();
 runExerciseBranchingScenario();
 runReflectionAndReloadScenario();
 runBreathingSelectionReturnScenario();
+runOperatorErrorReportingScenario();
 
 console.log('full guided flow smoke validation passed');
