@@ -10,7 +10,6 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
-import { renderOceanBackground } from '../ui/oceanBackground';
 import { uiTheme } from '../ui/theme';
 import { isValidPhrase, normalizePhrase, phraseMinLength } from '../state/types';
 
@@ -49,8 +48,6 @@ export class PhraseScene extends Phaser.Scene {
     const savedPhrase = sessionStore.getState().phrase;
     let draftPhrase = savedPhrase;
 
-    renderOceanBackground(this, { frame });
-
     createBackButton(this, {
       x: frame.contentX,
       y: frame.contentY + uiTheme.spacing.sm,
@@ -81,6 +78,7 @@ export class PhraseScene extends Phaser.Scene {
       y: cardTop,
       width: cardWidth,
       height: cardHeight,
+      alpha: 0.7,
     });
 
     const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, 'Choose a phrase that feels steady, simple, and easy to pair with a natural breath.', {

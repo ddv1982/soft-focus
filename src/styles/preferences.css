@@ -15,14 +15,14 @@
     min-width: 44px;
     min-height: 44px;
     padding: 12px 16px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--button-secondary-border);
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(16, 48, 64, 0.9), rgba(6, 24, 37, 0.86));
+    background: var(--button-secondary-bg);
     color: var(--text);
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 12px 30px rgba(1, 8, 14, 0.22);
+    box-shadow: var(--button-secondary-shadow);
     backdrop-filter: blur(16px);
     transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
   }
@@ -61,6 +61,50 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+  }
+
+  .preferences-shell__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .preferences-shell__theme-toggle {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--button-secondary-border);
+    border-radius: 18px;
+    background: var(--button-secondary-bg);
+    color: var(--text);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: var(--button-secondary-shadow);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  }
+
+  .preferences-shell__theme-toggle:hover {
+    border-color: rgba(155, 214, 223, 0.44);
+    transform: translateY(-1px);
+  }
+
+  .preferences-shell__theme-toggle:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .preferences-shell__theme-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .preferences-shell__theme-label {
+    font-size: 0.9rem;
   }
 
   .preferences-shell__eyebrow {
@@ -218,7 +262,7 @@
     padding: 10px 12px;
     border: 1px solid rgba(169, 219, 214, 0.28);
     border-radius: 16px;
-    background: rgba(4, 17, 29, 0.82);
+    background: var(--surface-control);
     color: var(--text);
     font: inherit;
     font-weight: 700;

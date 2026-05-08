@@ -54,9 +54,9 @@ export const createPhraseAnchorStagePresenter = ({
     .setStrokeStyle(2, accent, lowIntensity ? 0.2 : 0.34);
   const innerGlow = scene.add.circle(x, y, haloRadius * 0.68, accent, lowIntensity ? 0.06 : 0.1);
 
-  const phrasePanel = scene.add.rectangle(x, y, phraseCardWidth, 72, accent, lowIntensity ? 0.1 : 0.14)
+  const phrasePanel = scene.add.rectangle(x, y, phraseCardWidth, 72, accent, lowIntensity ? 0.06 : 0.08)
     .setOrigin(0.5)
-    .setStrokeStyle(1, border, lowIntensity ? 0.18 : 0.28);
+    .setStrokeStyle(1, border, lowIntensity ? 0.14 : 0.2);
 
   const phrasePreview = scene.add.text(x, y - 10, `“${displayPhrase}”`, {
     color: uiTheme.colors.foam,
@@ -137,7 +137,7 @@ export const createPhraseAnchorStagePresenter = ({
     title.setAlpha(visibleAlpha);
     halo.setAlpha(active ? (lowIntensity ? 0.5 : 0.74) : 0.16);
     innerGlow.setAlpha(active ? (lowIntensity ? 0.24 : 0.36) : 0.1);
-    phrasePanel.setAlpha(active ? (lowIntensity ? 0.55 : 0.78) : 0.2);
+    phrasePanel.setAlpha(active ? (lowIntensity ? 0.36 : 0.52) : 0.14);
     phrasePreview.setAlpha(active ? 1 : 0.42);
     phraseHint.setAlpha(active ? 0.72 : 0.26);
     breathLabel.setAlpha(active ? 0.9 : 0.28);

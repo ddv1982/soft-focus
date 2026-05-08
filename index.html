@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Soft Focus</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem('soft-focus/theme-preference');
+          const theme = storedTheme === 'light' || storedTheme === 'dark'
+            ? storedTheme
+            : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch {
+          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -7,7 +7,6 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
-import { renderOceanBackground } from '../ui/oceanBackground';
 import { uiTheme } from '../ui/theme';
 
 const introCopy = [
@@ -30,8 +29,6 @@ export class EntryScene extends Phaser.Scene {
     });
     const contentCenterX = frame.contentX + (frame.contentWidth / 2);
     const cardWidth = clampContentWidth(frame.contentWidth);
-
-    renderOceanBackground(this, { frame });
 
     const eyebrow = this.add.text(contentCenterX, frame.contentY, 'Soft Focus', {
       color: uiTheme.colors.accent,

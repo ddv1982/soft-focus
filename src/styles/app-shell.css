@@ -8,7 +8,7 @@
     position: relative;
     width: 100vw;
     min-height: 100vh;
-    background: linear-gradient(180deg, rgba(155, 214, 223, 0.08), rgba(234, 220, 195, 0.05));
+    background: transparent;
   }
 
   .app-shell {
@@ -25,7 +25,7 @@
   .session-overlay__panel,
   .preferences-shell__panel {
     border: 1px solid var(--line);
-    background: linear-gradient(180deg, rgba(13, 42, 58, 0.88), rgba(7, 25, 39, 0.78));
+    background: var(--surface-panel);
     box-shadow: var(--shadow-wellness-glass);
     backdrop-filter: blur(22px) saturate(1.15);
   }
@@ -87,23 +87,26 @@
 
   .wellness-button,
   .app-shell__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 44px;
     min-height: 44px;
     padding: 14px 18px;
-    border: 1px solid rgba(248, 255, 255, 0.16);
+    border: 1px solid var(--button-primary-border);
     border-radius: 20px;
-    background: linear-gradient(180deg, #9ce4ea, #6fc7d1 52%, #4caab7);
-    color: #062331;
+    background: var(--button-primary-bg);
+    color: var(--button-text);
     font: inherit;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: var(--shadow-wellness-button);
+    box-shadow: var(--button-primary-shadow);
     transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
   }
 
   .wellness-button:hover,
   .app-shell__button:hover {
-    filter: brightness(1.04);
+    filter: brightness(1.05) saturate(1.04);
     transform: translateY(-1px);
   }
 
@@ -124,8 +127,9 @@
   }
 
   .app-shell__button:disabled {
-    cursor: wait;
-    opacity: 0.7;
+    cursor: not-allowed;
+    filter: grayscale(0.18);
+    opacity: 0.56;
   }
 
   .app-shell__status {

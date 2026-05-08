@@ -30,9 +30,21 @@ export class PracticeRunner {
 
   private timer: PracticeTimer | null;
 
-  constructor(practiceConfig: PracticeConfig) {
+  constructor(practiceConfig: PracticeConfig, initialSnapshot?: PracticeRunnerSnapshot) {
     this.phases = getPhaseDefinitions(practiceConfig);
-    this.timer = this.phases[0] ? new PracticeTimer(toMilliseconds(this.phases[0].seconds)) : null;
+    this.phaseIndex = initialSnapshot && initialSnapshot.phaseIndex >= 0
+      ? Math.min(initialSnapshot.phaseIndex, this.phases.length)
+      : 0;
+
+    if (this.phaseIndex >= this.phases.length || initialSnapshot?.complete) {
+      this.timer = null;
+      return;
+    }
+
+    this.timer = new PracticeTimer(
+      initialSnapshot ? toMilliseconds(initialSnapshot.secondsRemaining) : toMilliseconds(this.phases[this.phaseIndex].seconds),
+      Boolean(initialSnapshot?.paused),
+    );
   }
 
   tick(deltaMs: number): PracticeRunnerSnapshot {

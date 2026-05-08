@@ -34,6 +34,7 @@ interface PracticeFamilyBuilderInput {
 }
 
 const reducedMotionLabel = 'Reduced motion';
+const minimalPracticeSubtitle = 'Pause or stop anytime.';
 
 const createSharedCopy = (copy: PracticeCopyConfig): PracticeCopyConfig => ({
   ...copy,
@@ -86,7 +87,7 @@ const createPhraseAnchorFamilyConfig = ({
   });
   const display: PracticeDisplayConfig = {
     title: exercise.title,
-    subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
+    subtitle: minimalPracticeSubtitle,
     phraseText: phrase,
     pausedOverlayCopy: 'Resume when the phrase feels easy to return to.',
     completeCopy: 'This round is complete.',
@@ -119,7 +120,7 @@ const createPhraseAnchorFamilyConfig = ({
       {
         key: 'settle',
         label: 'Settle',
-        copy: 'Let your attention settle before the phrase begins. Feel one easy point of contact with the chair, floor, or breath.',
+        copy: 'Settle on one easy point of contact.',
         seconds: lowIntensity.settleSeconds,
         activatesStagePresenter: false,
       },
@@ -127,15 +128,15 @@ const createPhraseAnchorFamilyConfig = ({
         key: 'phrase',
         label: 'Phrase practice',
         copy: settings.gazeGuidanceEnabled
-          ? 'Notice wandering, return to the phrase softly, and keep the eyes easy.'
-          : 'Repeat the phrase lightly with an easy breath. Notice wandering, return, and soften the effort.',
+          ? 'Notice wandering. Return to the phrase softly. Keep eyes easy.'
+          : 'Repeat the phrase with an easy breath. Return when attention wanders.',
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },
       {
         key: 'recovery',
         label: 'Recovery',
-        copy: 'Ease off fully for a moment and let the practice fade into stillness.',
+        copy: 'Ease off and let the practice fade.',
         seconds: lowIntensity.recoverySeconds,
         activatesStagePresenter: false,
       },
@@ -192,7 +193,7 @@ const createMovingBallFamilyConfig = ({
 
   const display: PracticeDisplayConfig = {
     title: exercise.title,
-    subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
+    subtitle: minimalPracticeSubtitle,
     phraseText: movingBallPreset.title,
     pausedOverlayCopy: `Resume when the ${movingBallPreset.title.toLowerCase()} feels easy to follow again.`,
     completeCopy: 'This round is complete.',
@@ -227,7 +228,7 @@ const createMovingBallFamilyConfig = ({
       {
         key: 'settle',
         label: 'Settle',
-        copy: 'Let your attention settle before the first sweep begins. Keep the effort light.',
+        copy: 'Settle before the first sweep.',
         seconds: lowIntensity.settleSeconds,
         activatesStagePresenter: false,
       },
@@ -241,7 +242,7 @@ const createMovingBallFamilyConfig = ({
       {
         key: 'recovery',
         label: 'Recovery',
-        copy: 'Ease off fully for a moment and let the practice fade into stillness.',
+        copy: 'Ease off and let the practice fade.',
         seconds: lowIntensity.recoverySeconds,
         activatesStagePresenter: false,
       },
@@ -302,7 +303,7 @@ const createBreathingResetFamilyConfig = ({
   });
   const display: PracticeDisplayConfig = {
     title: exercise.title,
-    subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
+    subtitle: minimalPracticeSubtitle,
     phraseText: `${breathingPreset.title} (${cadenceLabel})`,
     pausedOverlayCopy: 'Resume when the breathing rhythm feels easy to follow again.',
     completeCopy: 'This round is complete.',
@@ -343,7 +344,7 @@ const createBreathingResetFamilyConfig = ({
       {
         key: 'settle',
         label: 'Settle',
-        copy: 'Let your breathing settle before you follow the next gentle cycle.',
+        copy: 'Let your breathing settle.',
         seconds: lowIntensity.settleSeconds,
         activatesStagePresenter: false,
       },
@@ -357,7 +358,7 @@ const createBreathingResetFamilyConfig = ({
       {
         key: 'recovery',
         label: 'Recovery',
-        copy: 'Ease off fully for a moment and let your breathing find its own pace again.',
+        copy: 'Ease off and let breathing find its pace.',
         seconds: lowIntensity.recoverySeconds,
         activatesStagePresenter: false,
       },
@@ -403,7 +404,7 @@ const createBilateralRhythmFamilyConfig = ({
   });
   const display: PracticeDisplayConfig = {
     title: exercise.title,
-    subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
+    subtitle: minimalPracticeSubtitle,
     phraseText: 'Follow the alternating rhythm softly',
     pausedOverlayCopy: 'Resume when the alternating rhythm feels easy to follow again.',
     completeCopy: 'This round is complete.',
@@ -438,21 +439,21 @@ const createBilateralRhythmFamilyConfig = ({
       {
         key: 'settle',
         label: 'Settle',
-        copy: 'Let your attention settle before the alternating rhythm begins.',
+        copy: 'Settle before the rhythm begins.',
         seconds: lowIntensity.settleSeconds,
         activatesStagePresenter: false,
       },
       {
         key: 'phrase',
         label: 'Alternating rhythm',
-        copy: 'Follow the visible left-right pulse softly, or tap along gently if that feels easier. No sound is used.',
+        copy: 'Follow the left-right pulse softly. Tap along if helpful. No sound is used.',
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },
       {
         key: 'recovery',
         label: 'Recovery',
-        copy: 'Ease off fully for a moment and let the rhythm fade into stillness.',
+        copy: 'Ease off and let the rhythm fade.',
         seconds: lowIntensity.recoverySeconds,
         activatesStagePresenter: false,
       },
@@ -487,7 +488,7 @@ const createOrientingFamilyConfig = ({
   });
   const display: PracticeDisplayConfig = {
     title: exercise.title,
-    subtitle: 'Stay with a calm pace. You can pause, resume, or stop without losing control of the session.',
+    subtitle: minimalPracticeSubtitle,
     phraseText: 'Notice the wider space softly',
     pausedOverlayCopy: 'Resume when the orienting scan feels easy to follow again.',
     completeCopy: 'This round is complete.',
@@ -522,21 +523,21 @@ const createOrientingFamilyConfig = ({
       {
         key: 'settle',
         label: 'Settle',
-        copy: 'Let your attention settle before you begin the wider orienting scan.',
+        copy: 'Settle before the wider scan.',
         seconds: lowIntensity.settleSeconds,
         activatesStagePresenter: false,
       },
       {
         key: 'phrase',
         label: 'Orienting scan',
-        copy: 'Follow the orienting prompt softly and notice any part of the wider space that feels easier to rest with.',
+        copy: 'Follow the prompt softly. Rest with what feels easier.',
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },
       {
         key: 'recovery',
         label: 'Recovery',
-        copy: 'Ease off fully for a moment and let the room settle back around you.',
+        copy: 'Ease off and let the room settle.',
         seconds: lowIntensity.recoverySeconds,
         activatesStagePresenter: false,
       },

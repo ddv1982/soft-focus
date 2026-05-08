@@ -30,13 +30,13 @@ export const createPrimaryButton = (
   const background = scene.add
     .rectangle(0, 0, width, height, hexToNumber(uiTheme.colors.accent))
     .setOrigin(0.5)
-    .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.8);
+    .setStrokeStyle(2, hexToNumber(uiTheme.colors.foam), 0.34);
 
   const label = scene.add.text(0, 0, options.label, {
     color: uiTheme.colors.accentText,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${uiTheme.typography.buttonSize}px`,
-    fontStyle: '600',
+    fontStyle: '700',
     align: 'center',
   });
   label.setOrigin(0.5);
@@ -47,6 +47,14 @@ export const createPrimaryButton = (
   container.setData(primaryButtonEnabledDataKey, true);
 
   background.setInteractive({ useHandCursor: true });
+
+  background.on('pointerover', () => {
+    if (!container.getData(primaryButtonEnabledDataKey)) {
+      return;
+    }
+
+    background.setFillStyle(hexToNumber(uiTheme.colors.horizon));
+  });
 
   background.on('pointerdown', () => {
     if (!container.getData(primaryButtonEnabledDataKey)) {
@@ -80,4 +88,5 @@ export const setPrimaryButtonEnabled = (button: Phaser.GameObjects.Container, en
   button.setDataEnabled();
   button.setData(primaryButtonEnabledDataKey, enabled);
   button.setAlpha(enabled ? 1 : 0.5);
+  button.setScale(1);
 };

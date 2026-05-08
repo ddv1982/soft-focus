@@ -29,7 +29,7 @@ export const createBilateralRhythmStagePresenter = ({
   const radius = (lowIntensity ? 20 : 23) * Math.max(0.88, reducedMotion.amplitudeScale);
   const glowRadius = radius * 1.85;
 
-  const guide = scene.add.rectangle(x, y, Math.min(width, offset * 2.6), 3, border, 0.28).setOrigin(0.5);
+  const guide = scene.add.rectangle(x, y, Math.min(width, offset * 2.6), 3, border, 0.18).setOrigin(0.5);
   const leftGlow = scene.add.circle(x - offset, y, glowRadius, accent, 0.08);
   const rightGlow = scene.add.circle(x + offset, y, glowRadius, accent, 0.08);
   const leftMarker = scene.add.circle(x - offset, y, radius, accent, lowIntensity ? 0.28 : 0.36);
@@ -87,7 +87,7 @@ export const createBilateralRhythmStagePresenter = ({
     rhythmLabel.setAlpha(visible ? 0.88 : 0.3);
     leftLabel.setAlpha(visible ? 1 : 0.32);
     rightLabel.setAlpha(visible ? 1 : 0.32);
-    guide.setAlpha(visible ? 0.32 : 0.08);
+    guide.setAlpha(visible ? 0.2 : 0.06);
     tween.paused = !shouldRun;
 
     if (!shouldRun) {

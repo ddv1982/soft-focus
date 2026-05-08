@@ -10,7 +10,6 @@ import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } fr
 import { isValidPhrase } from '../state/types';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
-import { renderOceanBackground } from '../ui/oceanBackground';
 import { hexToNumber, uiTheme } from '../ui/theme';
 
 type SelectorOption = {
@@ -48,9 +47,9 @@ const createInfoBlock = (
   body.setOrigin(0, 0);
 
   const height = body.y + body.height + uiTheme.spacing.md;
-  const background = scene.add.rectangle(0, height / 2, width, height, surface)
+  const background = scene.add.rectangle(0, height / 2, width, height, surface, 0.5)
     .setOrigin(0.5)
-    .setStrokeStyle(1, border, 0.9);
+    .setStrokeStyle(1, border, 0.42);
 
   const container = scene.add.container(x, y, [background, title, body]);
   container.setSize(width, height);
@@ -92,14 +91,14 @@ const createToggle = (
   });
   descriptionText.setOrigin(0, 0);
 
-  const track = scene.add.rectangle((width / 2) - uiTheme.spacing.md - (toggleWidth / 2), 4, toggleWidth, toggleHeight, surface)
+  const track = scene.add.rectangle((width / 2) - uiTheme.spacing.md - (toggleWidth / 2), 4, toggleWidth, toggleHeight, surface, 0.56)
     .setOrigin(0.5)
-    .setStrokeStyle(1, border, 1);
+    .setStrokeStyle(1, border, 0.56);
 
   const knob = scene.add.circle(0, 4, 10, hexToNumber(uiTheme.colors.text));
 
   const refresh = (): void => {
-    track.setFillStyle(value ? accent : surface);
+    track.setFillStyle(value ? accent : surface, value ? 0.86 : 0.56);
     knob.setX((width / 2) - uiTheme.spacing.md - (value ? 14 : 34));
   };
 
@@ -153,9 +152,9 @@ const createOptionSelector = (
 
   const optionViews = options.map((option, index) => {
     const optionCenterY = labelText.height + uiTheme.spacing.sm + (index * (optionHeight + optionGap)) + (optionHeight / 2);
-    const background = scene.add.rectangle(0, optionCenterY, width, optionHeight, surface)
+    const background = scene.add.rectangle(0, optionCenterY, width, optionHeight, surface, 0.5)
       .setOrigin(0.5)
-      .setStrokeStyle(1, border, 0.9);
+      .setStrokeStyle(1, border, 0.42);
 
     const title = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY - 14, option.title, {
       color: uiTheme.colors.text,
@@ -190,8 +189,8 @@ const createOptionSelector = (
   const refresh = (): void => {
     optionViews.forEach(({ option, background, title, summary, indicator }) => {
       const selected = option.id === value;
-      background.setFillStyle(selected ? accent : surface, selected ? 0.2 : 1);
-      background.setStrokeStyle(1, selected ? accent : border, selected ? 1 : 0.9);
+      background.setFillStyle(selected ? accent : surface, selected ? 0.28 : 0.5);
+      background.setStrokeStyle(1, selected ? accent : border, selected ? 0.86 : 0.42);
       title.setColor(uiTheme.colors.text);
       summary.setColor(selected ? uiTheme.colors.text : uiTheme.colors.textMuted);
       indicator.setFillStyle(selected ? accent : border, selected ? 1 : 0.85);
@@ -235,8 +234,6 @@ export class InstructionsScene extends Phaser.Scene {
     let gazeGuidanceEnabled = savedState.settings.gazeGuidanceEnabled;
     const previewConfig = createPracticeConfigFromSettings(selectedExercise, phrase, savedState.settings);
 
-    renderOceanBackground(this, { frame });
-
     createBackButton(this, {
       x: frame.contentX,
       y: frame.contentY + uiTheme.spacing.sm,
@@ -267,6 +264,7 @@ export class InstructionsScene extends Phaser.Scene {
       y: cardTop,
       width: cardWidth,
       height: cardHeight,
+      alpha: 0.7,
     });
 
     const cardContent = this.add.container(card.x, card.y + sectionSpacing);

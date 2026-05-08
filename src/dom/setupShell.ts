@@ -295,7 +295,7 @@ export const mountSetupShell = ({
         const selected = game.sessionStore.getState().selectedExercise === exercise.id;
         const card = createElement('article', `rounded-3xl border p-5 transition motion-reduce:transition-none ${selected ? 'border-wellness-mist/70 bg-wellness-mist/10' : 'border-[var(--line)] bg-white/[0.04]'}`);
         card.append(
-          createElement('p', 'text-xl font-semibold text-wellness-foam', exercise.title),
+          createElement('p', 'text-lg font-semibold text-wellness-foam', exercise.title),
           createElement('p', 'mt-2 text-sm leading-6 text-[var(--text-muted)]', exercise.summary),
         );
         const button = createButton(`Start ${exercise.title}`, selected ? primaryButtonClass : secondaryButtonClass, () => {

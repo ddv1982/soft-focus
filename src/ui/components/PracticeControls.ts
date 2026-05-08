@@ -5,6 +5,7 @@ import { hexToNumber, uiTheme } from '../theme';
 export interface PracticeControls {
   container: Phaser.GameObjects.Container;
   setPaused(paused: boolean): void;
+  refreshTheme(paused: boolean): void;
 }
 
 export interface PracticeControlsLayout {
@@ -56,7 +57,7 @@ const createControlButton = (
   variant: 'primary' | 'secondary' = 'secondary',
 ): ControlButton => {
   const height = 48;
-  const shadow = scene.add.rectangle(0, 5, width - 8, height, uiTheme.colors.shadow, variant === 'primary' ? 0.26 : 0.16);
+  const shadow = scene.add.rectangle(0, 5, width - 8, height, uiTheme.colors.shadow, variant === 'primary' ? 0.18 : 0.08);
   shadow.setOrigin(0.5);
 
   const background = scene.add.rectangle(
@@ -65,12 +66,12 @@ const createControlButton = (
     width,
     height,
     hexToNumber(variant === 'primary' ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised),
-    variant === 'primary' ? 0.96 : 0.72,
+    variant === 'primary' ? 0.9 : 0.48,
   );
   background.setOrigin(0.5);
-  background.setStrokeStyle(1, hexToNumber(variant === 'primary' ? uiTheme.colors.foam : uiTheme.colors.border), variant === 'primary' ? 0.28 : 0.42);
+  background.setStrokeStyle(variant === 'primary' ? 2 : 1, hexToNumber(variant === 'primary' ? uiTheme.colors.foam : uiTheme.colors.border), variant === 'primary' ? 0.3 : 0.34);
 
-  const highlight = scene.add.rectangle(0, -((height / 2) - 1), width - 18, 1, hexToNumber(uiTheme.colors.foam), variant === 'primary' ? 0.34 : 0.16);
+  const highlight = scene.add.rectangle(0, -((height / 2) - 1), width - 18, 1, hexToNumber(uiTheme.colors.foam), variant === 'primary' ? 0.26 : 0.08);
   highlight.setOrigin(0.5);
 
   const text = scene.add.text(0, 0, label, {
@@ -88,10 +89,16 @@ const createControlButton = (
 
   background.on('pointerdown', () => {
     container.setScale(uiTheme.motion.pressScale);
+    background.setFillStyle(hexToNumber(variant === 'primary' ? uiTheme.colors.accentPressed : uiTheme.colors.surfaceMist), variant === 'primary' ? 0.94 : 0.6);
   });
   const resetState = (): void => {
     container.setScale(1);
+    background.setFillStyle(hexToNumber(variant === 'primary' ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised), variant === 'primary' ? 0.9 : 0.48);
   };
+
+  background.on('pointerover', () => {
+    background.setFillStyle(hexToNumber(variant === 'primary' ? uiTheme.colors.horizon : uiTheme.colors.surfaceMist), variant === 'primary' ? 0.94 : 0.6);
+  });
 
   background.on('pointerout', resetState);
 
@@ -152,6 +159,14 @@ export const createPracticeControls = ({
 
   return {
     container,
+    refreshTheme(_paused: boolean): void {
+      pauseButton.background.setFillStyle(hexToNumber(uiTheme.colors.accent), 0.9);
+      pauseButton.background.setStrokeStyle(2, hexToNumber(uiTheme.colors.foam), 0.3);
+      pauseButton.label.setColor(uiTheme.colors.accentText);
+      stopButton.background.setFillStyle(hexToNumber(uiTheme.colors.surfaceRaised), 0.48);
+      stopButton.background.setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.34);
+      stopButton.label.setColor(uiTheme.colors.text);
+    },
     setPaused(paused: boolean): void {
       pauseButton.label.setText(paused ? 'Resume' : 'Pause');
       pauseButton.setOnPress(() => {
@@ -162,10 +177,11 @@ export const createPracticeControls = ({
 
         onPause();
       });
-      pauseButton.background.setFillStyle(hexToNumber(paused ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised));
-      pauseButton.label.setColor(paused ? uiTheme.colors.accentText : uiTheme.colors.text);
-      pauseButton.background.setAlpha(paused ? 0.96 : 0.72);
-      pauseButton.highlight.setAlpha(paused ? 0.34 : 0.16);
+      pauseButton.background.setFillStyle(hexToNumber(uiTheme.colors.accent), 0.9);
+      pauseButton.background.setStrokeStyle(2, hexToNumber(uiTheme.colors.foam), 0.3);
+      pauseButton.label.setColor(uiTheme.colors.accentText);
+      pauseButton.background.setAlpha(1);
+      pauseButton.highlight.setAlpha(0.26);
     },
   };
 };

@@ -1,7 +1,6 @@
 import * as Phaser from 'phaser';
 
 import { appViewport, getViewportSize } from '../ui/layout';
-import { uiTheme } from '../ui/theme';
 
 export const createGameConfig = (
   parent: HTMLElement,
@@ -10,7 +9,7 @@ export const createGameConfig = (
   type: Phaser.AUTO,
   parent,
   scene: scenes,
-  backgroundColor: uiTheme.colors.background,
+  backgroundColor: 'rgba(0, 0, 0, 0)',
   ...getViewportSize(parent),
   scale: {
     mode: Phaser.Scale.NONE,
@@ -26,6 +25,6 @@ export const createGameConfig = (
     antialias: true,
     pixelArt: false,
     roundPixels: false,
-    transparent: false,
+    transparent: true,
   },
 });

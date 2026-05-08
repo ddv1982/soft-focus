@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { uiTheme } from '../theme';
+import { hexToNumber, uiTheme } from '../theme';
 
 export type BackButtonOptions = {
   x: number;
@@ -14,41 +14,44 @@ export const createBackButton = (
   options: BackButtonOptions,
 ): Phaser.GameObjects.Container => {
   const label = options.label ?? 'Back';
-  const icon = scene.add.text(0, 0, '←', {
-    color: uiTheme.colors.textMutedOnDark,
+  const icon = scene.add.text(uiTheme.spacing.sm, 0, '←', {
+    color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
     fontStyle: '600',
   });
   icon.setOrigin(0, 0.5);
 
-  const text = scene.add.text(icon.width + uiTheme.spacing.xs, 0, label, {
-    color: uiTheme.colors.textMutedOnDark,
+  const text = scene.add.text(uiTheme.spacing.sm + icon.width + uiTheme.spacing.xs, 0, label, {
+    color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '15px',
     fontStyle: '600',
   });
   text.setOrigin(0, 0.5);
 
-  const hitWidth = icon.width + uiTheme.spacing.xs + text.width + uiTheme.spacing.md;
-  const hitHeight = 36;
-  const hitArea = scene.add.rectangle(hitWidth / 2, 0, hitWidth, hitHeight, 0x000000, 0.001)
+  const hitWidth = icon.width + uiTheme.spacing.xs + text.width + (uiTheme.spacing.sm * 2);
+  const hitHeight = 44;
+  const hitArea = scene.add.rectangle(hitWidth / 2, 0, hitWidth, hitHeight, hexToNumber(uiTheme.colors.surfaceRaised), 0.64)
     .setOrigin(0.5)
+    .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.38)
     .setInteractive({ useHandCursor: true });
 
   const container = scene.add.container(options.x, options.y, [hitArea, icon, text]);
   container.setSize(hitWidth, hitHeight);
 
   const setIdle = (): void => {
-    icon.setColor(uiTheme.colors.textMutedOnDark);
-    text.setColor(uiTheme.colors.textMutedOnDark);
-    container.setAlpha(0.9);
+    icon.setColor(uiTheme.colors.text);
+    text.setColor(uiTheme.colors.text);
+    hitArea.setFillStyle(hexToNumber(uiTheme.colors.surfaceRaised), 0.64);
+    container.setAlpha(0.94);
     container.setScale(1);
   };
 
   const setHover = (): void => {
-    icon.setColor(uiTheme.colors.textOnDark);
-    text.setColor(uiTheme.colors.textOnDark);
+    icon.setColor(uiTheme.colors.accent);
+    text.setColor(uiTheme.colors.text);
+    hitArea.setFillStyle(hexToNumber(uiTheme.colors.surfaceMist), 0.72);
     container.setAlpha(1);
   };
 

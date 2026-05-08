@@ -34,7 +34,7 @@ export const createMovingBallGuidance = ({
   const guideLines = laneHeights.map((laneHeight) => {
     const laneY = y + ((laneHeight - 0.5) * laneBandHeight);
 
-    return scene.add.rectangle(x, laneY, width, 2, hexToNumber(uiTheme.colors.border), lowIntensity ? 0.18 : 0.28)
+    return scene.add.rectangle(x, laneY, width, 2, hexToNumber(uiTheme.colors.border), lowIntensity ? 0.12 : 0.18)
       .setOrigin(0.5);
   });
 
@@ -59,7 +59,7 @@ export const createMovingBallGuidance = ({
     }
 
     guideLines.forEach((line) => {
-      line.setAlpha(active ? (lowIntensity ? 0.18 : 0.28) : 0.08);
+      line.setAlpha(active ? (lowIntensity ? 0.12 : 0.18) : 0.06);
     });
     ball.setAlpha(active ? (lowIntensity ? 0.72 : 0.9) : 0.22);
   };

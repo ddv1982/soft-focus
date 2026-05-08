@@ -9,7 +9,6 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
-import { renderOceanBackground } from '../ui/oceanBackground';
 import { uiTheme } from '../ui/theme';
 
 export class ExerciseSelectionScene extends Phaser.Scene {
@@ -27,8 +26,6 @@ export class ExerciseSelectionScene extends Phaser.Scene {
     });
     const contentCenterX = frame.contentX + (frame.contentWidth / 2);
     const cardWidth = clampContentWidth(frame.contentWidth);
-
-    renderOceanBackground(this, { frame });
 
     createBackButton(this, {
       x: frame.contentX,
@@ -71,7 +68,7 @@ export class ExerciseSelectionScene extends Phaser.Scene {
       const heading = this.add.text(contentCenterX, phaseTag.y + phaseTag.height + cardInnerSpacing, exercise.title, {
         color: uiTheme.colors.text,
         fontFamily: uiTheme.typography.fontFamily,
-        fontSize: '22px',
+        fontSize: `${uiTheme.typography.cardHeadingSize}px`,
         fontStyle: '600',
         align: 'center',
         wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
@@ -106,6 +103,7 @@ export class ExerciseSelectionScene extends Phaser.Scene {
         y: currentY,
         width: cardWidth,
         height: cardHeight,
+        alpha: 0.66,
       });
       card.setDepth(-10);
 
@@ -162,7 +160,7 @@ export class ExerciseSelectionScene extends Phaser.Scene {
       y: currentY,
       width: cardWidth,
       height: noteCardHeight,
-      alpha: 0.72,
+      alpha: 0.5,
     });
     noteCard.setDepth(-10);
   }

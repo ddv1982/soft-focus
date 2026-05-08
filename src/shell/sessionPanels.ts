@@ -1,4 +1,5 @@
 import type { SoftFocusGame } from '../game/Game';
+import { getEffectiveThemePreference, toggleThemePreference } from '../dom/themePreference';
 import { sceneKeys } from '../game/sceneKeys';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import { exerciseIds, normalizeReflection, reflectionMaxLength, type BreathingPresetId } from '../state/types';
@@ -19,6 +20,7 @@ import {
   createPrimaryButton,
   createSecondaryButton,
   createSummaryList,
+  createThemeToggleButton,
   createTitle,
   formatDuration,
   supportCopy,
@@ -217,7 +219,20 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
       renderPreferences();
     });
 
-    header.append(heading, closeButton);
+    const headerActions = document.createElement('div');
+    headerActions.className = 'preferences-shell__header-actions';
+    headerActions.append(
+      createThemeToggleButton({
+        theme: getEffectiveThemePreference(),
+        onToggle: () => {
+          toggleThemePreference();
+          renderPreferences();
+        },
+      }),
+      closeButton,
+    );
+
+    header.append(heading, headerActions);
 
     const body = document.createElement('p');
     body.className = 'preferences-shell__body';

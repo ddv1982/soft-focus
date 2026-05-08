@@ -192,3 +192,32 @@ export const createPreferenceSelect = ({
   row.append(copy, select);
   return row;
 };
+
+export const createThemeToggleButton = ({
+  theme,
+  onToggle,
+}: {
+  theme: 'light' | 'dark';
+  onToggle: () => void;
+}): HTMLButtonElement => {
+  const button = document.createElement('button');
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  button.type = 'button';
+  button.className = 'preferences-shell__theme-toggle';
+  button.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
+  button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  button.title = `Switch to ${nextTheme} theme`;
+  button.addEventListener('click', onToggle);
+
+  const icon = document.createElement('span');
+  icon.className = 'preferences-shell__theme-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = theme === 'dark' ? '☾' : '☀';
+
+  const label = document.createElement('span');
+  label.className = 'preferences-shell__theme-label';
+  label.textContent = theme === 'dark' ? 'Dark' : 'Light';
+
+  button.append(icon, label);
+  return button;
+};

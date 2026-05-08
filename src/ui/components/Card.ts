@@ -25,7 +25,7 @@ export const createCard = (
     width - 14,
     options.height - 4,
     uiTheme.colors.shadow,
-    0.3,
+    0.16,
   );
   shadow.setOrigin(0.5, 0);
 
@@ -35,7 +35,7 @@ export const createCard = (
     width - 10,
     2,
     hexToNumber(uiTheme.colors.foam),
-    0.18,
+    0.1,
   );
   halo.setOrigin(0.5, 0);
 
@@ -49,7 +49,7 @@ export const createCard = (
   );
 
   card.setOrigin(0.5, 0);
-  card.setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.34);
+  card.setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.24);
 
   const syncDecorationDepth = (depth: number) => {
     shadow.setDepth(depth - 2);

@@ -22,8 +22,8 @@
     --ocean-mist: #9bd6df;
     --ocean-glass: #a9dbd6;
     --foam: #f8ffff;
-    --surface: rgba(10, 32, 45, 0.68);
-    --surface-strong: rgba(8, 27, 40, 0.82);
+    --surface: rgba(10, 32, 45, 0.72);
+    --surface-strong: rgba(8, 27, 40, 0.84);
     --sand: #eadcc3;
     --sand-soft: rgba(234, 220, 195, 0.26);
     --text: #f2fbfb;
@@ -32,7 +32,66 @@
     --line: rgba(169, 219, 214, 0.22);
     --shadow: rgba(1, 8, 14, 0.42);
     --focus: rgba(134, 215, 223, 0.62);
+    --button-text: #062331;
+    --surface-panel: linear-gradient(180deg, rgba(13, 42, 58, 0.88), rgba(7, 25, 39, 0.78));
+    --surface-panel-setup: linear-gradient(180deg, rgba(13, 42, 58, 0.82), rgba(7, 25, 39, 0.72));
+    --surface-control: linear-gradient(180deg, rgba(16, 48, 64, 0.9), rgba(6, 24, 37, 0.86));
+    --field-bg: rgba(248, 255, 255, 0.92);
+    --field-text: #0b2735;
+    --field-placeholder: #4c6670;
+    --beach-background-image: url("/backgrounds/beach-dark.png");
+    --beach-fallback: var(--ocean-deep);
+    --beach-background-position: 48% center;
+    --beach-background-position-small: 54% top;
+    --beach-overlay: linear-gradient(180deg, rgba(4, 17, 29, 0.12), rgba(4, 17, 29, 0.24));
+    --shell-background: var(--beach-overlay), var(--beach-background-image);
+    --button-primary-bg: linear-gradient(180deg, #b8f4f2 0%, #70d4db 54%, #3198aa 100%);
+    --button-primary-border: rgba(248, 255, 255, 0.44);
+    --button-primary-shadow: 0 16px 36px rgb(13 126 148 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.48);
+    --button-secondary-bg: rgba(8, 27, 40, 0.66);
+    --button-secondary-border: rgba(169, 219, 214, 0.36);
+    --button-secondary-shadow: 0 10px 26px rgb(1 8 14 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.12);
     background: var(--ocean-deep);
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --color-wellness-mist: #1d7484;
+    --color-wellness-foam: #14313c;
+    --ocean-deep: #f4e7cc;
+    --ocean-night: #f8f1de;
+    --ocean-tide: #238ea0;
+    --ocean-mist: #1d7484;
+    --ocean-glass: #d9f4ef;
+    --foam: #ffffff;
+    --surface: rgba(255, 250, 235, 0.8);
+    --surface-strong: rgba(255, 252, 244, 0.92);
+    --sand: #8d6338;
+    --sand-soft: rgba(177, 129, 71, 0.22);
+    --text: #14313c;
+    --text-muted: #45646b;
+    --text-on-dark: #f8ffff;
+    --line: rgba(34, 117, 132, 0.28);
+    --shadow: rgba(80, 60, 27, 0.2);
+    --focus: rgba(11, 129, 148, 0.52);
+    --button-text: #052937;
+    --surface-panel: linear-gradient(180deg, rgba(255, 252, 244, 0.88), rgba(245, 230, 195, 0.74));
+    --surface-panel-setup: linear-gradient(180deg, rgba(255, 252, 244, 0.86), rgba(245, 230, 195, 0.76));
+    --surface-control: linear-gradient(180deg, rgba(255, 252, 244, 0.96), rgba(246, 232, 199, 0.9));
+    --field-bg: rgba(255, 255, 255, 0.94);
+    --field-text: #14313c;
+    --field-placeholder: #5d7579;
+    --beach-background-image: url("/backgrounds/beach-light.png");
+    --beach-fallback: var(--ocean-deep);
+    --beach-background-position: 46% center;
+    --beach-background-position-small: 50% top;
+    --beach-overlay: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(246, 224, 184, 0.12));
+    --button-primary-bg: linear-gradient(180deg, #27a3b7 0%, #1e8598 58%, #156b7d 100%);
+    --button-primary-border: rgba(255, 255, 255, 0.56);
+    --button-primary-shadow: 0 16px 34px rgb(21 107 125 / 0.26), inset 0 1px 0 rgb(255 255 255 / 0.36);
+    --button-secondary-bg: rgba(255, 252, 244, 0.78);
+    --button-secondary-border: rgba(34, 117, 132, 0.34);
+    --button-secondary-shadow: 0 10px 24px rgb(80 60 27 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.62);
   }
 
   * {
@@ -43,10 +102,12 @@
   body {
     margin: 0;
     min-height: 100%;
-    background:
-      radial-gradient(circle at 18% 10%, rgba(155, 214, 223, 0.2) 0, transparent 30%),
-      radial-gradient(circle at 80% 8%, rgba(230, 164, 142, 0.12) 0, transparent 26%),
-      radial-gradient(circle at 50% -10%, rgba(79, 193, 206, 0.22) 0%, rgba(8, 32, 51, 0.5) 42%, rgba(4, 17, 29, 0.98) 100%);
+    background-color: var(--beach-fallback);
+    background-image: var(--shell-background);
+    background-attachment: fixed;
+    background-position: center, var(--beach-background-position);
+    background-repeat: no-repeat;
+    background-size: cover, cover;
   }
 
   body {
@@ -56,20 +117,16 @@
     color: var(--text);
   }
 
-  body::before {
-    content: "";
-    position: fixed;
-    inset: auto -12vw -13vh -12vw;
-    height: 34vh;
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse at 22% 52%, rgba(248, 255, 255, 0.12) 0 32%, transparent 33%),
-      radial-gradient(ellipse at 68% 46%, rgba(169, 219, 214, 0.16) 0 30%, transparent 31%),
-      linear-gradient(180deg, rgba(234, 220, 195, 0.06), rgba(234, 220, 195, 0.16));
-    filter: blur(0.2px);
+  @media (max-width: 720px) {
+    html,
+    body {
+      background-attachment: scroll;
+      background-position: center top, var(--beach-background-position-small);
+    }
   }
 
   canvas {
     display: block;
+    background: transparent;
   }
 }

@@ -50,7 +50,7 @@ export const createBreathingResetStagePresenter = ({
   const ring = scene.add.circle(x, y, ringRadius, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.3 : 0.42);
   const fill = scene.add.circle(x, y, fillRadius, accent, lowIntensity ? 0.2 : 0.28);
-  const guide = scene.add.rectangle(x, y, width, 2, border, 0.26).setOrigin(0.5);
+  const guide = scene.add.rectangle(x, y, width, 2, border, 0.18).setOrigin(0.5);
 
   const inhaleLabel = scene.add.text(
     x,
@@ -180,7 +180,7 @@ export const createBreathingResetStagePresenter = ({
     inhaleLabel.setAlpha(visible ? 1 : 0.32);
     exhaleLabel.setAlpha(visible ? 1 : 0.32);
     phaseLabel.setAlpha(visible ? 1 : 0.3);
-    guide.setAlpha(visible ? 0.26 : 0.08);
+    guide.setAlpha(visible ? 0.18 : 0.06);
     tween.paused = !shouldRun;
 
     if (!shouldRun) {

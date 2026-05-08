@@ -1,9 +1,12 @@
+import { applyPreferredTheme } from './dom/themePreference';
 import './styles.css';
 import { reportOperatorError } from './observability/operatorErrors';
 
 export {};
 
 const container = document.getElementById('app');
+
+applyPreferredTheme();
 
 declare global {
   interface Window {

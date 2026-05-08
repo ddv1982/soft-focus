@@ -1,4 +1,4 @@
-export const uiTheme = {
+export const darkUiTheme = {
   colors: {
     background: '#071927',
     backgroundDeep: '#04111d',
@@ -28,6 +28,7 @@ export const uiTheme = {
   typography: {
     fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     titleSize: 30,
+    cardHeadingSize: 18,
     subtitleSize: 18,
     bodySize: 16,
     buttonSize: 18,
@@ -48,12 +49,55 @@ export const uiTheme = {
   motion: {
     fastMs: 120,
     normalMs: 180,
-    reducedAlpha: 0.94,
+    reducedAlpha: 0.78,
     hoverScale: 1.01,
     pressScale: 0.98,
   },
 } as const;
 
-export type UiTheme = typeof uiTheme;
+export const lightUiTheme = {
+  ...darkUiTheme,
+  colors: {
+    ...darkUiTheme.colors,
+    background: '#f8f1de',
+    backgroundDeep: '#f4e7cc',
+    backgroundInk: '#cfa365',
+    horizon: '#56bdc9',
+    surface: '#fff6df',
+    surfaceRaised: '#fffbef',
+    surfaceDeep: '#f0dcc0',
+    surfaceMist: '#c5e5e2',
+    border: '#2d8290',
+    borderMuted: '#5f8f96',
+    text: '#102b35',
+    textOnDark: '#102b35',
+    textMuted: '#335963',
+    textMutedOnDark: '#335963',
+    accent: '#147f91',
+    accentPressed: '#0d6978',
+    accentText: '#f8ffff',
+    sand: '#e7c382',
+    sandDeep: '#b78346',
+    foam: '#123845',
+    seaGlass: '#24756f',
+    tide: '#258999',
+    coral: '#c26032',
+    shadow: 0x503c1b,
+  },
+} as const;
+
+export type UiTheme = typeof darkUiTheme | typeof lightUiTheme;
+
+export const getUiTheme = (): UiTheme => {
+  if (typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light') {
+    return lightUiTheme;
+  }
+
+  return darkUiTheme;
+};
+
+export const uiTheme = new Proxy(darkUiTheme, {
+  get: (_target, property: keyof UiTheme) => getUiTheme()[property],
+}) as UiTheme;
 
 export const hexToNumber = (hex: string): number => Number.parseInt(hex.slice(1), 16);

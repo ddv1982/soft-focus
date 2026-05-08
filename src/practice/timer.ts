@@ -9,8 +9,9 @@ export class PracticeTimer {
 
   private paused = false;
 
-  constructor(durationMs: number) {
+  constructor(durationMs: number, paused = false) {
     this.remainingMs = Math.max(0, durationMs);
+    this.paused = paused;
   }
 
   tick(deltaMs: number): PracticeTimerState {

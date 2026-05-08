@@ -34,7 +34,7 @@ export const createOrientingStagePresenter = ({
   const border = hexToNumber(uiTheme.colors.border);
   const span = Math.max(84, Math.min(180, width * 0.3)) * reducedMotion.amplitudeScale;
 
-  const guide = scene.add.rectangle(x, y, width, 2, border, 0.24).setOrigin(0.5);
+  const guide = scene.add.rectangle(x, y, width, 2, border, 0.16).setOrigin(0.5);
   const anchor = scene.add.circle(x - span, y, lowIntensity ? 16 : 18, accent, 0.92);
   const focusHalo = scene.add.circle(x - span, y, (lowIntensity ? 34 : 40) * reducedMotion.amplitudeScale, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.28 : 0.36);
@@ -98,7 +98,7 @@ export const createOrientingStagePresenter = ({
     anchor.setAlpha(visible ? 0.96 : 0.22);
     focusHalo.setAlpha(visible ? (lowIntensity ? 0.72 : 0.88) : 0.18);
     promptText.setAlpha(visible ? 1 : 0.32);
-    guide.setAlpha(visible ? 0.24 : 0.08);
+    guide.setAlpha(visible ? 0.16 : 0.06);
     stepTween.paused = !shouldRun;
 
     if (!shouldRun) {
