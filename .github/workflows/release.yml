@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional vMAJOR.MINOR.PATCH release version override
+        required: false
+        type: string
+      notes:
+        description: Optional release notes override
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24.14.1'
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: '1.3.13'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run typecheck, smoke tests, and production build
+        if: github.event_name == 'workflow_dispatch'
+        run: bun run validate
+
+      - name: Install Playwright Chromium
+        if: github.event_name == 'workflow_dispatch'
+        run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install --with-deps chromium
+
+      - name: Run browser E2E tests
+        if: github.event_name == 'workflow_dispatch'
+        run: bun run e2e:test
+
+      - name: Determine release version
+        id: release-version
+        uses: actions/github-script@v8
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+          NOTES_OVERRIDE: ${{ inputs.notes }}
+          TARGET_COMMITISH: ${{ github.event.workflow_run.head_sha || github.sha }}
+        with:
+          script: |
+            const semverPattern = /^v(\d+)\.(\d+)\.(\d+)$/;
+
+            function normalizeVersion(version) {
+              const trimmed = (version || '').trim();
+
+              if (!trimmed) {
+                return null;
+              }
+
+              const normalized = trimmed.startsWith('v') ? trimmed : `v${trimmed}`;
+
+              if (!semverPattern.test(normalized)) {
+                throw new Error(`Release version must match vMAJOR.MINOR.PATCH: ${trimmed}`);
+              }
+
+              return normalized;
+            }
+
+            function compareVersions(a, b) {
+              const [, aMajor, aMinor, aPatch] = a.match(semverPattern).map(Number);
+              const [, bMajor, bMinor, bPatch] = b.match(semverPattern).map(Number);
+
+              return aMajor - bMajor || aMinor - bMinor || aPatch - bPatch;
+            }
+
+            const { owner, repo } = context.repo;
+            const tags = await github.paginate(github.rest.repos.listTags, {
+              owner,
+              repo,
+              per_page: 100,
+            });
+
+            const latestTag = tags
+              .map((tag) => tag.name)
+              .filter((tag) => semverPattern.test(tag))
+              .sort((a, b) => compareVersions(b, a))[0];
+
+            const manualVersion = normalizeVersion(process.env.MANUAL_VERSION);
+            const releaseVersion = manualVersion || (latestTag
+              ? latestTag.replace(semverPattern, (_, major, minor, patch) => `v${major}.${minor}.${Number(patch) + 1}`)
+              : 'v0.1.0');
+
+            if (tags.some((tag) => tag.name === releaseVersion)) {
+              throw new Error(`Release tag already exists: ${releaseVersion}`);
+            }
+
+            core.setOutput('version', releaseVersion);
+            core.setOutput('previous_tag', latestTag || '');
+            core.setOutput('notes_override', (process.env.NOTES_OVERRIDE || '').trim());
+            core.setOutput('target_commitish', process.env.TARGET_COMMITISH);
+
+      - name: Create GitHub release
+        uses: actions/github-script@v8
+        env:
+          RELEASE_VERSION: ${{ steps.release-version.outputs.version }}
+          NOTES_OVERRIDE: ${{ steps.release-version.outputs.notes_override }}
+          TARGET_COMMITISH: ${{ steps.release-version.outputs.target_commitish }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const releaseVersion = process.env.RELEASE_VERSION;
+            const notesOverride = process.env.NOTES_OVERRIDE;
+
+            await github.rest.repos.createRelease({
+              owner,
+              repo,
+              tag_name: releaseVersion,
+              target_commitish: process.env.TARGET_COMMITISH,
+              name: releaseVersion,
+              body: notesOverride || undefined,
+              generate_release_notes: !notesOverride,
+              make_latest: 'true',
+            });
