@@ -14,6 +14,7 @@ import {
   type BreathingPresetId,
   type ExerciseId,
   type MovingBallPresetId,
+  type PracticeDurationPresetId,
   type PracticePhase,
   type PracticeRuntimeState,
   type PracticeSettings,
@@ -103,6 +104,10 @@ export class SessionStore {
 
   setGazeGuidanceEnabled(enabled: boolean): SessionState {
     return this.updateSettings({ gazeGuidanceEnabled: enabled });
+  }
+
+  setPracticeDurationPreset(practiceDurationPresetId: PracticeDurationPresetId): SessionState {
+    return this.updateSettings({ practiceDurationPresetId });
   }
 
   setMovingBallPreset(movingBallPresetId: MovingBallPresetId): SessionState {

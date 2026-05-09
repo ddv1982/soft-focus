@@ -35,6 +35,14 @@ export const breathingPresetIds = {
 
 export type BreathingPresetId = (typeof breathingPresetIds)[keyof typeof breathingPresetIds];
 
+export const practiceDurationPresetIds = {
+  brief: 'brief-60',
+  standard: 'standard-90',
+  extended: 'extended-180',
+} as const;
+
+export type PracticeDurationPresetId = (typeof practiceDurationPresetIds)[keyof typeof practiceDurationPresetIds];
+
 export const isExerciseId = (value: string): value is ExerciseId => (
   Object.values(exerciseIds) as readonly string[]
 ).includes(value);
@@ -55,10 +63,15 @@ export const isBreathingPresetId = (value: string): value is BreathingPresetId =
   Object.values(breathingPresetIds) as readonly string[]
 ).includes(value);
 
+export const isPracticeDurationPresetId = (value: string): value is PracticeDurationPresetId => (
+  Object.values(practiceDurationPresetIds) as readonly string[]
+).includes(value);
+
 export interface PracticeSettings {
   lowIntensityMode: boolean;
   reducedMotionEnabled: boolean;
   gazeGuidanceEnabled: boolean;
+  practiceDurationPresetId: PracticeDurationPresetId;
   movingBallPresetId: MovingBallPresetId;
   breathingPresetId: BreathingPresetId;
 }
@@ -136,6 +149,7 @@ export const defaultPracticeSettings = (): PracticeSettings => ({
   lowIntensityMode: true,
   reducedMotionEnabled: false,
   gazeGuidanceEnabled: false,
+  practiceDurationPresetId: practiceDurationPresetIds.standard,
   movingBallPresetId: movingBallPresetIds.steadyCenter,
   breathingPresetId: breathingPresetIds.longExhale,
 });

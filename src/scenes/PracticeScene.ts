@@ -108,38 +108,40 @@ export class PracticeScene extends Phaser.Scene {
 
     const practiceTop = title.y + title.height + (compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg);
     const practiceBottom = controlsY - (controlsLayout.height / 2) - (compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg);
-    const statusReservedHeight = compactPractice ? 0 : 54;
+    const statusReservedHeight = compactPractice ? 0 : 44;
     const phraseGap = compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg;
-    const copyGap = compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg;
-    const guideGap = compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.xl;
-    const guideMinHeight = compactPractice ? 72 : 132;
+    const copyGap = compactPractice ? uiTheme.spacing.xs : uiTheme.spacing.sm;
+    const guideGap = compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.md;
+    const guideMinHeight = compactPractice ? 120 : 184;
 
-    this.phaseText = this.add.text(contentCenterX, practiceTop + uiTheme.spacing.md, '', {
+    this.phaseText = this.add.text(contentCenterX, practiceTop + uiTheme.spacing.xs, '', {
       color: uiTheme.colors.seaGlass,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
+      fontSize: '12px',
       fontStyle: '700',
       align: 'center',
     });
     this.phaseText.setOrigin(0.5, 0);
+    this.phaseText.setAlpha(0.72);
 
     this.timerText = this.add.text(contentCenterX, this.phaseText.y + this.phaseText.height + uiTheme.spacing.sm, '', {
-      color: uiTheme.colors.text,
+      color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: cardWidth < 420 ? '36px' : '44px',
-      fontStyle: '700',
+      fontSize: '14px',
+      fontStyle: '600',
       align: 'center',
     });
     this.timerText.setOrigin(0.5, 0);
+    this.timerText.setAlpha(0.7);
 
     this.phraseText = this.add.text(
       contentCenterX,
       this.timerText.y + this.timerText.height + phraseGap,
       practiceConfig.display.phraseText,
       {
-        color: uiTheme.colors.foam,
+        color: uiTheme.colors.text,
         fontFamily: uiTheme.typography.fontFamily,
-        fontSize: cardWidth < 420 ? '20px' : '22px',
+        fontSize: cardWidth < 420 ? '17px' : '19px',
         fontStyle: '500',
         align: 'center',
         wordWrap: { width: readableWidth, useAdvancedWrap: true },
@@ -151,12 +153,13 @@ export class PracticeScene extends Phaser.Scene {
     this.copyText = this.add.text(contentCenterX, this.phraseText.y + this.phraseText.height + copyGap, '', {
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: `${uiTheme.typography.bodySize}px`,
+      fontSize: '13px',
       align: 'center',
       wordWrap: { width: readableWidth, useAdvancedWrap: true },
       lineSpacing: uiTheme.typography.bodyLineHeight - uiTheme.typography.bodySize,
     });
     this.copyText.setOrigin(0.5, 0);
+    this.copyText.setAlpha(0.72);
 
     const guideTop = this.copyText.y + this.copyText.height + guideGap;
     const guideBottom = practiceBottom - statusReservedHeight - (compactPractice ? uiTheme.spacing.xs : uiTheme.spacing.md);
@@ -166,13 +169,13 @@ export class PracticeScene extends Phaser.Scene {
     this.statusText = this.add.text(contentCenterX, practiceBottom, '', {
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
+      fontSize: '12px',
       align: 'center',
       wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
       lineSpacing: 4,
     });
     this.statusText.setOrigin(0.5, 1);
-    this.statusText.setAlpha(compactPractice ? 0 : 1);
+    this.statusText.setAlpha(compactPractice ? 0 : 0.55);
 
     void this.loadStagePresenter({
       x: contentCenterX,
@@ -207,7 +210,7 @@ export class PracticeScene extends Phaser.Scene {
     const overlayCopy = this.add.text(0, 20, practiceConfig.display.pausedOverlayCopy, {
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
+      fontSize: '13px',
       align: 'center',
       wordWrap: { width: Math.min(stageWidth, 680) - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
     });
@@ -282,14 +285,14 @@ export class PracticeScene extends Phaser.Scene {
     this.snapshot = snapshot;
     const activePhase = getPhaseDefinition(this.practiceConfig, snapshot);
     this.phaseText.setText(snapshot.phase === 'complete' ? 'Complete' : (activePhase?.label ?? 'Practice'));
-    this.timerText.setText(snapshot.phase === 'complete' ? '0s' : `${snapshot.secondsRemaining}s`);
+    this.timerText.setText(snapshot.phase === 'complete' ? '0s left' : `${snapshot.secondsRemaining}s left`);
     this.copyText.setText(snapshot.paused
       ? 'Pause and let the pace stay easy. Resume when your breathing and gaze feel settled.'
       : (snapshot.phase === 'complete' ? this.practiceConfig.display.completeCopy : (activePhase?.copy ?? '')));
     this.statusText.setText(this.practiceConfig.display.statusLines.join('\n'));
 
     if (this.phraseText) {
-      this.phraseText.setAlpha(snapshot.phase === 'phrase' ? 1 : 0.82);
+      this.phraseText.setAlpha(snapshot.phase === 'phrase' ? 0.82 : 0.62);
     }
 
     this.controls.setPaused(snapshot.paused);

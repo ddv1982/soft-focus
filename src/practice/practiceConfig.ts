@@ -1,6 +1,6 @@
-import type { BreathingPresetId, ExerciseId, MovingBallPresetId, PracticeSettings, SessionState } from '../state/types';
+import type { BreathingPresetId, ExerciseId, MovingBallPresetId, PracticeDurationPresetId, PracticeSettings, SessionState } from '../state/types';
 
-import { defaultLowIntensityConfig } from './defaultPracticeConfig';
+import { defaultLowIntensityConfig, getPracticeDurationPresetDefinition, practiceDurationPresetCatalog } from './defaultPracticeConfig';
 import { getExerciseDefinition } from './exercises';
 import { buildPracticeFamilyConfig } from './practiceFamilies';
 
@@ -83,6 +83,18 @@ export interface PracticeReducedMotionConfig {
   label: string;
   description: string;
   policy: PracticeReducedMotionPolicy;
+}
+
+export interface PracticeDurationConfig {
+  presetId: PracticeDurationPresetId;
+  label: string;
+  description: string;
+  practiceSeconds: number;
+  availablePresets: readonly {
+    id: PracticeDurationPresetId;
+    title: string;
+    summary: string;
+  }[];
 }
 
 export type PracticeAuxiliaryControl =
@@ -207,12 +219,22 @@ export interface PracticeConfig {
   display: PracticeDisplayConfig;
   capabilities: PracticeCapabilities;
   reducedMotion: PracticeReducedMotionConfig;
+  duration: PracticeDurationConfig;
 }
 
 export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pick<SessionState, 'selectedExercise' | 'phrase' | 'settings'>): PracticeConfig => {
   const exercise = getExerciseDefinition(selectedExercise);
+  const durationPreset = getPracticeDurationPresetDefinition(settings.practiceDurationPresetId);
+  const duration: PracticeDurationConfig = {
+    presetId: durationPreset.id,
+    label: 'Practice duration',
+    description: durationPreset.summary,
+    practiceSeconds: durationPreset.practiceSeconds,
+    availablePresets: practiceDurationPresetCatalog.map(({ id, title, summary }) => ({ id, title, summary })),
+  };
   const lowIntensity: PracticeLowIntensityConfig = {
     ...defaultLowIntensityConfig,
+    practiceSeconds: duration.practiceSeconds,
     enabled: settings.lowIntensityMode,
   };
   const familyConfig = buildPracticeFamilyConfig({
@@ -236,6 +258,7 @@ export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pic
     display: familyConfig.display,
     capabilities: familyConfig.capabilities,
     reducedMotion: familyConfig.reducedMotion,
+    duration,
   };
 };
 

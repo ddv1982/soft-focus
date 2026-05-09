@@ -7,6 +7,7 @@ import {
   getSessionFlowIdForExercise,
   isExerciseId,
   isMovingBallPresetId,
+  isPracticeDurationPresetId,
   isSessionFlowId,
   maxRecentSessionSummaries,
   normalizeReflection,
@@ -40,6 +41,9 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
     lowIntensityMode: typeof value.lowIntensityMode === 'boolean' ? value.lowIntensityMode : defaults.lowIntensityMode,
     reducedMotionEnabled: typeof value.reducedMotionEnabled === 'boolean' ? value.reducedMotionEnabled : defaults.reducedMotionEnabled,
     gazeGuidanceEnabled: typeof value.gazeGuidanceEnabled === 'boolean' ? value.gazeGuidanceEnabled : defaults.gazeGuidanceEnabled,
+    practiceDurationPresetId: typeof value.practiceDurationPresetId === 'string' && isPracticeDurationPresetId(value.practiceDurationPresetId)
+      ? value.practiceDurationPresetId
+      : defaults.practiceDurationPresetId,
     movingBallPresetId: typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
       ? value.movingBallPresetId
       : defaults.movingBallPresetId,

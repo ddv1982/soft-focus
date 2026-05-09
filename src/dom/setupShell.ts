@@ -7,12 +7,14 @@ import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import {
   isBreathingPresetId,
   isMovingBallPresetId,
+  isPracticeDurationPresetId,
   isValidPhrase,
   normalizePhrase,
   phraseMaxLength,
   phraseMinLength,
   type BreathingPresetId,
   type MovingBallPresetId,
+  type PracticeDurationPresetId,
 } from '../state/types';
 import {
   bodyClass,
@@ -422,6 +424,18 @@ export const mountSetupShell = ({
         onChange: (checked) => {
           game.sessionStore.setReducedMotionEnabled(checked);
           renderInstructions();
+        },
+      }),
+      createSelect({
+        label: previewConfig.duration.label,
+        description: previewConfig.duration.description,
+        value: previewConfig.duration.presetId,
+        options: previewConfig.duration.availablePresets,
+        onChange: (value) => {
+          if (isPracticeDurationPresetId(value)) {
+            game.sessionStore.setPracticeDurationPreset(value as PracticeDurationPresetId);
+            renderInstructions();
+          }
         },
       }),
     );

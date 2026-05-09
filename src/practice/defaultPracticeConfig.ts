@@ -1,4 +1,11 @@
-import { breathingPresetIds, movingBallPresetIds, type BreathingPresetId, type MovingBallPresetId } from '../state/types';
+import {
+  breathingPresetIds,
+  movingBallPresetIds,
+  practiceDurationPresetIds,
+  type BreathingPresetId,
+  type MovingBallPresetId,
+  type PracticeDurationPresetId,
+} from '../state/types';
 
 export const defaultPhrasePracticeExpectations = [
   'Use the phrase as an anchor: notice when attention wanders, then return without judging it.',
@@ -37,6 +44,38 @@ export const defaultLowIntensityConfig = {
   practiceSeconds: 90,
   recoverySeconds: 20,
 } as const;
+
+export interface PracticeDurationPresetDefinition {
+  id: PracticeDurationPresetId;
+  title: string;
+  summary: string;
+  practiceSeconds: number;
+}
+
+export const practiceDurationPresetCatalog: readonly PracticeDurationPresetDefinition[] = [
+  {
+    id: practiceDurationPresetIds.brief,
+    title: 'Brief · 1 min',
+    summary: 'A shorter practice window when you want only a quick reset.',
+    practiceSeconds: 60,
+  },
+  {
+    id: practiceDurationPresetIds.standard,
+    title: 'Standard · 90 sec',
+    summary: 'Keeps the current gentle practice length.',
+    practiceSeconds: defaultLowIntensityConfig.practiceSeconds,
+  },
+  {
+    id: practiceDurationPresetIds.extended,
+    title: 'Extended · 3 min',
+    summary: 'A longer practice window when the cue feels steady enough to stay with.',
+    practiceSeconds: 180,
+  },
+] as const;
+
+export const getPracticeDurationPresetDefinition = (presetId: PracticeDurationPresetId): PracticeDurationPresetDefinition => (
+  practiceDurationPresetCatalog.find((preset) => preset.id === presetId) ?? practiceDurationPresetCatalog[1]
+);
 
 export const defaultGazeGuidanceConfig = {
   label: 'Gaze guidance',

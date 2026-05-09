@@ -7,7 +7,7 @@ import {
 } from '../src/game/navigation.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
 import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { breathingPresetIds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionFlowIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { resolveMovingBallStagePresenterLayout } from '../src/practice/stagePresenters/movingBallStagePresenter.ts';
@@ -71,6 +71,9 @@ const runPracticeControlsScenario = (): void => {
   assert(practiceConfig.reducedMotion.enabled === true, 'expected reduced-motion toggle to feed practice config');
   assert(practiceConfig.reducedMotion.label === 'Reduced motion', 'expected reduced-motion metadata to expose a user-facing label');
   assert(practiceConfig.gazeGuidance.enabled === true, 'expected gaze guidance toggle to feed practice config');
+  assert(practiceConfig.duration.presetId === practiceDurationPresetIds.standard, 'expected default duration preset to preserve the standard practice length');
+  assert(practiceConfig.duration.practiceSeconds === 90, 'expected standard duration preset to preserve current practice seconds');
+  assert(practiceConfig.phases[1]?.seconds === 90, 'expected standard duration preset to feed the active practice phase');
   assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
   assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');
   assert(practiceConfig.phases[1]?.label === 'Phrase practice', 'expected phrase-anchor config to expose phase metadata through the family contract');
@@ -126,6 +129,7 @@ const runExerciseBranchingScenario = (): void => {
   store.setReducedMotionEnabled(true);
   store.setGazeGuidanceEnabled(true);
   store.setMovingBallPreset(movingBallPresetIds.steadyCenter);
+  store.setPracticeDurationPreset(practiceDurationPresetIds.extended);
 
   const movingBallConfig = store.createPracticeConfig();
   assert(getExerciseStartScene(exerciseIds.movingBall) === sceneKeys.instructions, 'expected moving-ball exercise to bypass phrase entry');
@@ -136,13 +140,17 @@ const runExerciseBranchingScenario = (): void => {
   assert(movingBallConfig.stagePresenter.key === 'moving-ball', 'expected moving-ball config to resolve the moving-ball presenter');
   assert(movingBallConfig.capabilities.auxiliaryControl.kind === 'selector', 'expected moving-ball config to declare a selector auxiliary control');
   assert(movingBallConfig.reducedMotion.enabled === true, 'expected moving-ball config to preserve the reduced-motion toggle');
+  assert(movingBallConfig.duration.presetId === practiceDurationPresetIds.extended, 'expected selected duration preset to feed moving-ball config');
+  assert(movingBallConfig.phases[1]?.seconds === 180, 'expected extended duration preset to lengthen the active practice phase');
   assert(movingBallConfig.movingBall?.laneHeights.length === 1, 'expected steady center sweep to use a single lane');
   assert(movingBallConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected moving-ball instructions copy to reflect the reset phase');
 
   store.setMovingBallPreset(movingBallPresetIds.multiHeight);
+  store.setPracticeDurationPreset(practiceDurationPresetIds.brief);
 
   const variedMovingBallConfig = store.createPracticeConfig();
   assert(variedMovingBallConfig.movingBall?.presetId === movingBallPresetIds.multiHeight, 'expected multi-height preset selection to carry into practice config');
+  assert(variedMovingBallConfig.phases[1]?.seconds === 60, 'expected brief duration preset to shorten the active practice phase');
   assert(variedMovingBallConfig.movingBall?.laneHeights.length === 3, 'expected moving-ball config to expose multi-height lanes for the multi-height preset');
   assert(variedMovingBallConfig.movingBall?.laneHeights[0] === 0.78, 'expected multi-height preset to begin in a lower visual lane');
   assert(variedMovingBallConfig.movingBall?.laneHeights[1] === 0.5, 'expected multi-height preset to include a middle visual lane');
@@ -253,6 +261,7 @@ const runReflectionAndReloadScenario = (): void => {
 
   store.setSelectedExercise(exerciseIds.movingBall);
   store.setLowIntensityMode(true);
+  store.setPracticeDurationPreset(practiceDurationPresetIds.extended);
   store.setMovingBallPreset(movingBallPresetIds.multiHeight);
   store.updateCurrentScene(sceneKeys.exerciseSelection);
   store.updateCurrentScene(sceneKeys.instructions);
@@ -279,6 +288,7 @@ const runReflectionAndReloadScenario = (): void => {
   assert(rehydratedState.phrase === '', 'expected moving-ball exercise not to persist a phrase requirement across reloads');
   assert(rehydratedState.selectedExercise === exerciseIds.movingBall, 'expected selected exercise to persist across reloads');
   assert(rehydratedState.settings.lowIntensityMode === true, 'expected settings persistence across reloads');
+  assert(rehydratedState.settings.practiceDurationPresetId === practiceDurationPresetIds.extended, 'expected duration preset persistence across reloads');
   assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.multiHeight, 'expected moving-ball preset persistence across reloads');
   assert(rehydratedState.currentSession === null, 'expected in-progress session state not to persist across reloads');
   assert(rehydratedState.practice === null, 'expected practice runtime state not to persist across reloads');
