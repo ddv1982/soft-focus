@@ -36,6 +36,12 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
 
     steps:
+      - name: Require manual releases from main
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Manual releases must run from the main branch. Current ref: ${{ github.ref }}"
+          exit 1
+
       - name: Check out repository
         uses: actions/checkout@v6.0.2
         with:
@@ -126,6 +132,7 @@ jobs:
             core.setOutput('previous_tag', latestTag || '');
             core.setOutput('notes_override', (process.env.NOTES_OVERRIDE || '').trim());
             core.setOutput('target_commitish', process.env.TARGET_COMMITISH);
+
 
       - name: Create GitHub release
         uses: actions/github-script@v8

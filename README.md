@@ -41,6 +41,17 @@ Soft Focus uses Bun.
 - `bun run e2e:install`: install the local Chromium browser used by Playwright.
 - `bun run e2e:test`: run Playwright end-to-end tests.
 
+
+## Deploy to Vercel
+
+Soft Focus deploys as a static Vite app to the existing Vercel project named `soft-focus`.
+
+- Vercel settings are captured in `vercel.json`: Vite framework, `bun install --frozen-lockfile`, `bun run build`, and `dist` output.
+- Git-based Vercel deployments are disabled in `vercel.json`; production deploys are handled by the dedicated **Vercel Deploy** GitHub Actions workflow on pushes to `main`, matching `space-explorer`.
+- The workflow requires these repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
+- Get `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` by linking the local repo to the existing Vercel project with `vercel link`, then reading `.vercel/project.json`. Keep `.vercel/` local; it is ignored by git.
+- The workflow uses `vercel pull`, `vercel build --prod`, then `vercel deploy --prebuilt --prod`, so Vercel serves the prebuilt static output without enabling automatic Vercel Git deployments.
+
 ## Releases
 
 Releases are published by the **Release** GitHub Actions workflow.
