@@ -31,6 +31,7 @@ export const breathingPresetIds = {
   coherent: 'coherent-5-5',
   box: 'box-4-4-4-4',
   cyclicSighing: 'cyclic-sighing-2-1-6',
+  custom: 'custom',
 } as const;
 
 export type BreathingPresetId = (typeof breathingPresetIds)[keyof typeof breathingPresetIds];
@@ -76,6 +77,9 @@ export interface PracticeSettings {
   customPracticeDurationMinutes: number;
   movingBallPresetId: MovingBallPresetId;
   breathingPresetId: BreathingPresetId;
+  customBreathingInhaleSeconds: number;
+  customBreathingHoldSeconds: number;
+  customBreathingExhaleSeconds: number;
 }
 
 export interface SessionRecord {
@@ -140,6 +144,14 @@ export const customPracticeDurationBounds = {
   defaultMinutes: 5,
 } as const;
 
+export const customBreathingTimingBounds = {
+  minSeconds: 1,
+  maxSeconds: 12,
+  defaultInhaleSeconds: 4,
+  defaultHoldSeconds: 2,
+  defaultExhaleSeconds: 6,
+} as const;
+
 export const normalizePhrase = (phrase: string): string => phrase.trim().replace(/\s+/g, ' ');
 
 export const normalizeReflection = (reflection: string): string => reflection
@@ -164,6 +176,17 @@ export const sanitizeCustomPracticeDurationMinutes = (minutes: unknown): number 
   );
 };
 
+export const sanitizeCustomBreathingSeconds = (seconds: unknown, fallbackSeconds: number): number => {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds)) {
+    return fallbackSeconds;
+  }
+
+  return Math.min(
+    customBreathingTimingBounds.maxSeconds,
+    Math.max(customBreathingTimingBounds.minSeconds, Math.round(seconds)),
+  );
+};
+
 export const defaultPracticeSettings = (): PracticeSettings => ({
   lowIntensityMode: true,
   reducedMotionEnabled: false,
@@ -172,6 +195,9 @@ export const defaultPracticeSettings = (): PracticeSettings => ({
   customPracticeDurationMinutes: customPracticeDurationBounds.defaultMinutes,
   movingBallPresetId: movingBallPresetIds.steadyCenter,
   breathingPresetId: breathingPresetIds.longExhale,
+  customBreathingInhaleSeconds: customBreathingTimingBounds.defaultInhaleSeconds,
+  customBreathingHoldSeconds: customBreathingTimingBounds.defaultHoldSeconds,
+  customBreathingExhaleSeconds: customBreathingTimingBounds.defaultExhaleSeconds,
 });
 
 export const createDefaultPracticeSettings = (): PracticeSettings => defaultPracticeSettings();

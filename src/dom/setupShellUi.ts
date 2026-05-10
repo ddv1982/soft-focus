@@ -146,3 +146,43 @@ export const createMinuteStepper = ({
 
   return row;
 };
+
+export const createSecondStepper = ({
+  label,
+  description,
+  seconds,
+  minSeconds,
+  maxSeconds,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  seconds: number;
+  minSeconds: number;
+  maxSeconds: number;
+  onChange: (seconds: number) => void;
+}): HTMLElement => {
+  const row = createElement('div', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 sm:grid-cols-[1fr_auto] sm:items-center');
+  const copy = createElement('div', 'space-y-1');
+  copy.append(
+    createElement('p', 'text-sm font-bold text-[var(--text)]', label),
+    createElement('p', 'text-sm leading-6 text-[var(--text-muted)]', description),
+  );
+
+  const controls = createElement('div', 'grid grid-cols-[auto_minmax(5rem,1fr)_auto] items-center gap-3 sm:min-w-64');
+  const decrementButton = createButton('−', `${secondaryButtonClass} min-h-11 min-w-11 rounded-full px-0 py-0 text-2xl`, () => onChange(seconds - 1));
+  decrementButton.ariaLabel = `Decrease ${label.toLowerCase()} by 1 second`;
+  decrementButton.disabled = seconds <= minSeconds;
+
+  const value = createElement('output', 'rounded-2xl border border-[var(--line)] bg-[var(--surface-control)] px-4 py-3 text-center text-base font-black text-[var(--text)]', `${seconds} sec`);
+  value.ariaLive = 'polite';
+
+  const incrementButton = createButton('+', `${secondaryButtonClass} min-h-11 min-w-11 rounded-full px-0 py-0 text-2xl`, () => onChange(seconds + 1));
+  incrementButton.ariaLabel = `Increase ${label.toLowerCase()} by 1 second`;
+  incrementButton.disabled = seconds >= maxSeconds;
+
+  controls.append(decrementButton, value, incrementButton);
+  row.append(copy, controls);
+
+  return row;
+};

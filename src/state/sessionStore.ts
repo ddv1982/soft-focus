@@ -11,7 +11,9 @@ import {
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  sanitizeCustomBreathingSeconds,
   sanitizeCustomPracticeDurationMinutes,
+  customBreathingTimingBounds,
   type BreathingPresetId,
   type ExerciseId,
   type MovingBallPresetId,
@@ -123,6 +125,33 @@ export class SessionStore {
 
   setBreathingPreset(breathingPresetId: BreathingPresetId): SessionState {
     return this.updateSettings({ breathingPresetId });
+  }
+
+  setCustomBreathingInhaleSeconds(customBreathingInhaleSeconds: number): SessionState {
+    return this.updateSettings({
+      customBreathingInhaleSeconds: sanitizeCustomBreathingSeconds(
+        customBreathingInhaleSeconds,
+        customBreathingTimingBounds.defaultInhaleSeconds,
+      ),
+    });
+  }
+
+  setCustomBreathingHoldSeconds(customBreathingHoldSeconds: number): SessionState {
+    return this.updateSettings({
+      customBreathingHoldSeconds: sanitizeCustomBreathingSeconds(
+        customBreathingHoldSeconds,
+        customBreathingTimingBounds.defaultHoldSeconds,
+      ),
+    });
+  }
+
+  setCustomBreathingExhaleSeconds(customBreathingExhaleSeconds: number): SessionState {
+    return this.updateSettings({
+      customBreathingExhaleSeconds: sanitizeCustomBreathingSeconds(
+        customBreathingExhaleSeconds,
+        customBreathingTimingBounds.defaultExhaleSeconds,
+      ),
+    });
   }
 
   createPracticeConfig(): PracticeConfig {

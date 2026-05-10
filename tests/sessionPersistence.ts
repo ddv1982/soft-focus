@@ -51,7 +51,10 @@ const runRehydrationScenario = (): void => {
   store.setLowIntensityMode(false);
   store.setReducedMotionEnabled(true);
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
-  store.setBreathingPreset(breathingPresetIds.cyclicSighing);
+  store.setBreathingPreset(breathingPresetIds.custom);
+  store.setCustomBreathingInhaleSeconds(5);
+  store.setCustomBreathingHoldSeconds(3);
+  store.setCustomBreathingExhaleSeconds(7);
   store.startSession(sceneKeys.instructions, startedAt);
   store.updateCurrentScene(sceneKeys.instructions);
   store.updateCurrentScene(sceneKeys.practice);
@@ -68,7 +71,10 @@ const runRehydrationScenario = (): void => {
   assert(rehydratedState.settings.lowIntensityMode === false, 'expected low-intensity setting to rehydrate');
   assert(rehydratedState.settings.reducedMotionEnabled === true, 'expected reduced-motion setting to rehydrate');
   assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.settlingSteps, 'expected moving-ball preset setting to rehydrate');
-  assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.cyclicSighing, 'expected breathing preset setting to rehydrate');
+  assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.custom, 'expected breathing preset setting to rehydrate');
+  assert(rehydratedState.settings.customBreathingInhaleSeconds === 5, 'expected custom breathing inhale setting to rehydrate');
+  assert(rehydratedState.settings.customBreathingHoldSeconds === 3, 'expected custom breathing hold setting to rehydrate');
+  assert(rehydratedState.settings.customBreathingExhaleSeconds === 7, 'expected custom breathing exhale setting to rehydrate');
   assert(rehydratedState.currentSession === null, 'expected current session not to resume after reload');
   assert(rehydratedState.practice === null, 'expected practice runtime not to resume after reload');
   assert(rehydratedState.recentSessionSummaries.length === 1, 'expected one recent session summary to rehydrate');
@@ -187,6 +193,35 @@ const runPartialSettingsFallbackScenario = (): void => {
   assert(rehydratedState.settings.gazeGuidanceEnabled === false, 'expected missing persisted gaze-guidance setting to preserve the app default');
   assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.steadyCenter, 'expected missing persisted moving-ball preset to preserve the app default');
   assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.longExhale, 'expected missing persisted breathing preset to preserve the app default');
+  assert(rehydratedState.settings.customBreathingInhaleSeconds === 4, 'expected missing custom breathing inhale to preserve the app default');
+  assert(rehydratedState.settings.customBreathingHoldSeconds === 2, 'expected missing custom breathing hold to preserve the app default');
+  assert(rehydratedState.settings.customBreathingExhaleSeconds === 6, 'expected missing custom breathing exhale to preserve the app default');
+};
+
+const runCustomBreathingSettingsSanitizationScenario = (): void => {
+  const storage = new MemoryStorage();
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.breathingReset,
+    phrase: '',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.custom,
+      customBreathingInhaleSeconds: 20,
+      customBreathingHoldSeconds: -5,
+      customBreathingExhaleSeconds: Number.NaN,
+    },
+    recentSessionSummaries: [],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.custom, 'expected valid custom breathing preset to rehydrate');
+  assert(rehydratedState.settings.customBreathingInhaleSeconds === 12, 'expected persisted custom inhale to clamp to the upper bound');
+  assert(rehydratedState.settings.customBreathingHoldSeconds === 1, 'expected persisted custom hold to clamp to the lower bound');
+  assert(rehydratedState.settings.customBreathingExhaleSeconds === 6, 'expected invalid persisted custom exhale to fall back to the default');
 };
 
 const runInvalidSummaryDurationScenario = (): void => {
@@ -250,6 +285,7 @@ runGracefulFailureScenario();
 runClearRecentSessionSummariesScenario();
 runInvalidSummarySceneKeyScenario();
 runPartialSettingsFallbackScenario();
+runCustomBreathingSettingsSanitizationScenario();
 runInvalidSummaryDurationScenario();
 runFractionalSummaryDurationScenario();
 

@@ -272,6 +272,26 @@ const runExerciseBranchingScenario = (): void => {
   assert(cyclicSighingResetConfig.display.phraseText === 'Cyclic sighing (2 in / 1 top-up / 6 out)', 'expected cyclic sighing reset to expose the double-inhale cadence');
   assert(cyclicSighingResetConfig.capabilities.auxiliaryControl.description.includes('cyclic sighing rhythm'), 'expected cyclic sighing guidance to describe the double-inhale cadence');
 
+  store.setBreathingPreset(breathingPresetIds.custom);
+  store.setCustomBreathingInhaleSeconds(5);
+  store.setCustomBreathingHoldSeconds(2);
+  store.setCustomBreathingExhaleSeconds(8);
+  const customBreathingResetConfig = store.createPracticeConfig();
+  assert(customBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected custom breathing reset config to keep the breathing presenter');
+  assert(customBreathingResetConfig.breathingReset?.presetId === breathingPresetIds.custom, 'expected custom breathing preset to feed practice config');
+  assert(customBreathingResetConfig.stagePresenter.inhaleMs === 5000, 'expected custom breathing reset to use the custom inhale cue');
+  assert(customBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 2000, 'expected custom breathing reset to use the custom hold cue');
+  assert(customBreathingResetConfig.stagePresenter.exhaleMs === 8000, 'expected custom breathing reset to use the custom exhale cue');
+  assert(customBreathingResetConfig.stagePresenter.holdAfterExhaleMs === null, 'expected custom breathing reset to omit an exhale hold');
+  assert(customBreathingResetConfig.display.phraseText === 'Custom (5 in / 2 hold / 8 out)', 'expected custom breathing reset to expose the selected cadence');
+  assert(customBreathingResetConfig.breathingReset.availablePresets.some((preset) => preset.id === breathingPresetIds.custom && preset.title.includes('5 in / 2 hold / 8 out')), 'expected custom breathing option title to reflect selected cadence');
+  store.setCustomBreathingInhaleSeconds(99);
+  store.setCustomBreathingHoldSeconds(-2);
+  store.setCustomBreathingExhaleSeconds(Number.NaN);
+  assert(store.getState().settings.customBreathingInhaleSeconds === 12, 'expected custom inhale seconds to clamp to the upper bound');
+  assert(store.getState().settings.customBreathingHoldSeconds === 1, 'expected custom hold seconds to clamp to the lower bound');
+  assert(store.getState().settings.customBreathingExhaleSeconds === 6, 'expected invalid custom exhale seconds to fall back to the default');
+
   store.setSelectedExercise(exerciseIds.bilateralRhythm);
   const bilateralRhythmConfig = store.createPracticeConfig();
   assert(bilateralRhythmConfig.stagePresenter.key === 'bilateral-rhythm', 'expected bilateral rhythm config to resolve the bilateral-rhythm presenter');

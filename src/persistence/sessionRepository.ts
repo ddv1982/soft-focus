@@ -12,7 +12,9 @@ import {
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  sanitizeCustomBreathingSeconds,
   sanitizeCustomPracticeDurationMinutes,
+  customBreathingTimingBounds,
   type PracticeSettings,
   type SessionState,
   type SessionSummary,
@@ -52,6 +54,18 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
     breathingPresetId: typeof value.breathingPresetId === 'string' && isBreathingPresetId(value.breathingPresetId)
       ? value.breathingPresetId
       : defaults.breathingPresetId,
+    customBreathingInhaleSeconds: sanitizeCustomBreathingSeconds(
+      value.customBreathingInhaleSeconds,
+      customBreathingTimingBounds.defaultInhaleSeconds,
+    ),
+    customBreathingHoldSeconds: sanitizeCustomBreathingSeconds(
+      value.customBreathingHoldSeconds,
+      customBreathingTimingBounds.defaultHoldSeconds,
+    ),
+    customBreathingExhaleSeconds: sanitizeCustomBreathingSeconds(
+      value.customBreathingExhaleSeconds,
+      customBreathingTimingBounds.defaultExhaleSeconds,
+    ),
   };
 };
 

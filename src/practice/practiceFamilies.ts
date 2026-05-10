@@ -1,7 +1,13 @@
-import type { PracticeSettings } from '../state/types';
+import {
+  breathingPresetIds,
+  customBreathingTimingBounds,
+  sanitizeCustomBreathingSeconds,
+  type PracticeSettings,
+} from '../state/types';
 
 import type { ExerciseDefinition } from './exercises';
 import {
+  type BreathingPresetDefinition,
   breathingPresetCatalog,
   defaultBilateralRhythmExpectations,
   defaultBreathingResetExpectations,
@@ -35,6 +41,35 @@ interface PracticeFamilyBuilderInput {
 
 const reducedMotionLabel = 'Reduced motion';
 const minimalPracticeSubtitle = 'Pause or stop anytime.';
+
+const createCustomBreathingPresetDefinition = (settings: PracticeSettings): BreathingPresetDefinition => {
+  const inhaleSeconds = sanitizeCustomBreathingSeconds(
+    settings.customBreathingInhaleSeconds,
+    customBreathingTimingBounds.defaultInhaleSeconds,
+  );
+  const holdSeconds = sanitizeCustomBreathingSeconds(
+    settings.customBreathingHoldSeconds,
+    customBreathingTimingBounds.defaultHoldSeconds,
+  );
+  const exhaleSeconds = sanitizeCustomBreathingSeconds(
+    settings.customBreathingExhaleSeconds,
+    customBreathingTimingBounds.defaultExhaleSeconds,
+  );
+  const cadence = `${inhaleSeconds} in / ${holdSeconds} hold / ${exhaleSeconds} out`;
+
+  return {
+    id: breathingPresetIds.custom,
+    title: 'Custom',
+    summary: `Your ${cadence} rhythm.`,
+    activeCopy: 'Follow your custom inhale, hold, and exhale timing softly.',
+    pattern: 'custom',
+    inhaleMs: inhaleSeconds * 1000,
+    inhaleTopUpMs: null,
+    holdAfterInhaleMs: holdSeconds * 1000,
+    exhaleMs: exhaleSeconds * 1000,
+    holdAfterExhaleMs: null,
+  };
+};
 
 const createSharedCopy = (copy: PracticeCopyConfig): PracticeCopyConfig => ({
   ...copy,
@@ -268,7 +303,9 @@ const createBreathingResetFamilyConfig = ({
   lowIntensity,
   settings,
 }: PracticeFamilyBuilderInput): PracticeFamilyConfig => {
-  const breathingPreset = getBreathingPresetDefinition(settings.breathingPresetId);
+  const breathingPreset = settings.breathingPresetId === breathingPresetIds.custom
+    ? createCustomBreathingPresetDefinition(settings)
+    : getBreathingPresetDefinition(settings.breathingPresetId);
   const {
     inhaleMs,
     inhaleTopUpMs,
@@ -276,7 +313,9 @@ const createBreathingResetFamilyConfig = ({
     exhaleMs,
     holdAfterExhaleMs,
   } = breathingPreset;
-  const cadenceLabel = breathingPreset.pattern === 'box'
+  const cadenceLabel = breathingPreset.id === breathingPresetIds.custom
+    ? `${Math.round(inhaleMs / 1000)} in / ${Math.round((holdAfterInhaleMs ?? 0) / 1000)} hold / ${Math.round(exhaleMs / 1000)} out`
+    : breathingPreset.pattern === 'box'
     ? `${Math.round(inhaleMs / 1000)} in / ${Math.round((holdAfterInhaleMs ?? 0) / 1000)} hold / ${Math.round(exhaleMs / 1000)} out / ${Math.round((holdAfterExhaleMs ?? 0) / 1000)} hold`
     : breathingPreset.pattern === 'cyclic-sighing'
       ? `${Math.round(inhaleMs / 1000)} in / ${Math.round((inhaleTopUpMs ?? 0) / 1000)} top-up / ${Math.round(exhaleMs / 1000)} out`
@@ -287,7 +326,11 @@ const createBreathingResetFamilyConfig = ({
     title: breathingPreset.title,
     summary: breathingPreset.summary,
     activeCopy: breathingPreset.activeCopy,
-    availablePresets: breathingPresetCatalog.map(({ id, title, summary }) => ({ id, title, summary })),
+    availablePresets: breathingPresetCatalog.map(({ id, title, summary }) => ({
+      id,
+      title: id === breathingPresetIds.custom ? `Custom · ${cadenceLabel}` : title,
+      summary,
+    })),
     pattern: breathingPreset.pattern,
     inhaleMs: breathingPreset.inhaleMs,
     inhaleTopUpMs: breathingPreset.inhaleTopUpMs,
@@ -325,7 +368,9 @@ const createBreathingResetFamilyConfig = ({
     movingBall: null,
     breathingReset,
     copy: createSharedCopy({
-      instructionsSubtitle: breathingPreset.pattern === 'balanced'
+      instructionsSubtitle: breathingPreset.id === breathingPresetIds.custom
+        ? `Let the breath stay natural, follow your custom ${cadenceLabel} pace, and soften the hold if it feels effortful.`
+        : breathingPreset.pattern === 'balanced'
         ? `Let the breath stay natural, follow the balanced ${cadenceLabel} pace, and keep both phases easy instead of trying to take a bigger breath.`
         : breathingPreset.pattern === 'box'
           ? `Let the breath stay natural, follow the equal ${cadenceLabel} pace, and keep the holds gentle enough that they do not feel strained.`

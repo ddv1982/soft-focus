@@ -107,7 +107,7 @@ export interface BreathingPresetDefinition {
   title: string;
   summary: string;
   activeCopy: string;
-  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing';
+  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing' | 'custom';
   inhaleMs: number;
   inhaleTopUpMs: number | null;
   holdAfterInhaleMs: number | null;
@@ -216,6 +216,18 @@ export const breathingPresetCatalog: readonly BreathingPresetDefinition[] = [
     inhaleMs: 2000,
     inhaleTopUpMs: 1000,
     holdAfterInhaleMs: null,
+    exhaleMs: 6000,
+    holdAfterExhaleMs: null,
+  },
+  {
+    id: breathingPresetIds.custom,
+    title: 'Custom',
+    summary: 'Choose your own inhale, hold, and exhale timing before starting.',
+    activeCopy: 'Follow your custom breathing rhythm softly.',
+    pattern: 'custom',
+    inhaleMs: 4000,
+    inhaleTopUpMs: null,
+    holdAfterInhaleMs: 2000,
     exhaleMs: 6000,
     holdAfterExhaleMs: null,
   },

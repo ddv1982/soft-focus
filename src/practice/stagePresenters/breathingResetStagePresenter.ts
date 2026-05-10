@@ -10,7 +10,7 @@ interface CreateBreathingResetStagePresenterOptions {
   y: number;
   width: number;
   lowIntensity: boolean;
-  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing';
+  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing' | 'custom';
   inhaleMs: number;
   inhaleTopUpMs: number | null;
   holdAfterInhaleMs: number | null;
@@ -57,6 +57,8 @@ export const createBreathingResetStagePresenter = ({
     y - ringRadius - 28,
     pattern === 'cyclic-sighing'
       ? 'Inhale • top-up'
+      : pattern === 'custom'
+        ? 'Inhale • hold'
       : pattern === 'box'
         ? 'Inhale • hold'
         : pattern === 'balanced'
@@ -75,6 +77,8 @@ export const createBreathingResetStagePresenter = ({
     y + ringRadius + 28,
     pattern === 'box'
       ? 'Exhale • hold'
+      : pattern === 'custom'
+        ? 'Custom exhale'
       : pattern === 'balanced'
         ? 'Balanced exhale'
         : 'Long easy exhale',

@@ -5,6 +5,8 @@ import { reportOperatorError } from '../observability/operatorErrors';
 import { exerciseCatalog, getExerciseDefinition, getExerciseStartScene } from '../practice/exercises';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import {
+  breathingPresetIds,
+  customBreathingTimingBounds,
   customPracticeDurationBounds,
   isBreathingPresetId,
   isMovingBallPresetId,
@@ -26,6 +28,7 @@ import {
   createHeader,
   createMinuteStepper,
   createSelect,
+  createSecondStepper,
   createToggle,
   eyebrowClass,
   fieldClass,
@@ -459,7 +462,8 @@ export const mountSetupShell = ({
         },
       }));
     } else if (previewConfig.breathingReset) {
-      settings.append(createSelect({
+      const breathingControl = createElement('div', 'grid gap-3');
+      breathingControl.append(createSelect({
         label: 'Breathing preset',
         description: previewConfig.breathingReset.summary,
         value: previewConfig.breathingReset.presetId,
@@ -471,6 +475,46 @@ export const mountSetupShell = ({
           }
         },
       }));
+
+      if (previewConfig.breathingReset.presetId === breathingPresetIds.custom) {
+        breathingControl.append(
+          createSecondStepper({
+            label: 'Custom inhale',
+            description: 'Choose how many seconds the visual cue spends on the inhale.',
+            seconds: state.settings.customBreathingInhaleSeconds,
+            minSeconds: customBreathingTimingBounds.minSeconds,
+            maxSeconds: customBreathingTimingBounds.maxSeconds,
+            onChange: (seconds) => {
+              game.sessionStore.setCustomBreathingInhaleSeconds(seconds);
+              renderInstructions();
+            },
+          }),
+          createSecondStepper({
+            label: 'Custom hold',
+            description: 'Choose the gentle pause after the inhale before the exhale starts.',
+            seconds: state.settings.customBreathingHoldSeconds,
+            minSeconds: customBreathingTimingBounds.minSeconds,
+            maxSeconds: customBreathingTimingBounds.maxSeconds,
+            onChange: (seconds) => {
+              game.sessionStore.setCustomBreathingHoldSeconds(seconds);
+              renderInstructions();
+            },
+          }),
+          createSecondStepper({
+            label: 'Custom exhale',
+            description: 'Choose how many seconds the visual cue spends on the exhale.',
+            seconds: state.settings.customBreathingExhaleSeconds,
+            minSeconds: customBreathingTimingBounds.minSeconds,
+            maxSeconds: customBreathingTimingBounds.maxSeconds,
+            onChange: (seconds) => {
+              game.sessionStore.setCustomBreathingExhaleSeconds(seconds);
+              renderInstructions();
+            },
+          }),
+        );
+      }
+
+      settings.append(breathingControl);
     } else if (previewConfig.capabilities.auxiliaryControl.kind === 'toggle') {
       settings.append(createToggle({
         label: previewConfig.capabilities.auxiliaryControl.label,

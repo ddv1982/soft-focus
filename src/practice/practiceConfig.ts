@@ -72,7 +72,7 @@ export interface PracticeBreathingConfig {
     title: string;
     summary: string;
   }[];
-  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing';
+  pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing' | 'custom';
   inhaleMs: number;
   inhaleTopUpMs: number | null;
   holdAfterInhaleMs: number | null;
