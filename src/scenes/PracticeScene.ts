@@ -49,6 +49,42 @@ export class PracticeScene extends Phaser.Scene {
 
   private shuttingDown = false;
 
+  private resizeRaf: number | null = null;
+
+  private layoutSize?: { width: number; height: number };
+
+  private readonly handleScaleResize = (): void => {
+    if (this.shuttingDown || !this.practiceConfig || !this.snapshot) {
+      return;
+    }
+
+    const nextWidth = this.scale.width;
+    const nextHeight = this.scale.height;
+
+    if (this.layoutSize?.width === nextWidth && this.layoutSize.height === nextHeight) {
+      return;
+    }
+
+    if (this.resizeRaf !== null) {
+      window.cancelAnimationFrame(this.resizeRaf);
+    }
+
+    this.resizeRaf = window.requestAnimationFrame(() => {
+      this.resizeRaf = null;
+
+      if (this.shuttingDown || !this.practiceConfig || !this.snapshot) {
+        return;
+      }
+
+      const snapshot = this.practiceRunner?.getSnapshot() ?? this.snapshot;
+
+      this.scene.restart({
+        practiceConfig: this.practiceConfig,
+        snapshot,
+      } satisfies PracticeSceneData);
+    });
+  };
+
   private readonly handleThemeChange = (): void => {
     if (!this.practiceConfig || !this.snapshot) {
       return;
@@ -71,6 +107,10 @@ export class PracticeScene extends Phaser.Scene {
     this.practiceConfig = practiceConfig;
     this.practiceRunner = new PracticeRunner(practiceConfig, data?.snapshot);
     this.snapshot = this.practiceRunner.getSnapshot();
+    this.layoutSize = {
+      width: this.scale.width,
+      height: this.scale.height,
+    };
 
     sessionStore.updateCurrentScene(sceneKeys.practice);
     sessionStore.startPractice(practiceConfig);
@@ -190,9 +230,15 @@ export class PracticeScene extends Phaser.Scene {
 
     this.refreshView(this.snapshot);
     window.addEventListener('soft-focus:themechange', this.handleThemeChange);
+    this.scale.on('resize', this.handleScaleResize);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.shuttingDown = true;
+      this.scale.off('resize', this.handleScaleResize);
+      if (this.resizeRaf !== null) {
+        window.cancelAnimationFrame(this.resizeRaf);
+        this.resizeRaf = null;
+      }
       window.removeEventListener('soft-focus:themechange', this.handleThemeChange);
       this.stagePresenter.destroy();
       this.stagePresenter = createIdlePracticeStagePresenter();
