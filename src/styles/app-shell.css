@@ -1,18 +1,25 @@
 @layer components {
   #app {
-    width: 100vw;
+    width: 100%;
     min-height: 100vh;
+    min-height: var(--app-viewport-height);
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .app-runtime-shell {
     position: relative;
-    width: 100vw;
+    width: 100%;
     min-height: 100vh;
+    min-height: var(--app-viewport-height);
     background: transparent;
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .app-shell {
     min-height: 100vh;
+    min-height: var(--app-viewport-height);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -140,8 +147,10 @@
   }
 
   .app-shell__runtime {
-    width: 100vw;
+    width: 100%;
     min-height: 100vh;
+    min-height: var(--app-viewport-height);
+    overflow: hidden;
   }
 
   .app-shell__runtime--setup {

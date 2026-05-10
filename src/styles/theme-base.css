@@ -51,7 +51,27 @@
     --button-secondary-bg: rgba(8, 27, 40, 0.66);
     --button-secondary-border: rgba(169, 219, 214, 0.36);
     --button-secondary-shadow: 0 10px 26px rgb(1 8 14 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.12);
+    --app-viewport-height: 100vh;
+    --app-viewport-width: 100vw;
     background: var(--ocean-deep);
+  }
+
+  @supports (height: 100svh) {
+    :root {
+      --app-viewport-height: 100svh;
+    }
+  }
+
+  @supports (height: 100dvh) {
+    :root {
+      --app-viewport-height: 100dvh;
+    }
+  }
+
+  @supports (width: 100dvw) {
+    :root {
+      --app-viewport-width: 100dvw;
+    }
   }
 
   :root[data-theme="light"] {
@@ -103,25 +123,47 @@
     margin: 0;
     min-height: 100%;
     background-color: var(--beach-fallback);
-    background-image: var(--shell-background);
-    background-attachment: fixed;
-    background-position: center, var(--beach-background-position);
-    background-repeat: no-repeat;
-    background-size: cover, cover;
+  }
+
+  html {
+    overflow-x: hidden;
   }
 
   body {
+    position: relative;
+    isolation: isolate;
     min-height: 100vh;
-    width: 100vw;
+    min-height: var(--app-viewport-height);
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+    background-color: transparent;
     color: var(--text);
   }
 
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--beach-fallback);
+    background-image: var(--shell-background);
+    background-position: center, var(--beach-background-position);
+    background-repeat: no-repeat;
+    background-size: cover, cover;
+    transform: translateZ(0);
+  }
+
   @media (max-width: 720px) {
-    html,
-    body {
-      background-attachment: scroll;
+    body::before {
       background-position: center top, var(--beach-background-position-small);
+    }
+  }
+
+  @media (max-width: 920px) and (orientation: landscape) {
+    body::before {
+      background-position: center, 50% center;
     }
   }
 

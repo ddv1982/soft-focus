@@ -5,6 +5,7 @@ import { hexToNumber, uiTheme } from '../theme';
 export interface PracticeControls {
   container: Phaser.GameObjects.Container;
   setPaused(paused: boolean): void;
+  setInteractiveEnabled(enabled: boolean): void;
   refreshTheme(paused: boolean): void;
 }
 
@@ -32,6 +33,7 @@ interface ControlButton {
   background: Phaser.GameObjects.Rectangle;
   highlight: Phaser.GameObjects.Rectangle;
   setOnPress: (onPress: () => void) => void;
+  setInteractiveEnabled: (enabled: boolean) => void;
 }
 
 export const getPracticeControlsLayout = (width: number): PracticeControlsLayout => {
@@ -110,6 +112,16 @@ const createControlButton = (
     });
   };
 
+  const setInteractiveEnabled = (enabled: boolean): void => {
+    if (enabled) {
+      background.setInteractive({ useHandCursor: true });
+      return;
+    }
+
+    background.disableInteractive();
+    resetState();
+  };
+
   setOnPress(onPress);
 
   return {
@@ -118,6 +130,7 @@ const createControlButton = (
     background,
     highlight,
     setOnPress,
+    setInteractiveEnabled,
   };
 };
 
@@ -182,6 +195,10 @@ export const createPracticeControls = ({
       pauseButton.label.setColor(uiTheme.colors.accentText);
       pauseButton.background.setAlpha(1);
       pauseButton.highlight.setAlpha(0.26);
+    },
+    setInteractiveEnabled(enabled: boolean): void {
+      pauseButton.setInteractiveEnabled(enabled);
+      stopButton.setInteractiveEnabled(enabled);
     },
   };
 };

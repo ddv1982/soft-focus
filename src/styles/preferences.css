@@ -1,13 +1,25 @@
 @layer components {
   .preferences-shell {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: max(1.5rem, env(safe-area-inset-top));
+    right: max(1.25rem, env(safe-area-inset-right));
     z-index: 30;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 12px;
+  }
+
+  @media (min-width: 640px) {
+    .preferences-shell {
+      right: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .preferences-shell {
+      right: 2.5rem;
+    }
   }
 
   .preferences-shell__launcher,
@@ -36,9 +48,11 @@
   .preferences-shell__panel {
     position: relative;
     width: min(100vw - 32px, 470px);
+    width: min(calc(var(--app-viewport-width) - 32px), 470px);
+    max-height: calc(var(--app-viewport-height) - 6rem);
     padding: 22px;
     border-radius: 30px;
-    overflow: hidden;
+    overflow: auto;
   }
 
   .preferences-shell__panel::before {

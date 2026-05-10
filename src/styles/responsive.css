@@ -7,6 +7,7 @@
   .session-overlay__panel {
     width: 100%;
     max-height: calc(100vh - 28px);
+    max-height: calc(var(--app-viewport-height) - 28px);
     border-radius: 30px 30px 24px 24px;
   }
 
@@ -24,10 +25,10 @@
   }
 
   .preferences-shell {
-    top: 12px;
-    right: 12px;
-    left: 12px;
-    align-items: stretch;
+    top: max(1.5rem, env(safe-area-inset-top));
+    right: max(1.25rem, env(safe-area-inset-right));
+    left: auto;
+    align-items: flex-end;
   }
 
   .preferences-shell__launcher {
@@ -36,6 +37,7 @@
 
   .preferences-shell__panel {
     width: 100%;
+    max-height: calc(var(--app-viewport-height) - 6.5rem);
   }
 
   .preferences-shell__toggle {
@@ -44,5 +46,26 @@
 
   .preferences-shell__select {
     width: 100%;
+  }
+}
+
+@media (max-width: 920px) and (orientation: landscape) {
+  .session-overlay {
+    align-items: center;
+    padding: 12px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left));
+  }
+
+  .session-overlay__panel {
+    max-height: calc(var(--app-viewport-height) - 24px);
+    padding: clamp(18px, 3vw, 28px);
+  }
+
+  .preferences-shell {
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+  }
+
+  .preferences-shell__panel {
+    max-height: calc(var(--app-viewport-height) - 4.75rem);
   }
 }

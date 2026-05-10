@@ -97,6 +97,26 @@ export class PracticeScene extends Phaser.Scene {
     }
   };
 
+  private readonly handlePracticePointerDown = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.snapshot || this.snapshot.complete) {
+      return;
+    }
+
+    if (pointer.wasTouch) {
+      this.revealFocusHeader();
+      this.revealFocusControls();
+      return;
+    }
+
+    if (this.isPointerInHeaderRevealZone(pointer.y)) {
+      this.revealFocusHeader();
+    }
+
+    if (this.isPointerInControlsRevealZone(pointer.y)) {
+      this.revealFocusControls();
+    }
+  };
+
   private readonly handleScaleResize = (): void => {
     if (this.shuttingDown || !this.practiceConfig || !this.snapshot) {
       return;
@@ -291,6 +311,7 @@ export class PracticeScene extends Phaser.Scene {
     });
 
     this.refreshView(this.snapshot);
+    this.input.on('pointerdown', this.handlePracticePointerDown);
     this.input.on('pointermove', this.handlePracticePointerMove);
     this.scheduleFocusHeaderFade();
     this.scheduleFocusControlsFade();
@@ -304,6 +325,7 @@ export class PracticeScene extends Phaser.Scene {
         window.cancelAnimationFrame(this.resizeRaf);
         this.resizeRaf = null;
       }
+      this.input.off('pointerdown', this.handlePracticePointerDown);
       this.input.off('pointermove', this.handlePracticePointerMove);
       this.focusHeaderHideEvent?.remove(false);
       this.focusHeaderTween?.stop();
@@ -444,12 +466,21 @@ export class PracticeScene extends Phaser.Scene {
       return;
     }
 
+    if (alpha > focusHeaderHiddenAlpha) {
+      this.controls.setInteractiveEnabled(true);
+    }
+
     this.focusControlsTween?.stop();
     this.focusControlsTween = this.tweens.add({
       targets: this.controls.container,
       alpha,
       duration,
       ease: 'Sine.easeInOut',
+      onComplete: () => {
+        if (alpha === focusHeaderHiddenAlpha) {
+          this.controls?.setInteractiveEnabled(false);
+        }
+      },
     });
 
     this.focusControlsTextTween?.stop();
