@@ -11,6 +11,7 @@ import {
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  sanitizeCustomPracticeDurationMinutes,
   type BreathingPresetId,
   type ExerciseId,
   type MovingBallPresetId,
@@ -108,6 +109,12 @@ export class SessionStore {
 
   setPracticeDurationPreset(practiceDurationPresetId: PracticeDurationPresetId): SessionState {
     return this.updateSettings({ practiceDurationPresetId });
+  }
+
+  setCustomPracticeDurationMinutes(customPracticeDurationMinutes: number): SessionState {
+    return this.updateSettings({
+      customPracticeDurationMinutes: sanitizeCustomPracticeDurationMinutes(customPracticeDurationMinutes),
+    });
   }
 
   setMovingBallPreset(movingBallPresetId: MovingBallPresetId): SessionState {

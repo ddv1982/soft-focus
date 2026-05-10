@@ -4,8 +4,8 @@ export const shellClass = [
 ].join(' ');
 
 export const panelClass = 'rounded-[2rem] border border-[var(--line)] bg-[var(--surface-panel-setup)] shadow-wellness-glass backdrop-blur-2xl';
-export const eyebrowClass = 'text-xs font-black uppercase tracking-[0.22em] text-wellness-mist';
-export const titleClass = 'text-balance text-4xl font-semibold leading-[0.98] text-wellness-foam sm:text-5xl lg:text-6xl';
+export const eyebrowClass = 'text-xs font-black uppercase tracking-[0.2em] text-wellness-mist';
+export const titleClass = 'text-balance text-4xl font-semibold leading-tight text-wellness-foam sm:text-5xl';
 export const bodyClass = 'text-pretty text-base leading-7 text-[var(--text-muted)]';
 export const primaryButtonClass = 'wellness-focus inline-flex min-h-12 items-center justify-center rounded-2xl border border-[var(--button-primary-border)] [background:var(--button-primary-bg)] px-5 py-3 font-black text-[var(--button-text)] shadow-[var(--button-primary-shadow)] transition hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none motion-reduce:hover:translate-y-0';
 export const secondaryButtonClass = 'wellness-focus inline-flex min-h-12 items-center justify-center rounded-2xl border border-[var(--button-secondary-border)] [background:var(--button-secondary-bg)] px-5 py-3 font-bold text-[var(--text)] shadow-[var(--button-secondary-shadow)] transition hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:brightness-95 motion-reduce:transition-none motion-reduce:hover:translate-y-0';
@@ -32,13 +32,17 @@ export const createButton = (label: string, className: string, onClick: () => vo
   return button;
 };
 
-export const createHeader = (eyebrow: string, title: string, subtitle: string): HTMLElement => {
-  const header = createElement('header', 'mx-auto flex w-full max-w-5xl flex-col gap-5 pt-6 sm:pt-10');
+export const createHeader = (eyebrow: string, title: string, subtitle?: string): HTMLElement => {
+  const header = createElement('header', 'mx-auto flex w-full max-w-5xl flex-col gap-4 pt-6 sm:pt-10');
   header.append(
     createElement('p', eyebrowClass, eyebrow),
     createElement('h1', titleClass, title),
-    createElement('p', `${bodyClass} max-w-2xl`, subtitle),
   );
+
+  if (subtitle) {
+    header.append(createElement('p', `${bodyClass} max-w-2xl`, subtitle));
+  }
+
   return header;
 };
 
@@ -101,6 +105,44 @@ export const createSelect = ({
   });
   select.addEventListener('change', () => onChange(select.value));
   row.append(select);
+
+  return row;
+};
+
+export const createMinuteStepper = ({
+  label,
+  minutes,
+  minMinutes,
+  maxMinutes,
+  onChange,
+}: {
+  label: string;
+  minutes: number;
+  minMinutes: number;
+  maxMinutes: number;
+  onChange: (minutes: number) => void;
+}): HTMLElement => {
+  const row = createElement('div', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 sm:grid-cols-[1fr_auto] sm:items-center');
+  const copy = createElement('div', 'space-y-1');
+  copy.append(
+    createElement('p', 'text-sm font-bold text-[var(--text)]', label),
+    createElement('p', 'text-sm leading-6 text-[var(--text-muted)]', `${minutes} minute${minutes === 1 ? '' : 's'} selected. Use the buttons to adjust by 1 minute.`),
+  );
+
+  const controls = createElement('div', 'grid grid-cols-[auto_minmax(5rem,1fr)_auto] items-center gap-3 sm:min-w-64');
+  const decrementButton = createButton('−', `${secondaryButtonClass} min-h-11 min-w-11 rounded-full px-0 py-0 text-2xl`, () => onChange(minutes - 1));
+  decrementButton.ariaLabel = 'Decrease custom practice duration by 1 minute';
+  decrementButton.disabled = minutes <= minMinutes;
+
+  const value = createElement('output', 'rounded-2xl border border-[var(--line)] bg-[var(--surface-control)] px-4 py-3 text-center text-base font-black text-[var(--text)]', `${minutes} min`);
+  value.ariaLive = 'polite';
+
+  const incrementButton = createButton('+', `${secondaryButtonClass} min-h-11 min-w-11 rounded-full px-0 py-0 text-2xl`, () => onChange(minutes + 1));
+  incrementButton.ariaLabel = 'Increase custom practice duration by 1 minute';
+  incrementButton.disabled = minutes >= maxMinutes;
+
+  controls.append(decrementButton, value, incrementButton);
+  row.append(copy, controls);
 
   return row;
 };

@@ -7,7 +7,7 @@ import {
 } from '../src/game/navigation.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
 import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { breathingPresetIds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { breathingPresetIds, customPracticeDurationBounds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionFlowIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { resolveMovingBallStagePresenterLayout } from '../src/practice/stagePresenters/movingBallStagePresenter.ts';
@@ -73,13 +73,14 @@ const runPracticeControlsScenario = (): void => {
   assert(practiceConfig.gazeGuidance.enabled === true, 'expected gaze guidance toggle to feed practice config');
   assert(practiceConfig.duration.presetId === practiceDurationPresetIds.standard, 'expected default duration preset to preserve the standard practice length');
   assert(practiceConfig.duration.practiceSeconds === 90, 'expected standard duration preset to preserve current practice seconds');
+  assert(practiceConfig.duration.customMinutes === customPracticeDurationBounds.defaultMinutes, 'expected default custom duration minutes to be available');
   assert(practiceConfig.phases[1]?.seconds === 90, 'expected standard duration preset to feed the active practice phase');
   assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
   assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');
   assert(practiceConfig.phases[1]?.label === 'Phrase practice', 'expected phrase-anchor config to expose phase metadata through the family contract');
-  assert(practiceConfig.phases[1]?.copy.includes('Notice wandering'), 'expected phrase-anchor active copy to teach noticing wandering');
+  assert(practiceConfig.phases[1]?.copy.includes('Repeat the phrase silently'), 'expected phrase-anchor active copy to keep the phrase as the primary anchor');
   assert(practiceConfig.copy.expectationsTitle === 'What to expect in this maintenance round', 'expected maintenance instructions copy to be phase-aware');
-  assert(practiceConfig.copy.instructionsSubtitle.includes('relaxed breath'), 'expected phrase-anchor instructions to describe relaxed breathing support');
+  assert(practiceConfig.copy.instructionsSubtitle.includes('Let breath stay natural'), 'expected phrase-anchor instructions to keep breath supportive rather than forced');
   assert(practiceConfig.copy.reflectionPrompt.includes('notice, return, or soften'), 'expected maintenance reflection prompt to reinforce the anchor loop');
 
   const unguidedStore = createSessionStore();
@@ -90,7 +91,7 @@ const runPracticeControlsScenario = (): void => {
   assert(unguidedPracticeConfig.stagePresenter.key === 'phrase-anchor', 'expected phrase-anchor config to resolve default phrase-anchor presenter when gaze guidance is off');
   assert(unguidedPracticeConfig.stagePresenter.phrase === 'steady phrase', 'expected default phrase-anchor presenter to receive the normalized phrase');
   assert(unguidedPracticeConfig.phases[1]?.activatesStagePresenter === true, 'expected phrase-anchor practice phase to activate default presenter');
-  assert(unguidedPracticeConfig.phases[1]?.copy.includes('easy breath'), 'expected unguided phrase-anchor copy to pair phrase repetition with easy breathing');
+  assert(unguidedPracticeConfig.phases[1]?.copy.includes('Acknowledge wandering'), 'expected unguided phrase-anchor copy to teach acknowledgement before returning');
 
   store.startPractice(practiceConfig);
   let runner = new PracticeRunner(practiceConfig);
@@ -168,6 +169,40 @@ const runExerciseBranchingScenario = (): void => {
   assert(reducedMotionMultiHeightLayout.laneBandHeight === 202.8, 'expected reduced motion to apply the same amplitude scale vertically');
   assert(variedMovingBallConfig.copy.reflectionPrompt.includes('settle, reset'), 'expected reset reflection prompt to stay phase-aware');
 
+  store.setPracticeDurationPreset(practiceDurationPresetIds.custom);
+  store.setCustomPracticeDurationMinutes(7);
+
+  const customDurationConfig = store.createPracticeConfig();
+  assert(customDurationConfig.duration.presetId === practiceDurationPresetIds.custom, 'expected custom duration preset to feed practice config');
+  assert(customDurationConfig.duration.customMinutes === 7, 'expected custom duration minutes to be preserved in practice config');
+  assert(customDurationConfig.duration.practiceSeconds === 420, 'expected custom minutes to convert to practice seconds');
+  assert(customDurationConfig.phases[1]?.seconds === 420, 'expected custom duration to feed the active practice phase');
+  assert(customDurationConfig.duration.availablePresets.some((preset) => preset.id === practiceDurationPresetIds.custom && preset.title.includes('7 min')), 'expected custom duration option title to reflect selected minutes');
+
+  [
+    exerciseIds.phraseAnchor,
+    exerciseIds.movingBall,
+    exerciseIds.breathingReset,
+    exerciseIds.bilateralRhythm,
+    exerciseIds.orienting,
+  ].forEach((exerciseId) => {
+    store.setSelectedExercise(exerciseId);
+    const exerciseCustomDurationConfig = store.createPracticeConfig();
+
+    assert(exerciseCustomDurationConfig.duration.practiceSeconds === 420, `expected custom duration to feed ${exerciseId} practice seconds`);
+    assert(exerciseCustomDurationConfig.phases[1]?.seconds === 420, `expected custom duration to feed ${exerciseId} active phase`);
+  });
+
+  store.setCustomPracticeDurationMinutes(999);
+  assert(store.getState().settings.customPracticeDurationMinutes === customPracticeDurationBounds.maxMinutes, 'expected custom duration setter to clamp stored minutes to the maximum');
+  const clampedCustomDurationConfig = store.createPracticeConfig();
+  assert(clampedCustomDurationConfig.duration.customMinutes === customPracticeDurationBounds.maxMinutes, 'expected excessive custom minutes to clamp to the maximum');
+  assert(clampedCustomDurationConfig.phases[1]?.seconds === customPracticeDurationBounds.maxMinutes * 60, 'expected clamped custom minutes to feed phase seconds');
+
+  store.setCustomPracticeDurationMinutes(0);
+  assert(store.getState().settings.customPracticeDurationMinutes === customPracticeDurationBounds.minMinutes, 'expected custom duration setter to clamp stored minutes to the minimum');
+
+  store.setSelectedExercise(exerciseIds.movingBall);
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
 
   const settlingMovingBallConfig = store.createPracticeConfig();

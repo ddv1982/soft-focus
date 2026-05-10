@@ -39,6 +39,7 @@ export const practiceDurationPresetIds = {
   brief: 'brief-60',
   standard: 'standard-90',
   extended: 'extended-180',
+  custom: 'custom',
 } as const;
 
 export type PracticeDurationPresetId = (typeof practiceDurationPresetIds)[keyof typeof practiceDurationPresetIds];
@@ -72,6 +73,7 @@ export interface PracticeSettings {
   reducedMotionEnabled: boolean;
   gazeGuidanceEnabled: boolean;
   practiceDurationPresetId: PracticeDurationPresetId;
+  customPracticeDurationMinutes: number;
   movingBallPresetId: MovingBallPresetId;
   breathingPresetId: BreathingPresetId;
 }
@@ -132,6 +134,12 @@ export const reflectionMaxLength = 240;
 
 export const maxRecentSessionSummaries = 5;
 
+export const customPracticeDurationBounds = {
+  minMinutes: 1,
+  maxMinutes: 30,
+  defaultMinutes: 5,
+} as const;
+
 export const normalizePhrase = (phrase: string): string => phrase.trim().replace(/\s+/g, ' ');
 
 export const normalizeReflection = (reflection: string): string => reflection
@@ -145,11 +153,23 @@ export const isValidPhrase = (phrase: string): boolean => {
   return normalizedPhrase.length >= phraseMinLength && normalizedPhrase.length <= phraseMaxLength;
 };
 
+export const sanitizeCustomPracticeDurationMinutes = (minutes: unknown): number => {
+  if (typeof minutes !== 'number' || !Number.isFinite(minutes)) {
+    return customPracticeDurationBounds.defaultMinutes;
+  }
+
+  return Math.min(
+    customPracticeDurationBounds.maxMinutes,
+    Math.max(customPracticeDurationBounds.minMinutes, Math.round(minutes)),
+  );
+};
+
 export const defaultPracticeSettings = (): PracticeSettings => ({
   lowIntensityMode: true,
   reducedMotionEnabled: false,
   gazeGuidanceEnabled: false,
   practiceDurationPresetId: practiceDurationPresetIds.standard,
+  customPracticeDurationMinutes: customPracticeDurationBounds.defaultMinutes,
   movingBallPresetId: movingBallPresetIds.steadyCenter,
   breathingPresetId: breathingPresetIds.longExhale,
 });

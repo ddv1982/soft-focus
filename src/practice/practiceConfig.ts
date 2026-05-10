@@ -1,4 +1,13 @@
-import type { BreathingPresetId, ExerciseId, MovingBallPresetId, PracticeDurationPresetId, PracticeSettings, SessionState } from '../state/types';
+import {
+  practiceDurationPresetIds,
+  sanitizeCustomPracticeDurationMinutes,
+  type BreathingPresetId,
+  type ExerciseId,
+  type MovingBallPresetId,
+  type PracticeDurationPresetId,
+  type PracticeSettings,
+  type SessionState,
+} from '../state/types';
 
 import { defaultLowIntensityConfig, getPracticeDurationPresetDefinition, practiceDurationPresetCatalog } from './defaultPracticeConfig';
 import { getExerciseDefinition } from './exercises';
@@ -90,6 +99,7 @@ export interface PracticeDurationConfig {
   label: string;
   description: string;
   practiceSeconds: number;
+  customMinutes: number;
   availablePresets: readonly {
     id: PracticeDurationPresetId;
     title: string;
@@ -225,12 +235,22 @@ export interface PracticeConfig {
 export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pick<SessionState, 'selectedExercise' | 'phrase' | 'settings'>): PracticeConfig => {
   const exercise = getExerciseDefinition(selectedExercise);
   const durationPreset = getPracticeDurationPresetDefinition(settings.practiceDurationPresetId);
+  const customMinutes = sanitizeCustomPracticeDurationMinutes(settings.customPracticeDurationMinutes);
+  const isCustomDuration = durationPreset.id === practiceDurationPresetIds.custom;
+  const practiceSeconds = isCustomDuration ? customMinutes * 60 : durationPreset.practiceSeconds;
   const duration: PracticeDurationConfig = {
     presetId: durationPreset.id,
     label: 'Practice duration',
-    description: durationPreset.summary,
-    practiceSeconds: durationPreset.practiceSeconds,
-    availablePresets: practiceDurationPresetCatalog.map(({ id, title, summary }) => ({ id, title, summary })),
+    description: isCustomDuration ? `${customMinutes} minute custom practice window.` : durationPreset.summary,
+    practiceSeconds,
+    customMinutes,
+    availablePresets: practiceDurationPresetCatalog.map(({ id, title, summary }) => ({
+      id,
+      title: id === practiceDurationPresetIds.custom ? `Custom · ${customMinutes} min` : title,
+      summary: id === practiceDurationPresetIds.custom
+        ? 'Use the custom duration value below.'
+        : summary,
+    })),
   };
   const lowIntensity: PracticeLowIntensityConfig = {
     ...defaultLowIntensityConfig,

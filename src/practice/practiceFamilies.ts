@@ -78,10 +78,10 @@ const createPhraseAnchorFamilyConfig = ({
 }: PracticeFamilyBuilderInput): PracticeFamilyConfig => {
   const gazePrompt = settings.gazeGuidanceEnabled ? defaultGazeGuidanceConfig.prompt : null;
   const reducedMotion = createReducedMotionPolicy({
-    title: 'Steadier phrase guidance',
+    title: 'Steadier phrase anchor',
     description: settings.reducedMotionEnabled || lowIntensity.enabled
-      ? 'Reduced motion keeps the phrase practice steadier and removes the breathing pulse motion.'
-      : 'Phrase practice uses a slow breathing halo so the phrase can ride an easy breath.',
+      ? 'Reduced motion keeps the phrase practice steady and removes the breathing pulse motion.'
+      : 'Phrase practice uses a slow breathing halo as support while the phrase remains the main anchor.',
     cycleMultiplier: 1,
     amplitudeScale: settings.reducedMotionEnabled || lowIntensity.enabled ? 0 : 1,
   });
@@ -89,7 +89,7 @@ const createPhraseAnchorFamilyConfig = ({
     title: exercise.title,
     subtitle: minimalPracticeSubtitle,
     phraseText: phrase,
-    pausedOverlayCopy: 'Resume when the phrase feels easy to return to.',
+    pausedOverlayCopy: 'Resume when you are ready to return to the phrase gently.',
     completeCopy: 'This round is complete.',
     statusLines: [
       `${exercise.phaseLabel} • ${exercise.title}`,
@@ -107,7 +107,7 @@ const createPhraseAnchorFamilyConfig = ({
     movingBall: null,
     breathingReset: null,
     copy: createSharedCopy({
-      instructionsSubtitle: 'Choose a phrase that is easy to repeat. During practice, let it ride a relaxed breath, notice wandering, and return softly.',
+      instructionsSubtitle: 'Choose a phrase that is easy to repeat silently. During practice, notice wandering, acknowledge what is here, and return softly to the phrase. Let breath stay natural.',
       instructionsSelectionLabel: 'Practice phrase',
       expectationsTitle: 'What to expect in this maintenance round',
       completionNote: 'Continue when you are ready to note what helped you return without forcing it.',
@@ -128,8 +128,8 @@ const createPhraseAnchorFamilyConfig = ({
         key: 'phrase',
         label: 'Phrase practice',
         copy: settings.gazeGuidanceEnabled
-          ? 'Notice wandering. Return to the phrase softly. Keep eyes easy.'
-          : 'Repeat the phrase with an easy breath. Return when attention wanders.',
+          ? 'Repeat the phrase silently. Notice wandering, then return softly while keeping eyes easy.'
+          : 'Repeat the phrase gently. Acknowledge wandering, feel the body, and return without forcing.',
         seconds: lowIntensity.practiceSeconds,
         activatesStagePresenter: true,
       },

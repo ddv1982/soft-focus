@@ -21,6 +21,24 @@ export interface ExerciseDefinition {
 
 export const exerciseCatalog: readonly ExerciseDefinition[] = [
   {
+    id: exerciseIds.breathingReset,
+    phase: exercisePhaseIds.reset,
+    phaseLabel: 'Reset',
+    phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
+    title: 'Breathing reset',
+    summary: 'A paced breathing reset with a softer visual rhythm and a lower-motion fallback.',
+    requiresPhrase: false,
+  },
+  {
+    id: exerciseIds.orienting,
+    phase: exercisePhaseIds.reset,
+    phaseLabel: 'Reset',
+    phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
+    title: 'Orienting',
+    summary: 'A guided scan that invites you to notice the wider space around you without rushing.',
+    requiresPhrase: false,
+  },
+  {
     id: exerciseIds.phraseAnchor,
     phase: exercisePhaseIds.maintenance,
     phaseLabel: 'Maintenance',
@@ -39,30 +57,12 @@ export const exerciseCatalog: readonly ExerciseDefinition[] = [
     requiresPhrase: false,
   },
   {
-    id: exerciseIds.breathingReset,
-    phase: exercisePhaseIds.reset,
-    phaseLabel: 'Reset',
-    phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
-    title: 'Breathing reset',
-    summary: 'A paced breathing reset with a softer visual rhythm and a lower-motion fallback.',
-    requiresPhrase: false,
-  },
-  {
     id: exerciseIds.bilateralRhythm,
     phase: exercisePhaseIds.reset,
     phaseLabel: 'Reset',
     phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
     title: 'Bilateral rhythm',
     summary: 'An alternating left-right rhythm for a steadier reset with less visual travel than moving ball.',
-    requiresPhrase: false,
-  },
-  {
-    id: exerciseIds.orienting,
-    phase: exercisePhaseIds.reset,
-    phaseLabel: 'Reset',
-    phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
-    title: 'Orienting',
-    summary: 'A guided scan that invites you to notice the wider space around you without rushing.',
     requiresPhrase: false,
   },
 ];

@@ -7,7 +7,7 @@ import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import { createBackButton } from '../ui/components/BackButton';
 import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
-import { isValidPhrase } from '../state/types';
+import { customPracticeDurationBounds, isValidPhrase, practiceDurationPresetIds } from '../state/types';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
 import { hexToNumber, uiTheme } from '../ui/theme';
@@ -16,6 +16,10 @@ type SelectorOption = {
   id: string;
   title: string;
   summary: string;
+};
+
+type SelectorControl = Phaser.GameObjects.Container & {
+  setSelectedValue: (nextValue: string) => void;
 };
 
 const createInfoBlock = (
@@ -134,7 +138,7 @@ const createOptionSelector = (
   options: readonly SelectorOption[],
   initialValue: string,
   onSelect: (nextValue: string) => void,
-): Phaser.GameObjects.Container => {
+): SelectorControl => {
   const border = hexToNumber(uiTheme.colors.border);
   const surface = hexToNumber(uiTheme.colors.surfaceRaised);
   const accent = hexToNumber(uiTheme.colors.accent);
@@ -200,10 +204,101 @@ const createOptionSelector = (
   const container = scene.add.container(x, y, [
     labelText,
     ...optionViews.flatMap(({ background, title, summary, indicator }) => [background, title, summary, indicator]),
-  ]);
+  ]) as SelectorControl;
   container.setSize(width, labelText.height + uiTheme.spacing.sm + (options.length * optionHeight) + ((options.length - 1) * optionGap));
+  container.setSelectedValue = (nextValue: string): void => {
+    value = nextValue;
+    refresh();
+  };
 
   refresh();
+
+  return container;
+};
+
+const createCustomDurationControl = (
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  width: number,
+  initialMinutes: number,
+  onChange: (nextMinutes: number) => void,
+): Phaser.GameObjects.Container => {
+  const border = hexToNumber(uiTheme.colors.border);
+  const surface = hexToNumber(uiTheme.colors.surfaceRaised);
+  const accent = hexToNumber(uiTheme.colors.accent);
+  const buttonSize = 42;
+  let minutes = initialMinutes;
+
+  const label = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, 'Custom duration', {
+    color: uiTheme.colors.text,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '16px',
+    fontStyle: '600',
+  });
+  label.setOrigin(0, 0);
+
+  const helper = scene.add.text((-width / 2) + uiTheme.spacing.md, label.height + uiTheme.spacing.xs, `Tap − / + to set ${customPracticeDurationBounds.minMinutes}-${customPracticeDurationBounds.maxMinutes} minutes. Changing this selects Custom.`, {
+    color: uiTheme.colors.textMuted,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '13px',
+    wordWrap: { width: width - (uiTheme.spacing.xl * 2) - 136, useAdvancedWrap: true },
+  });
+  helper.setOrigin(0, 0);
+
+  const valueText = scene.add.text(0, label.height + 21, '', {
+    color: uiTheme.colors.text,
+    fontFamily: uiTheme.typography.fontFamily,
+    fontSize: '18px',
+    fontStyle: '700',
+    align: 'center',
+  });
+  valueText.setOrigin(0.5);
+
+  const createStepButton = (buttonX: number, labelText: string, delta: number): Phaser.GameObjects.Container => {
+    const background = scene.add.rectangle(0, 0, buttonSize, buttonSize, surface, 0.54)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, border, 0.48);
+    const text = scene.add.text(0, -1, labelText, {
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '22px',
+      fontStyle: '700',
+      align: 'center',
+    });
+    text.setOrigin(0.5);
+
+    const button = scene.add.container(buttonX, label.height + 21, [background, text]);
+    button.setSize(buttonSize, buttonSize);
+    const applyStep = (): void => {
+      minutes = Math.min(
+        customPracticeDurationBounds.maxMinutes,
+        Math.max(customPracticeDurationBounds.minMinutes, minutes + delta),
+      );
+      valueText.setText(`${minutes} min`);
+      onChange(minutes);
+    };
+
+    button.setInteractive(new Phaser.Geom.Rectangle(-buttonSize / 2, -buttonSize / 2, buttonSize, buttonSize), Phaser.Geom.Rectangle.Contains);
+    button.on('pointerup', applyStep);
+    button.on('pointerover', () => background.setFillStyle(accent, 0.28));
+    button.on('pointerout', () => background.setFillStyle(surface, 0.54));
+
+    return button;
+  };
+
+  const decrementButton = createStepButton((width / 2) - uiTheme.spacing.md - (buttonSize * 2) - 84, '−', -1);
+  const incrementButton = createStepButton((width / 2) - uiTheme.spacing.md - buttonSize, '+', 1);
+  valueText.setX((decrementButton.x + incrementButton.x) / 2);
+  valueText.setText(`${minutes} min`);
+
+  const height = Math.max(76, helper.y + helper.height + uiTheme.spacing.md);
+  const background = scene.add.rectangle(0, height / 2, width, height, surface, 0.5)
+    .setOrigin(0.5)
+    .setStrokeStyle(1, border, 0.42);
+
+  const container = scene.add.container(x, y, [background, label, helper, decrementButton, valueText, incrementButton]);
+  container.setSize(width, height);
 
   return container;
 };
@@ -232,6 +327,8 @@ export class InstructionsScene extends Phaser.Scene {
     let lowIntensityMode = savedState.settings.lowIntensityMode;
     let reducedMotionEnabled = savedState.settings.reducedMotionEnabled;
     let gazeGuidanceEnabled = savedState.settings.gazeGuidanceEnabled;
+    let practiceDurationPresetId = savedState.settings.practiceDurationPresetId;
+    let customPracticeDurationMinutes = savedState.settings.customPracticeDurationMinutes;
     const previewConfig = createPracticeConfigFromSettings(selectedExercise, phrase, savedState.settings);
 
     createBackButton(this, {
@@ -364,12 +461,43 @@ export class InstructionsScene extends Phaser.Scene {
     );
     cardContent.add(reducedMotionToggle);
 
+    const durationSelector = createOptionSelector(
+      this,
+      0,
+      reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+      cardWidth - (uiTheme.spacing.xl * 2),
+      previewConfig.duration.label,
+      previewConfig.duration.availablePresets,
+      practiceDurationPresetId,
+      (nextValue) => {
+        practiceDurationPresetId = nextValue as typeof practiceDurationPresetId;
+        sessionStore.setPracticeDurationPreset(practiceDurationPresetId);
+      },
+    );
+    cardContent.add(durationSelector);
+
+    const customDurationControl = createCustomDurationControl(
+      this,
+      0,
+      durationSelector.y + durationSelector.height + uiTheme.spacing.md,
+      cardWidth - (uiTheme.spacing.xl * 2),
+      previewConfig.duration.customMinutes,
+      (nextMinutes) => {
+        customPracticeDurationMinutes = nextMinutes;
+        sessionStore.setCustomPracticeDurationMinutes(customPracticeDurationMinutes);
+        practiceDurationPresetId = practiceDurationPresetIds.custom;
+        sessionStore.setPracticeDurationPreset(practiceDurationPresetId);
+        durationSelector.setSelectedValue(practiceDurationPresetId);
+      },
+    );
+    cardContent.add(customDurationControl);
+
     const auxiliaryControl = previewConfig.capabilities.auxiliaryControl;
     const presetSelector = auxiliaryControl.kind === 'selector' && previewConfig.movingBall
       ? createOptionSelector(
         this,
         0,
-        reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+        customDurationControl.y + customDurationControl.height + uiTheme.spacing.md,
         cardWidth - (uiTheme.spacing.xl * 2),
         auxiliaryControl.label,
         previewConfig.movingBall.availablePresets,
@@ -382,7 +510,7 @@ export class InstructionsScene extends Phaser.Scene {
         ? createOptionSelector(
           this,
           0,
-          reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
+          customDurationControl.y + customDurationControl.height + uiTheme.spacing.md,
           cardWidth - (uiTheme.spacing.xl * 2),
           'Breathing preset',
           previewConfig.breathingReset.availablePresets,
@@ -401,7 +529,7 @@ export class InstructionsScene extends Phaser.Scene {
       ? createInfoBlock(
         this,
         0,
-        (presetSelector ?? reducedMotionToggle).y + (presetSelector ?? reducedMotionToggle).height + uiTheme.spacing.md,
+        (presetSelector ?? customDurationControl).y + (presetSelector ?? customDurationControl).height + uiTheme.spacing.md,
         cardWidth - (uiTheme.spacing.xl * 2),
         auxiliaryControl.label,
         auxiliaryControl.description,
@@ -410,7 +538,7 @@ export class InstructionsScene extends Phaser.Scene {
         ? createToggle(
         this,
         0,
-        (presetSelector ?? reducedMotionToggle).y + (presetSelector ?? reducedMotionToggle).height + uiTheme.spacing.md,
+        (presetSelector ?? customDurationControl).y + (presetSelector ?? customDurationControl).height + uiTheme.spacing.md,
         cardWidth - (uiTheme.spacing.xl * 2),
         auxiliaryControl.label,
         auxiliaryControl.description,
@@ -423,7 +551,7 @@ export class InstructionsScene extends Phaser.Scene {
         : createInfoBlock(
           this,
           0,
-          (presetSelector ?? reducedMotionToggle).y + (presetSelector ?? reducedMotionToggle).height + uiTheme.spacing.md,
+          (presetSelector ?? customDurationControl).y + (presetSelector ?? customDurationControl).height + uiTheme.spacing.md,
           cardWidth - (uiTheme.spacing.xl * 2),
           'Practice details',
           'This practice does not expose additional controls right now.',

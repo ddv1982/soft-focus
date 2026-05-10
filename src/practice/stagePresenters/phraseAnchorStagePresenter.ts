@@ -41,7 +41,7 @@ export const createPhraseAnchorStagePresenter = ({
   const haloRestScale = motionEnabled ? 0.92 : 1;
   const haloInhaleScale = lowIntensity ? 1.02 : 1.18;
 
-  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase with relaxed breathing', {
+  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase anchor practice', {
     color: uiTheme.colors.seaGlass,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
@@ -68,7 +68,7 @@ export const createPhraseAnchorStagePresenter = ({
   });
   phrasePreview.setOrigin(0.5);
 
-  const phraseHint = scene.add.text(x, y + 18, 'Let the phrase ride the breath.', {
+  const phraseHint = scene.add.text(x, y + 18, 'Repeat it silently at an easy pace.', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '12px',
@@ -77,7 +77,7 @@ export const createPhraseAnchorStagePresenter = ({
   });
   phraseHint.setOrigin(0.5);
 
-  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Breathe in softly', {
+  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Notice what is here', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
@@ -86,7 +86,7 @@ export const createPhraseAnchorStagePresenter = ({
   });
   breathLabel.setOrigin(0.5);
 
-  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Return to the phrase on an easy exhale.', {
+  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Feel the body, then return to the phrase.', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
@@ -112,7 +112,7 @@ export const createPhraseAnchorStagePresenter = ({
           duration: 3600,
           ease: 'Sine.InOut',
           onStart: () => {
-            breathLabel.setText('Breathe in softly');
+            breathLabel.setText('Notice what is here');
             returnLabel.setText('Let the phrase arrive without forcing it.');
           },
         },
@@ -122,8 +122,8 @@ export const createPhraseAnchorStagePresenter = ({
           duration: 4800,
           ease: 'Sine.Out',
           onStart: () => {
-            breathLabel.setText('Easy exhale');
-            returnLabel.setText('Return to the phrase and soften the effort.');
+            breathLabel.setText('Return softly');
+            returnLabel.setText('Come back to the phrase and soften the effort.');
           },
         },
       ],
@@ -151,7 +151,7 @@ export const createPhraseAnchorStagePresenter = ({
       halo.setScale(1);
       innerGlow.setScale(1);
       breathLabel.setText('Natural breath');
-      returnLabel.setText('Let the phrase arrive and soften around it.');
+      returnLabel.setText('Notice, feel the body, and return to the phrase.');
     }
   }
 

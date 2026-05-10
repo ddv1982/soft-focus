@@ -71,6 +71,12 @@ export const practiceDurationPresetCatalog: readonly PracticeDurationPresetDefin
     summary: 'A longer practice window when the cue feels steady enough to stay with.',
     practiceSeconds: 180,
   },
+  {
+    id: practiceDurationPresetIds.custom,
+    title: 'Custom',
+    summary: 'Choose your own practice window before starting.',
+    practiceSeconds: 300,
+  },
 ] as const;
 
 export const getPracticeDurationPresetDefinition = (presetId: PracticeDurationPresetId): PracticeDurationPresetDefinition => (

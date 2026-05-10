@@ -10,10 +10,9 @@ import { clampContentWidth, getLayoutFrame } from '../ui/layout';
 import { uiTheme } from '../ui/theme';
 
 const introCopy = [
-  'Take one slow breath and let your attention settle before you begin.',
-  'You will choose an exercise, set the pace gently, and move into practice when you are ready.',
-  'If you feel strained at any point, pause and soften your focus.',
-].join('\n\n');
+  'Choose one gentle exercise.',
+  'Pause or stop anytime.',
+].join('\n');
 
 export class EntryScene extends Phaser.Scene {
   constructor() {
@@ -43,8 +42,8 @@ export class EntryScene extends Phaser.Scene {
       x: contentCenterX,
       y: eyebrow.y + eyebrow.height + uiTheme.spacing.sm,
       width: cardWidth,
-      title: 'A calm first step into guided practice',
-      subtitle: 'Settle in, choose your exercise, and move forward at an easy pace.',
+      title: 'A quiet space to practice',
+      subtitle: 'Settle in. Move gently.',
     });
 
     const { height: buttonHeight } = getPrimaryButtonSize(cardWidth);
@@ -70,7 +69,7 @@ export class EntryScene extends Phaser.Scene {
     });
     intro.setOrigin(0.5, 0);
 
-    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'You can change the exercise and phrase before practice begins.', {
+    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Adjust settings before practice begins.', {
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
@@ -83,7 +82,7 @@ export class EntryScene extends Phaser.Scene {
       x: contentCenterX,
       y: buttonY,
       width: cardWidth,
-        label: 'Choose your exercise',
+        label: 'Open Soft Focus',
         onPress: () => {
           navigateToScene(this, {
             from: sceneKeys.entry,

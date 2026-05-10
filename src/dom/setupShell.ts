@@ -2,9 +2,10 @@ import type { SoftFocusGame } from '../game/Game';
 import { sceneKeys, type SceneKey } from '../game/sceneKeys';
 import { getInstructionsBackScene } from '../game/navigation';
 import { reportOperatorError } from '../observability/operatorErrors';
-import { exerciseCatalog, getExerciseDefinition, getExerciseStartScene, upcomingExercisePhases, upcomingResetTools } from '../practice/exercises';
+import { exerciseCatalog, getExerciseDefinition, getExerciseStartScene } from '../practice/exercises';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import {
+  customPracticeDurationBounds,
   isBreathingPresetId,
   isMovingBallPresetId,
   isPracticeDurationPresetId,
@@ -12,6 +13,7 @@ import {
   normalizePhrase,
   phraseMaxLength,
   phraseMinLength,
+  practiceDurationPresetIds,
   type BreathingPresetId,
   type MovingBallPresetId,
   type PracticeDurationPresetId,
@@ -22,6 +24,7 @@ import {
   createButton,
   createElement,
   createHeader,
+  createMinuteStepper,
   createSelect,
   createToggle,
   eyebrowClass,
@@ -185,31 +188,25 @@ export const mountSetupShell = ({
 
   const renderEntry = (): void => {
     const main = createElement('main', 'mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl place-items-center');
-    const panel = createElement('section', `${panelClass} relative isolate grid w-full gap-8 overflow-hidden p-7 sm:p-10 lg:grid-cols-[1.05fr_0.95fr] lg:p-12`);
+    const panel = createElement('section', `${panelClass} relative isolate w-full max-w-3xl overflow-hidden p-7 sm:p-10`);
     panel.setAttribute('aria-labelledby', 'setup-entry-title');
-    const glow = createElement('div', 'pointer-events-none absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-wellness-mist/15 blur-3xl');
-    const copy = createElement('div', 'flex flex-col justify-center gap-6');
-    const title = createElement('h1', titleClass, 'A quieter way into focused practice');
+    const glow = createElement('div', 'pointer-events-none absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-wellness-mist/10 blur-3xl');
+    const copy = createElement('div', 'flex flex-col justify-center gap-5');
+    const title = createElement('h1', titleClass, 'A quiet space to practice');
     title.id = 'setup-entry-title';
+    title.tabIndex = -1;
+    title.dataset.autofocus = 'true';
     copy.append(
       createElement('p', eyebrowClass, 'Soft Focus'),
       title,
-      createElement('p', `${bodyClass} max-w-xl`, 'Choose a gentle exercise, keep the settings that support today, and enter the Phaser practice space only when you are ready.'),
+      createElement('p', `${bodyClass} max-w-xl`, 'Choose one gentle exercise. Pause or stop anytime.'),
     );
     const actions = createElement('div', 'flex flex-wrap gap-3');
-    const startButton = createButton('Choose your exercise', primaryButtonClass, () => goTo(sceneKeys.exerciseSelection));
-    startButton.dataset.autofocus = 'true';
-    actions.append(startButton, createButton('View recent reflections', secondaryButtonClass, goToHistory));
-    copy.append(actions, createElement('p', 'max-w-xl text-sm leading-6 text-[var(--text-muted)]', 'If motion or pace feels too intense, pause, stop, or return to a steadier option.'));
+    const startButton = createButton('Open Soft Focus', primaryButtonClass, () => goTo(sceneKeys.exerciseSelection));
+    actions.append(startButton, createButton('Recent reflections', secondaryButtonClass, goToHistory));
+    copy.append(actions);
 
-    const notes = createElement('div', 'grid content-center gap-3');
-    ['Phrase anchor for maintenance', 'Moving ball, breathing, rhythm, and orienting reset tools', 'Local persistence for phrase, settings, and session notes'].forEach((item) => {
-      const card = createElement('article', 'rounded-3xl border border-[var(--line)] bg-white/[0.045] p-5');
-      card.append(createElement('p', 'text-base font-bold text-wellness-foam', item));
-      notes.append(card);
-    });
-
-    panel.append(glow, copy, notes);
+    panel.append(glow, copy);
     main.append(panel);
     root.replaceChildren(main);
   };
@@ -279,32 +276,31 @@ export const mountSetupShell = ({
 
   const renderExerciseSelection = (): void => {
     const groups = [...new Set(exerciseCatalog.map((exercise) => exercise.phase))];
-    const main = createElement('main', 'mx-auto flex w-full max-w-6xl flex-col gap-8 pb-12');
+    const main = createElement('main', 'mx-auto flex w-full max-w-5xl flex-col gap-7 pb-12');
     main.append(createBackButton('Back to welcome', () => goTo(sceneKeys.entry)));
-    main.append(createHeader('Exercise library', 'Select the shore that fits today', `Maintenance and Reset are ready now. Coming next: ${upcomingResetTools.join(', ')}.`));
+    main.append(createHeader('Exercises', 'Choose one gentle focus'));
 
-    const grid = createElement('div', 'grid gap-5 lg:grid-cols-2');
+    const grid = createElement('div', 'grid gap-5 lg:grid-cols-2 lg:items-start');
     groups.forEach((group) => {
       const exercises = exerciseCatalog.filter((exercise) => exercise.phase === group);
       const phase = exercises[0];
       const section = createElement('section', `${panelClass} p-5 sm:p-6`);
       section.append(
         createElement('p', eyebrowClass, phase.phaseLabel),
-        createElement('h2', 'mt-3 text-2xl font-semibold text-wellness-foam', phase.phaseSummary),
+        createElement('p', 'mt-3 max-w-md text-base font-semibold leading-7 text-[var(--text-muted)] sm:text-lg', phase.phaseSummary),
       );
       const list = createElement('div', 'mt-5 grid gap-3');
       exercises.forEach((exercise) => {
         const selected = game.sessionStore.getState().selectedExercise === exercise.id;
-        const card = createElement('article', `rounded-3xl border p-5 transition motion-reduce:transition-none ${selected ? 'border-wellness-mist/70 bg-wellness-mist/10' : 'border-[var(--line)] bg-white/[0.04]'}`);
-        card.append(
-          createElement('p', 'text-lg font-semibold text-wellness-foam', exercise.title),
-          createElement('p', 'mt-2 text-sm leading-6 text-[var(--text-muted)]', exercise.summary),
-        );
+        const card = createElement('article', `rounded-3xl border p-4 transition motion-reduce:transition-none ${selected ? 'border-wellness-mist/55 bg-white/[0.075]' : 'border-[var(--line)] bg-white/[0.04]'}`);
+        const cardHeader = createElement('div', 'flex flex-wrap items-center justify-between gap-2');
+        cardHeader.append(createElement('p', 'text-base font-semibold text-wellness-foam', exercise.title));
+        card.append(cardHeader);
         const button = createButton(`Start ${exercise.title}`, selected ? primaryButtonClass : secondaryButtonClass, () => {
           game.sessionStore.setSelectedExercise(exercise.id);
           goTo(getExerciseStartScene(exercise.id) as SetupSceneKey);
         });
-        button.classList.add('mt-5', 'w-full');
+        button.classList.add('mt-4', 'w-full');
         card.append(button);
         list.append(card);
       });
@@ -312,20 +308,14 @@ export const mountSetupShell = ({
       grid.append(section);
     });
 
-    const upcoming = upcomingExercisePhases[0];
-    const roadmap = createElement('aside', `${panelClass} p-6`);
-    roadmap.append(
-      createElement('p', eyebrowClass, upcoming.label),
-      createElement('p', 'mt-3 text-base leading-7 text-[var(--text-muted)]', upcoming.summary),
-    );
-    main.append(grid, roadmap);
+    main.append(grid);
     root.replaceChildren(main);
   };
 
   const renderPhrase = (): void => {
     const main = createElement('main', 'mx-auto flex w-full max-w-4xl flex-col gap-8 pb-12');
     main.append(createBackButton('Back to exercises', () => goTo(sceneKeys.exerciseSelection)));
-    main.append(createHeader('Phrase anchor', 'Choose a phrase with room to breathe', 'Use a short phrase you can repeat gently when attention wanders.'));
+    main.append(createHeader('Phrase', 'Choose a short anchor'));
 
     const form = createElement('form', `${panelClass} grid gap-5 p-6 sm:p-8`);
     const label = createElement('label', 'grid gap-3');
@@ -349,7 +339,7 @@ export const mountSetupShell = ({
     const refresh = (): void => {
       const normalized = normalizePhrase(phraseDraft);
       const valid = isValidPhrase(normalized);
-      helper.textContent = valid ? 'That phrase is ready. You can continue when it feels right.' : `Use ${phraseMinLength}-${phraseMaxLength} characters for now.`;
+      helper.textContent = valid ? 'Ready.' : `Use ${phraseMinLength}-${phraseMaxLength} characters.`;
       continueButton.disabled = !valid;
       input.setAttribute('aria-invalid', phraseDraft.length > 0 && !valid ? 'true' : 'false');
     };
@@ -374,8 +364,7 @@ export const mountSetupShell = ({
     });
     refresh();
 
-    const note = createElement('p', 'rounded-3xl border border-[var(--line)] bg-white/[0.04] p-5 text-sm leading-6 text-[var(--text-muted)]', 'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.');
-    form.append(label, helper, note, continueButton);
+    form.append(label, helper, continueButton);
     main.append(form);
     root.replaceChildren(main);
   };
@@ -386,7 +375,7 @@ export const mountSetupShell = ({
     const canStartPractice = !previewConfig.exercise.requiresPhrase || isValidPhrase(state.phrase);
     const main = createElement('main', 'mx-auto flex w-full max-w-6xl flex-col gap-8 pb-12');
     main.append(createBackButton('Back', () => goTo(getInstructionsBackScene(state.selectedExercise) as SetupSceneKey)));
-    main.append(createHeader(previewConfig.exercise.phaseLabel, `${previewConfig.exercise.title} instructions`, previewConfig.copy.instructionsSubtitle));
+    main.append(createHeader(previewConfig.exercise.phaseLabel, previewConfig.exercise.title));
 
     const layout = createElement('div', 'grid gap-5 lg:grid-cols-[0.9fr_1.1fr]');
     const summary = createElement('section', `${panelClass} p-6 sm:p-8`);
@@ -403,10 +392,37 @@ export const mountSetupShell = ({
       item.append(createElement('span', 'font-black text-wellness-mist', String(index + 1)), createElement('span', undefined, expectation));
       expectations.append(item);
     });
-    summary.append(createElement('p', 'mt-7 text-base font-bold text-wellness-foam', previewConfig.copy.expectationsTitle), expectations);
+    summary.append(createElement('p', 'mt-7 text-base font-bold text-wellness-foam', 'Practice flow'), expectations);
 
     const settings = createElement('section', `${panelClass} grid gap-4 p-6 sm:p-8`);
     settings.append(createElement('p', eyebrowClass, 'Practice settings'));
+    const durationControl = createElement('div', 'grid gap-3');
+    durationControl.append(createSelect({
+      label: previewConfig.duration.label,
+      description: previewConfig.duration.description,
+      value: previewConfig.duration.presetId,
+      options: previewConfig.duration.availablePresets,
+      onChange: (value) => {
+        if (isPracticeDurationPresetId(value)) {
+          game.sessionStore.setPracticeDurationPreset(value as PracticeDurationPresetId);
+          renderInstructions();
+        }
+      },
+    }));
+
+    if (previewConfig.duration.presetId === practiceDurationPresetIds.custom) {
+      durationControl.append(createMinuteStepper({
+        label: 'Custom duration minutes',
+        minutes: previewConfig.duration.customMinutes,
+        minMinutes: customPracticeDurationBounds.minMinutes,
+        maxMinutes: customPracticeDurationBounds.maxMinutes,
+        onChange: (minutes) => {
+          game.sessionStore.setCustomPracticeDurationMinutes(minutes);
+          renderInstructions();
+        },
+      }));
+    }
+
     settings.append(
       createToggle({
         label: previewConfig.lowIntensity.label,
@@ -426,18 +442,7 @@ export const mountSetupShell = ({
           renderInstructions();
         },
       }),
-      createSelect({
-        label: previewConfig.duration.label,
-        description: previewConfig.duration.description,
-        value: previewConfig.duration.presetId,
-        options: previewConfig.duration.availablePresets,
-        onChange: (value) => {
-          if (isPracticeDurationPresetId(value)) {
-            game.sessionStore.setPracticeDurationPreset(value as PracticeDurationPresetId);
-            renderInstructions();
-          }
-        },
-      }),
+      durationControl,
     );
 
     if (previewConfig.movingBall) {
@@ -480,7 +485,6 @@ export const mountSetupShell = ({
       settings.append(createElement('p', 'rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 text-sm leading-6 text-[var(--text-muted)]', `${previewConfig.capabilities.auxiliaryControl.label}: ${previewConfig.capabilities.auxiliaryControl.description}`));
     }
 
-    settings.append(createElement('p', 'text-sm leading-6 text-[var(--text-muted)]', `${previewConfig.capabilities.reducedMotion.title}: ${previewConfig.capabilities.reducedMotion.description}`));
     const startButton = createButton('Start practice', primaryButtonClass, () => {
       void startPractice();
     });

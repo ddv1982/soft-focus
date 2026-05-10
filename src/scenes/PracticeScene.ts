@@ -21,6 +21,15 @@ const getPhaseDefinition = (
   snapshot: PracticeRunnerSnapshot,
 ): PracticePhaseDefinition | null => practiceConfig.phases[snapshot.phaseIndex] ?? null;
 
+const focusHeaderVisibleAlpha = 1;
+const focusHeaderHiddenAlpha = 0;
+const focusHeaderIdleDelayMs = 3200;
+const focusHeaderFadeMs = 1200;
+const focusHeaderRevealMs = 360;
+const focusControlsIdleDelayMs = 3200;
+const focusControlsFadeMs = 1200;
+const focusControlsRevealMs = 300;
+
 interface PracticeSceneData {
   practiceConfig?: PracticeConfig;
   snapshot?: PracticeRunnerSnapshot;
@@ -39,6 +48,20 @@ export class PracticeScene extends Phaser.Scene {
 
   private statusText?: Phaser.GameObjects.Text;
 
+  private focusHeaderObjects: (Phaser.GameObjects.Container | Phaser.GameObjects.Text)[] = [];
+
+  private focusHeaderHideEvent?: Phaser.Time.TimerEvent;
+
+  private focusHeaderTween?: Phaser.Tweens.Tween;
+
+  private focusControlsHideEvent?: Phaser.Time.TimerEvent;
+
+  private focusControlsTween?: Phaser.Tweens.Tween;
+
+  private focusControlsTextTween?: Phaser.Tweens.Tween;
+
+  private focusControlsTextVisibleAlpha = 0.55;
+
   private pauseOverlay?: Phaser.GameObjects.Container;
 
   private controls?: PracticeControls;
@@ -52,6 +75,27 @@ export class PracticeScene extends Phaser.Scene {
   private resizeRaf: number | null = null;
 
   private layoutSize?: { width: number; height: number };
+
+  private readonly handlePracticePointerMove = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.snapshot || this.snapshot.complete) {
+      return;
+    }
+
+    if (this.isPointerInHeaderRevealZone(pointer.y)) {
+      this.revealFocusHeader();
+      return;
+    }
+
+    if (this.isPointerInControlsRevealZone(pointer.y)) {
+      this.revealFocusControls();
+      return;
+    }
+
+    if (!this.snapshot.paused) {
+      this.scheduleFocusHeaderFade();
+      this.scheduleFocusControlsFade();
+    }
+  };
 
   private readonly handleScaleResize = (): void => {
     if (this.shuttingDown || !this.practiceConfig || !this.snapshot) {
@@ -165,11 +209,28 @@ export class PracticeScene extends Phaser.Scene {
     });
     this.timerText.setOrigin(0.5, 0);
     this.timerText.setAlpha(0.7);
+    this.focusHeaderObjects = [title, this.phaseText, this.timerText];
 
     const guideTop = this.timerText.y + this.timerText.height + guideGap;
     const guideBottom = practiceBottom - statusReservedHeight - (compactPractice ? uiTheme.spacing.xs : uiTheme.spacing.md);
     const guideHeight = Math.max(guideMinHeight, guideBottom - guideTop);
     const guideCenterY = guideTop + (guideHeight / 2);
+    const phraseHeadingY = Math.max(
+      this.timerText.y + this.timerText.height + uiTheme.spacing.xl,
+      guideCenterY - (compactPractice ? 72 : 104),
+    );
+    const phraseHeading = practiceConfig.exercise.requiresPhrase && practiceConfig.phrase
+      ? this.add.text(contentCenterX, phraseHeadingY, `“${practiceConfig.phrase}”`, {
+        color: uiTheme.colors.foam,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: compactPractice ? '18px' : '24px',
+        fontStyle: '700',
+        align: 'center',
+        wordWrap: { width: readableWidth, useAdvancedWrap: true },
+      })
+      : null;
+    phraseHeading?.setOrigin(0.5, 0.5);
+    phraseHeading?.setAlpha(0.96);
 
     this.statusText = this.add.text(contentCenterX, practiceBottom, '', {
       color: uiTheme.colors.textMuted,
@@ -180,7 +241,8 @@ export class PracticeScene extends Phaser.Scene {
       lineSpacing: 4,
     });
     this.statusText.setOrigin(0.5, 1);
-    this.statusText.setAlpha(compactPractice ? 0 : 0.55);
+    this.focusControlsTextVisibleAlpha = compactPractice ? 0 : 0.55;
+    this.statusText.setAlpha(this.focusControlsTextVisibleAlpha);
 
     void this.loadStagePresenter({
       x: contentCenterX,
@@ -229,6 +291,9 @@ export class PracticeScene extends Phaser.Scene {
     });
 
     this.refreshView(this.snapshot);
+    this.input.on('pointermove', this.handlePracticePointerMove);
+    this.scheduleFocusHeaderFade();
+    this.scheduleFocusControlsFade();
     window.addEventListener('soft-focus:themechange', this.handleThemeChange);
     this.scale.on('resize', this.handleScaleResize);
 
@@ -239,6 +304,12 @@ export class PracticeScene extends Phaser.Scene {
         window.cancelAnimationFrame(this.resizeRaf);
         this.resizeRaf = null;
       }
+      this.input.off('pointermove', this.handlePracticePointerMove);
+      this.focusHeaderHideEvent?.remove(false);
+      this.focusHeaderTween?.stop();
+      this.focusControlsHideEvent?.remove(false);
+      this.focusControlsTween?.stop();
+      this.focusControlsTextTween?.stop();
       window.removeEventListener('soft-focus:themechange', this.handleThemeChange);
       this.stagePresenter.destroy();
       this.stagePresenter = createIdlePracticeStagePresenter();
@@ -281,6 +352,7 @@ export class PracticeScene extends Phaser.Scene {
       return;
     }
 
+    const wasPaused = this.snapshot?.paused ?? false;
     this.snapshot = snapshot;
     const activePhase = getPhaseDefinition(this.practiceConfig, snapshot);
     this.phaseText.setText(snapshot.phase === 'complete' ? 'Complete' : (activePhase?.label ?? 'Practice'));
@@ -292,9 +364,101 @@ export class PracticeScene extends Phaser.Scene {
     this.stagePresenter.setActive(Boolean(activePhase?.activatesStagePresenter) && !snapshot.complete);
     this.stagePresenter.setPaused(snapshot.paused);
 
+    if (snapshot.paused) {
+      this.revealFocusHeader(false);
+      this.revealFocusControls(false);
+    } else if (wasPaused) {
+      this.scheduleFocusHeaderFade();
+      this.scheduleFocusControlsFade();
+    }
+
     const sessionStore = getSessionStore(this);
     sessionStore.setPracticePhase(snapshot.phase, snapshot.phaseIndex, snapshot.secondsRemaining);
     sessionStore.setPracticePaused(snapshot.paused);
+  }
+
+  private isPointerInHeaderRevealZone(pointerY: number): boolean {
+    return pointerY <= Math.max(112, this.scale.height * 0.18);
+  }
+
+  private isPointerInControlsRevealZone(pointerY: number): boolean {
+    return pointerY >= this.scale.height - Math.max(112, this.scale.height * 0.18);
+  }
+
+  private scheduleFocusHeaderFade(): void {
+    if (this.snapshot?.paused || this.snapshot?.complete || this.focusHeaderObjects.length === 0) {
+      return;
+    }
+
+    this.focusHeaderHideEvent?.remove(false);
+    this.focusHeaderHideEvent = this.time.delayedCall(focusHeaderIdleDelayMs, () => {
+      if (!this.snapshot?.paused && !this.snapshot?.complete) {
+        this.fadeFocusHeaderTo(focusHeaderHiddenAlpha, focusHeaderFadeMs);
+      }
+    });
+  }
+
+  private revealFocusHeader(rescheduleFade = true): void {
+    this.focusHeaderHideEvent?.remove(false);
+    this.fadeFocusHeaderTo(focusHeaderVisibleAlpha, focusHeaderRevealMs);
+
+    if (rescheduleFade && !this.snapshot?.paused) {
+      this.scheduleFocusHeaderFade();
+    }
+  }
+
+  private fadeFocusHeaderTo(alpha: number, duration: number): void {
+    this.focusHeaderTween?.stop();
+    this.focusHeaderTween = this.tweens.add({
+      targets: this.focusHeaderObjects,
+      alpha,
+      duration,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  private scheduleFocusControlsFade(): void {
+    if (this.snapshot?.paused || this.snapshot?.complete || !this.controls) {
+      return;
+    }
+
+    this.focusControlsHideEvent?.remove(false);
+    this.focusControlsHideEvent = this.time.delayedCall(focusControlsIdleDelayMs, () => {
+      if (!this.snapshot?.paused && !this.snapshot?.complete) {
+        this.fadeFocusControlsTo(focusHeaderHiddenAlpha, focusControlsFadeMs);
+      }
+    });
+  }
+
+  private revealFocusControls(rescheduleFade = true): void {
+    this.focusControlsHideEvent?.remove(false);
+    this.fadeFocusControlsTo(focusHeaderVisibleAlpha, focusControlsRevealMs);
+
+    if (rescheduleFade && !this.snapshot?.paused) {
+      this.scheduleFocusControlsFade();
+    }
+  }
+
+  private fadeFocusControlsTo(alpha: number, duration: number): void {
+    if (!this.controls || !this.statusText) {
+      return;
+    }
+
+    this.focusControlsTween?.stop();
+    this.focusControlsTween = this.tweens.add({
+      targets: this.controls.container,
+      alpha,
+      duration,
+      ease: 'Sine.easeInOut',
+    });
+
+    this.focusControlsTextTween?.stop();
+    this.focusControlsTextTween = this.tweens.add({
+      targets: this.statusText,
+      alpha: alpha === focusHeaderVisibleAlpha ? this.focusControlsTextVisibleAlpha : alpha,
+      duration,
+      ease: 'Sine.easeInOut',
+    });
   }
 
   private async loadStagePresenter({

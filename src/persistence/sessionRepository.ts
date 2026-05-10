@@ -12,6 +12,7 @@ import {
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  sanitizeCustomPracticeDurationMinutes,
   type PracticeSettings,
   type SessionState,
   type SessionSummary,
@@ -44,6 +45,7 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
     practiceDurationPresetId: typeof value.practiceDurationPresetId === 'string' && isPracticeDurationPresetId(value.practiceDurationPresetId)
       ? value.practiceDurationPresetId
       : defaults.practiceDurationPresetId,
+    customPracticeDurationMinutes: sanitizeCustomPracticeDurationMinutes(value.customPracticeDurationMinutes),
     movingBallPresetId: typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
       ? value.movingBallPresetId
       : defaults.movingBallPresetId,
