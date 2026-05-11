@@ -1,4 +1,5 @@
 import { applyPreferredTheme } from './dom/themePreference';
+import { getViewportSize } from './ui/layout';
 import './styles.css';
 import { reportOperatorError } from './observability/operatorErrors';
 
@@ -55,8 +56,7 @@ const startSoftFocus = async (): Promise<void> => {
     mountSessionPanels(container, game);
 
     const refreshInputBounds = (): void => {
-      const width = runtimeHost.clientWidth || window.innerWidth;
-      const height = runtimeHost.clientHeight || window.innerHeight;
+      const { width, height } = getViewportSize(runtimeHost);
 
       if (width > 0 && height > 0) {
         game.scale.resize(width, height);

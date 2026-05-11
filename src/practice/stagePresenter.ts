@@ -15,6 +15,7 @@ export interface PracticeStagePresenterLoadOptions {
   x: number;
   y: number;
   stageWidth: number;
+  stageHeight: number;
   readableWidth: number;
   movingBallInset: number;
   createIdleController: () => PracticeStagePresenterController;
@@ -38,6 +39,7 @@ export const loadPracticeStagePresenter = async ({
   x,
   y,
   stageWidth,
+  stageHeight,
   readableWidth,
   movingBallInset,
   createIdleController,
@@ -47,6 +49,7 @@ export const loadPracticeStagePresenter = async ({
   x,
   y,
   stageWidth,
+  stageHeight,
   readableWidth,
   movingBallInset,
   createIdleController,

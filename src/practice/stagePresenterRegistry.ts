@@ -62,7 +62,7 @@ const movingBallStagePresenterLoader: StagePresenterLoader = async ({ scene, x, 
   });
 };
 
-const breathingResetStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth }, config) => {
+const breathingResetStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth, stageHeight }, config) => {
   if (config.key !== 'breathing-reset') {
     throw new Error(`Expected breathing-reset config, received ${config.key}`);
   }
@@ -82,6 +82,7 @@ const breathingResetStagePresenterLoader: StagePresenterLoader = async ({ scene,
     x,
     y,
     width: stageWidth,
+    height: stageHeight,
   });
 };
 

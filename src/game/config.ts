@@ -16,7 +16,7 @@ export const createGameConfig = (
     autoCenter: Phaser.Scale.NO_CENTER,
     min: {
       width: appViewport.minWidth,
-      height: appViewport.minHeight,
+      height: appViewport.landscapeMinHeight,
     },
   },
   antialias: true,

@@ -148,6 +148,8 @@
 
   .app-shell__runtime {
     width: 100%;
+    height: 100vh;
+    height: var(--app-viewport-height);
     min-height: 100vh;
     min-height: var(--app-viewport-height);
     overflow: hidden;

@@ -9,6 +9,7 @@ interface CreateBreathingResetStagePresenterOptions {
   x: number;
   y: number;
   width: number;
+  height: number;
   lowIntensity: boolean;
   pattern: 'extended-exhale' | 'balanced' | 'box' | 'cyclic-sighing' | 'custom';
   inhaleMs: number;
@@ -24,6 +25,7 @@ export const createBreathingResetStagePresenter = ({
   x,
   y,
   width,
+  height,
   lowIntensity,
   pattern,
   inhaleMs,
@@ -35,7 +37,21 @@ export const createBreathingResetStagePresenter = ({
 }: CreateBreathingResetStagePresenterOptions): PracticeStagePresenterController => {
   const accent = hexToNumber(uiTheme.colors.accent);
   const border = hexToNumber(uiTheme.colors.border);
-  const ringRadius = Math.max(48, Math.min(96, width * 0.16));
+  const portraitStage = height >= width * 0.56;
+  const compactStage = height < 180;
+  const ringRadius = Math.max(
+    compactStage ? 28 : 58,
+    Math.min(
+      portraitStage ? 132 : 96,
+      width * (portraitStage ? 0.23 : 0.16),
+      height * (portraitStage ? 0.28 : 0.24),
+    ),
+  );
+  const labelGap = compactStage ? 16 : portraitStage ? 34 : 26;
+  const guideWidth = Math.min(width, ringRadius * (portraitStage ? 5.2 : 6.4));
+  const phaseFontSize = Math.round(Math.max(compactStage ? 16 : 18, Math.min(24, ringRadius * 0.22)));
+  const guideFontSize = Math.round(Math.max(compactStage ? 12 : 13, Math.min(compactStage ? 13 : 16, ringRadius * 0.15)));
+  const showBreathGuideLabels = !compactStage;
   const fillRadius = ringRadius * (lowIntensity ? 0.6 : 0.54) * reducedMotion.amplitudeScale;
   const restScale = Math.max(0.9, reducedMotion.amplitudeScale);
   const inhaleScale = (lowIntensity ? 1.1 : 1.16) * Math.max(0.9, reducedMotion.amplitudeScale);
@@ -50,11 +66,11 @@ export const createBreathingResetStagePresenter = ({
   const ring = scene.add.circle(x, y, ringRadius, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.3 : 0.42);
   const fill = scene.add.circle(x, y, fillRadius, accent, lowIntensity ? 0.2 : 0.28);
-  const guide = scene.add.rectangle(x, y, width, 2, border, 0.18).setOrigin(0.5);
+  const guide = scene.add.rectangle(x, y, guideWidth, 2, border, 0.18).setOrigin(0.5);
 
   const inhaleLabel = scene.add.text(
     x,
-    y - ringRadius - 28,
+    y - ringRadius - labelGap,
     pattern === 'cyclic-sighing'
       ? 'Inhale • top-up'
       : pattern === 'custom'
@@ -67,14 +83,15 @@ export const createBreathingResetStagePresenter = ({
     {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '14px',
+    fontSize: `${guideFontSize}px`,
     align: 'center',
   });
   inhaleLabel.setOrigin(0.5);
+  inhaleLabel.setVisible(showBreathGuideLabels);
 
   const exhaleLabel = scene.add.text(
     x,
-    y + ringRadius + 28,
+    y + ringRadius + labelGap,
     pattern === 'box'
       ? 'Exhale • hold'
       : pattern === 'custom'
@@ -85,15 +102,16 @@ export const createBreathingResetStagePresenter = ({
     {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '14px',
+    fontSize: `${guideFontSize}px`,
     align: 'center',
   });
   exhaleLabel.setOrigin(0.5);
+  exhaleLabel.setVisible(showBreathGuideLabels);
 
   const phaseLabel = scene.add.text(x, y, pattern === 'box' ? 'Inhale' : 'Easy inhale', {
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
-    fontSize: lowIntensity ? '16px' : '18px',
+    fontSize: `${lowIntensity ? Math.max(17, phaseFontSize - 2) : phaseFontSize}px`,
     fontStyle: '600',
     align: 'center',
   });
@@ -181,8 +199,8 @@ export const createBreathingResetStagePresenter = ({
 
     ring.setAlpha(visible ? (lowIntensity ? 0.84 : 0.96) : 0.2);
     fill.setAlpha(visible ? 1 : 0.28);
-    inhaleLabel.setAlpha(visible ? 1 : 0.32);
-    exhaleLabel.setAlpha(visible ? 1 : 0.32);
+    inhaleLabel.setAlpha(showBreathGuideLabels && visible ? 1 : 0.32);
+    exhaleLabel.setAlpha(showBreathGuideLabels && visible ? 1 : 0.32);
     phaseLabel.setAlpha(visible ? 1 : 0.3);
     guide.setAlpha(visible ? 0.18 : 0.06);
     tween.paused = !shouldRun;

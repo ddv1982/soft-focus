@@ -268,6 +268,7 @@ export class PracticeScene extends Phaser.Scene {
       x: contentCenterX,
       y: guideCenterY,
       stageWidth,
+      stageHeight: guideHeight,
       readableWidth,
       movingBallInset,
     });
@@ -496,12 +497,14 @@ export class PracticeScene extends Phaser.Scene {
     x,
     y,
     stageWidth,
+    stageHeight,
     readableWidth,
     movingBallInset,
   }: {
     x: number;
     y: number;
     stageWidth: number;
+    stageHeight: number;
     readableWidth: number;
     movingBallInset: number;
   }): Promise<void> {
@@ -519,6 +522,7 @@ export class PracticeScene extends Phaser.Scene {
         x,
         y,
         stageWidth,
+        stageHeight,
         readableWidth,
         movingBallInset,
         createIdleController: createIdlePracticeStagePresenter,
