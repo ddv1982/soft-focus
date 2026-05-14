@@ -6,6 +6,15 @@ const openSoftFocus = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => Boolean(window.__softFocusGame));
 };
 
+test('welcome title is not focused on initial load', async ({ page }) => {
+  await page.goto('/');
+
+  const title = page.getByRole('heading', { name: 'A quiet space to practice' });
+
+  await expect(title).toBeVisible();
+  await expect(title).not.toBeFocused();
+});
+
 const putGameIntoCompletion = async (
   page: Page,
   {

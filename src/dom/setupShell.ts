@@ -84,7 +84,11 @@ export const mountSetupShell = ({
   let setupNavigationToken = 0;
   let practiceStartInFlight = false;
 
-  const showSetup = (sceneKey: SetupSceneKey): void => {
+  const focusAutofocusTarget = (): void => {
+    window.requestAnimationFrame(() => root.querySelector<HTMLElement>('[data-autofocus]')?.focus());
+  };
+
+  const showSetup = (sceneKey: SetupSceneKey, { focusAutofocus = true }: { focusAutofocus?: boolean } = {}): void => {
     setupNavigationToken += 1;
     currentSceneKey = sceneKey;
     stopActiveScenes(game);
@@ -92,7 +96,10 @@ export const mountSetupShell = ({
     runtimeHost.classList.add('app-shell__runtime--setup');
     root.hidden = false;
     render();
-    window.requestAnimationFrame(() => root.querySelector<HTMLElement>('[data-autofocus]')?.focus());
+
+    if (focusAutofocus) {
+      focusAutofocusTarget();
+    }
   };
 
   const showPracticeRuntime = (): void => {
@@ -120,7 +127,7 @@ export const mountSetupShell = ({
     runtimeHost.classList.add('app-shell__runtime--setup');
     root.hidden = false;
     render();
-    window.requestAnimationFrame(() => root.querySelector<HTMLElement>('[data-autofocus]')?.focus());
+    focusAutofocusTarget();
   };
 
   const formatSessionDate = (value: string): string => {
@@ -269,7 +276,7 @@ export const mountSetupShell = ({
 
       game.sessionStore.clearRecentSessionSummaries();
       renderHistory();
-      window.requestAnimationFrame(() => root.querySelector<HTMLElement>('[data-autofocus]')?.focus());
+      focusAutofocusTarget();
     });
 
     panel.append(list, clearButton);
@@ -605,7 +612,7 @@ export const mountSetupShell = ({
     }
   };
 
-  showSetup(sceneKeys.entry);
+  showSetup(sceneKeys.entry, { focusAutofocus: false });
 
   return () => {
     unsubscribe();
