@@ -18,7 +18,7 @@ test('breathing preset selection persists and choose-another-exercise returns to
   });
 
   await page.getByRole('button', { name: 'Preferences' }).click();
-  const breathingPresetSelect = page.locator('.preferences-shell__select');
+  const breathingPresetSelect = page.getByLabel('Breathing preset');
   await expect(breathingPresetSelect).toBeVisible();
   await breathingPresetSelect.selectOption('coherent-5-5');
 

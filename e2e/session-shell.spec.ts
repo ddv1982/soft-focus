@@ -72,7 +72,7 @@ test('preferences panel persists safety and breathing settings across reloads', 
   const lowIntensity = page.locator('.preferences-shell__toggle').filter({ hasText: 'Low intensity' }).locator('input[type="checkbox"]');
   const reducedMotion = page.locator('.preferences-shell__toggle').filter({ hasText: 'Reduced motion' }).locator('input[type="checkbox"]');
   const gazeGuidance = page.locator('.preferences-shell__toggle').filter({ hasText: 'Gaze guidance' }).locator('input[type="checkbox"]');
-  const breathingPreset = page.locator('.preferences-shell__select');
+  const breathingPreset = page.getByLabel('Breathing preset');
 
   await expect(gazeGuidance).toBeDisabled();
   await lowIntensity.check();
