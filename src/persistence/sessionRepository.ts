@@ -3,6 +3,7 @@ import {
   createInitialSessionState,
   createDefaultPracticeSettings,
   isBreathingPresetId,
+  isAmbientAudioPresetId,
   exerciseIds,
   getSessionFlowIdForExercise,
   isExerciseId,
@@ -12,6 +13,7 @@ import {
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  sanitizeAmbientAudioVolume,
   sanitizeCustomBreathingSeconds,
   sanitizeCustomPracticeDurationMinutes,
   customBreathingTimingBounds,
@@ -44,6 +46,11 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
     lowIntensityMode: typeof value.lowIntensityMode === 'boolean' ? value.lowIntensityMode : defaults.lowIntensityMode,
     reducedMotionEnabled: typeof value.reducedMotionEnabled === 'boolean' ? value.reducedMotionEnabled : defaults.reducedMotionEnabled,
     gazeGuidanceEnabled: typeof value.gazeGuidanceEnabled === 'boolean' ? value.gazeGuidanceEnabled : defaults.gazeGuidanceEnabled,
+    ambientAudioEnabled: typeof value.ambientAudioEnabled === 'boolean' ? value.ambientAudioEnabled : defaults.ambientAudioEnabled,
+    ambientAudioVolume: sanitizeAmbientAudioVolume(value.ambientAudioVolume),
+    ambientAudioPresetId: typeof value.ambientAudioPresetId === 'string' && isAmbientAudioPresetId(value.ambientAudioPresetId)
+      ? value.ambientAudioPresetId
+      : defaults.ambientAudioPresetId,
     practiceDurationPresetId: typeof value.practiceDurationPresetId === 'string' && isPracticeDurationPresetId(value.practiceDurationPresetId)
       ? value.practiceDurationPresetId
       : defaults.practiceDurationPresetId,

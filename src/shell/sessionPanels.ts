@@ -2,7 +2,14 @@ import type { SoftFocusGame } from '../game/Game';
 import { getEffectiveThemePreference, toggleThemePreference } from '../dom/themePreference';
 import { sceneKeys } from '../game/sceneKeys';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
-import { exerciseIds, normalizeReflection, reflectionMaxLength, type BreathingPresetId } from '../state/types';
+import {
+  ambientAudioVolumeBounds,
+  exerciseIds,
+  normalizeReflection,
+  reflectionMaxLength,
+  type AmbientAudioPresetId,
+  type BreathingPresetId,
+} from '../state/types';
 import {
   chooseAnotherExercise,
   continueToReflection,
@@ -14,6 +21,7 @@ import {
   createEyebrow,
   createOverlayRoot,
   createPanel,
+  createPreferenceRange,
   createPreferenceSelect,
   createPreferencesRoot,
   createPreferenceToggle,
@@ -184,8 +192,15 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
   const root = createOverlayRoot(parent);
   const preferencesRoot = createPreferencesRoot(parent);
   let preferencesOpen = false;
+  let preferencesScrollTop = 0;
 
   const renderPreferences = (): void => {
+    const previousPanel = preferencesRoot.querySelector<HTMLElement>('.preferences-shell__panel');
+
+    if (previousPanel && preferencesOpen) {
+      preferencesScrollTop = previousPanel.scrollTop;
+    }
+
     const state = game.sessionStore.getState();
     const practiceConfig = createPracticeConfigFromSettings(state.selectedExercise, state.phrase, state.settings);
 
@@ -199,6 +214,9 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     const panel = document.createElement('section');
     panel.className = `preferences-shell__panel wellness-reduced-motion${preferencesOpen ? '' : ' preferences-shell__panel--hidden'}`;
     panel.setAttribute('aria-label', 'Practice preferences');
+    panel.addEventListener('scroll', () => {
+      preferencesScrollTop = panel.scrollTop;
+    }, { passive: true });
 
     const header = document.createElement('div');
     header.className = 'preferences-shell__header';
@@ -310,12 +328,59 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
       );
     }
 
+    const ambientGroup = document.createElement('div');
+    ambientGroup.className = 'preferences-shell__group';
+    const ambientTitle = document.createElement('h3');
+    ambientTitle.className = 'preferences-shell__group-title';
+    ambientTitle.textContent = 'Ambient audio';
+    ambientGroup.append(ambientTitle);
+    toggles.append(
+      ambientGroup,
+      createPreferenceToggle({
+        label: practiceConfig.ambientAudio.label,
+        description: practiceConfig.ambientAudio.enabled
+          ? practiceConfig.ambientAudio.description
+          : 'Turn on gentle background music for practice. You can choose the sound and volume here too.',
+        checked: practiceConfig.ambientAudio.enabled,
+        onChange: (checked) => {
+          game.sessionStore.setAmbientAudioEnabled(checked);
+        },
+      }),
+      createPreferenceSelect({
+        label: 'Ambient preset',
+        description: practiceConfig.ambientAudio.availablePresets.find(({ id }) => id === practiceConfig.ambientAudio.presetId)?.summary
+          ?? 'Choose the ambient music character for practice.',
+        value: practiceConfig.ambientAudio.presetId,
+        options: practiceConfig.ambientAudio.availablePresets,
+        onChange: (nextValue) => {
+          game.sessionStore.setAmbientAudioPreset(nextValue as AmbientAudioPresetId);
+        },
+      }),
+      createPreferenceRange({
+        label: 'Ambient volume',
+        description: 'Set how quietly the ambient music sits behind the exercise guidance.',
+        value: practiceConfig.ambientAudio.volume,
+        min: ambientAudioVolumeBounds.min,
+        max: ambientAudioVolumeBounds.max,
+        valueLabel: `${practiceConfig.ambientAudio.volume}%`,
+        onChange: (nextValue) => {
+          game.sessionStore.setAmbientAudioVolume(nextValue);
+        },
+      }),
+    );
+
     const support = document.createElement('p');
     support.className = 'preferences-shell__support';
     support.textContent = supportCopy;
 
     panel.append(header, body, toggles, support);
     preferencesRoot.replaceChildren(launcher, panel);
+
+    if (preferencesOpen) {
+      panel.scrollTop = preferencesScrollTop;
+    } else {
+      preferencesScrollTop = 0;
+    }
   };
 
   const render = (): void => {

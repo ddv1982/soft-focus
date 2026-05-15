@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "smoke:test": "node --import tsx tests/fullFlowSmoke.ts && node --import tsx tests/sessionPersistence.ts && node --import tsx tests/sessionRestartLifecycle.ts && node --import tsx tests/sessionPanelActions.ts && node --import tsx tests/themePreference.ts",
+    "smoke:test": "node --import tsx tests/fullFlowSmoke.ts && node --import tsx tests/ambientAudio.ts && node --import tsx tests/sessionPersistence.ts && node --import tsx tests/sessionRestartLifecycle.ts && node --import tsx tests/sessionPanelActions.ts && node --import tsx tests/themePreference.ts",
     "build": "bun run typecheck && vite build",
     "validate": "bun run typecheck && bun run smoke:test && vite build",
     "validate:full": "bun run validate && bun run e2e:test",

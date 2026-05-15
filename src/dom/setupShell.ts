@@ -1,13 +1,21 @@
+import {
+  createAmbientAudioEngine,
+  getPracticeDurationSeconds,
+  type AmbientAudioSettings,
+  type AmbientAudioStartHandle,
+} from '../audio/ambientAudio';
 import type { SoftFocusGame } from '../game/Game';
 import { sceneKeys, type SceneKey } from '../game/sceneKeys';
 import { getInstructionsBackScene } from '../game/navigation';
 import { reportOperatorError } from '../observability/operatorErrors';
 import { exerciseCatalog, getExerciseDefinition, getExerciseStartScene } from '../practice/exercises';
-import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
+import { createPracticeConfigFromSettings, type PracticeConfig } from '../practice/practiceConfig';
 import {
+  ambientAudioVolumeBounds,
   breathingPresetIds,
   customBreathingTimingBounds,
   customPracticeDurationBounds,
+  isAmbientAudioPresetId,
   isBreathingPresetId,
   isMovingBallPresetId,
   isPracticeDurationPresetId,
@@ -16,6 +24,7 @@ import {
   phraseMaxLength,
   phraseMinLength,
   practiceDurationPresetIds,
+  type AmbientAudioPresetId,
   type BreathingPresetId,
   type MovingBallPresetId,
   type PracticeDurationPresetId,
@@ -27,6 +36,7 @@ import {
   createElement,
   createHeader,
   createMinuteStepper,
+  createRangeSlider,
   createSelect,
   createSecondStepper,
   createToggle,
@@ -56,6 +66,12 @@ declare global {
     __softFocusShowSetupScene?: (sceneKey: SceneKey) => void;
   }
 }
+
+const getAmbientAudioSettings = (settings: PracticeConfig['ambientAudio']): AmbientAudioSettings => ({
+  enabled: settings.enabled,
+  presetId: settings.presetId,
+  volume: settings.volume,
+});
 
 const stopActiveScenes = (game: SoftFocusGame, exceptSceneKey?: SceneKey): void => {
   game.scene.getScenes(true).forEach((scene) => {
@@ -164,6 +180,28 @@ export const mountSetupShell = ({
     }
 
     const navigationToken = setupNavigationToken;
+    const practiceConfig = game.sessionStore.createPracticeConfig();
+    let ambientAudioStart: AmbientAudioStartHandle | undefined;
+    let ambientAudioHandedOff = false;
+
+    if (practiceConfig.ambientAudio.enabled) {
+      const ambientAudioSettings = getAmbientAudioSettings(practiceConfig.ambientAudio);
+      const engine = createAmbientAudioEngine(ambientAudioSettings, {
+        onPlaybackError: (error) => {
+          reportOperatorError('Soft Focus could not continue ambient music.', error);
+        },
+      });
+      const startResult = engine.start()
+        .then(() => ({ ok: true }) as const)
+        .catch((error: unknown) => ({ ok: false, error }) as const);
+
+      ambientAudioStart = {
+        engine,
+        settings: ambientAudioSettings,
+        startResult,
+        totalDurationSeconds: getPracticeDurationSeconds(practiceConfig),
+      };
+    }
 
     practiceStartInFlight = true;
     renderInstructions();
@@ -175,9 +213,9 @@ export const mountSetupShell = ({
         return;
       }
 
-      const practiceConfig = game.sessionStore.createPracticeConfig();
       showPracticeRuntime();
-      game.scene.start(sceneKeys.practice, { practiceConfig });
+      game.scene.start(sceneKeys.practice, { practiceConfig, ambientAudioStart });
+      ambientAudioHandedOff = true;
     } catch (error) {
       if (navigationToken === setupNavigationToken && currentSceneKey === sceneKeys.instructions) {
         parent.classList.add('app-runtime-shell--setup');
@@ -188,6 +226,10 @@ export const mountSetupShell = ({
 
       reportOperatorError('Soft Focus could not start practice.', error);
     } finally {
+      if (!ambientAudioHandedOff) {
+        ambientAudioStart?.engine.dispose({ fadeOutSeconds: 0 });
+      }
+
       practiceStartInFlight = false;
 
       if (!root.hidden && currentSceneKey === sceneKeys.instructions) {
@@ -454,6 +496,48 @@ export const mountSetupShell = ({
       }),
       durationControl,
     );
+
+    const audioSettings = createElement('div', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.035] p-4');
+    audioSettings.append(createToggle({
+      label: previewConfig.ambientAudio.label,
+      description: previewConfig.ambientAudio.description,
+      checked: state.settings.ambientAudioEnabled,
+      onChange: (checked) => {
+        game.sessionStore.setAmbientAudioEnabled(checked);
+        renderInstructions();
+      },
+    }));
+
+    if (state.settings.ambientAudioEnabled) {
+      audioSettings.append(
+        createSelect({
+          label: 'Ambient music preset',
+          description: previewConfig.ambientAudio.availablePresets.find(({ id }) => id === previewConfig.ambientAudio.presetId)?.summary ?? previewConfig.ambientAudio.description,
+          value: previewConfig.ambientAudio.presetId,
+          options: previewConfig.ambientAudio.availablePresets,
+          onChange: (value) => {
+            if (isAmbientAudioPresetId(value)) {
+              game.sessionStore.setAmbientAudioPreset(value as AmbientAudioPresetId);
+              renderInstructions();
+            }
+          },
+        }),
+        createRangeSlider({
+          label: 'Ambient music volume',
+          description: 'Adjust before practice starts. The value updates while you drag and commits when released; start near 40% and lower if you want more space.',
+          value: state.settings.ambientAudioVolume,
+          min: ambientAudioVolumeBounds.min,
+          max: ambientAudioVolumeBounds.max,
+          valueLabel: `${state.settings.ambientAudioVolume}%`,
+          onChange: (volume) => {
+            game.sessionStore.setAmbientAudioVolume(volume);
+            renderInstructions();
+          },
+        }),
+      );
+    }
+
+    settings.append(audioSettings);
 
     if (previewConfig.movingBall) {
       settings.append(createSelect({

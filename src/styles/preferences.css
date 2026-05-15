@@ -53,6 +53,8 @@
     padding: 22px;
     border-radius: 30px;
     overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .preferences-shell__panel::before {
@@ -280,5 +282,48 @@
     color: var(--text);
     font: inherit;
     font-weight: 700;
+  }
+
+  .preferences-shell__range-row {
+    align-items: center;
+  }
+
+  .preferences-shell__range-control {
+    flex: 0 0 min(180px, 42%);
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+  }
+
+  .preferences-shell__range-value {
+    color: var(--sand);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  .preferences-shell__range {
+    width: 100%;
+    min-width: 132px;
+    min-height: 44px;
+    accent-color: var(--ocean-tide);
+    cursor: pointer;
+  }
+
+  @media (max-width: 520px) {
+    .preferences-shell__range-row {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .preferences-shell__range-control {
+      flex: none;
+      width: 100%;
+      justify-items: stretch;
+    }
+
+    .preferences-shell__range-value {
+      justify-self: start;
+    }
   }
 }

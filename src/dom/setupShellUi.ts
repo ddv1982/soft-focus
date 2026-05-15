@@ -109,6 +109,53 @@ export const createSelect = ({
   return row;
 };
 
+export const createRangeSlider = ({
+  label,
+  description,
+  value,
+  min,
+  max,
+  step = 1,
+  valueLabel,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  valueLabel: string;
+  onChange: (value: number) => void;
+}): HTMLLabelElement => {
+  const row = createElement('label', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4');
+  const header = createElement('span', 'grid gap-1 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4');
+  const valueOutput = createElement('output', 'rounded-full border border-[var(--line)] bg-[var(--surface-control)] px-3 py-1 text-sm font-black text-[var(--text)]', valueLabel);
+  valueOutput.ariaLive = 'polite';
+  header.append(
+    createElement('span', 'text-base font-bold text-[var(--text)]', label),
+    valueOutput,
+  );
+  row.append(
+    header,
+    createElement('span', 'text-sm leading-6 text-[var(--text-muted)]', description),
+  );
+
+  const input = createElement('input', 'wellness-focus min-h-12 w-full accent-wellness-mist');
+  input.type = 'range';
+  input.min = String(min);
+  input.max = String(max);
+  input.step = String(step);
+  input.value = String(value);
+  input.addEventListener('input', () => {
+    valueOutput.textContent = `${input.value}%`;
+  });
+  input.addEventListener('change', () => onChange(Number(input.value)));
+  row.append(input);
+
+  return row;
+};
+
 export const createMinuteStepper = ({
   label,
   minutes,

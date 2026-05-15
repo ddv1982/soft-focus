@@ -7,8 +7,9 @@ import {
 } from '../src/game/navigation.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
 import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { breathingPresetIds, customPracticeDurationBounds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { ambientAudioPresetIds, ambientAudioPresetOrder, ambientAudioVolumeBounds, breathingPresetIds, customPracticeDurationBounds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionFlowIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
+import { ambientAudioPresetCatalog } from '../src/practice/practiceConfig.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { resolveMovingBallStagePresenterLayout } from '../src/practice/stagePresenters/movingBallStagePresenter.ts';
 import { initialSceneKey } from '../src/game/sceneKeys.ts';
@@ -59,6 +60,9 @@ const runPracticeControlsScenario = (): void => {
   store.setLowIntensityMode(false);
   store.setReducedMotionEnabled(true);
   store.setGazeGuidanceEnabled(true);
+  store.setAmbientAudioEnabled(true);
+  store.setAmbientAudioVolume(36);
+  store.setAmbientAudioPreset(ambientAudioPresetIds.clearBells);
   store.updateCurrentScene(sceneKeys.entry);
   store.updateCurrentScene(sceneKeys.exerciseSelection);
   store.updateCurrentScene(sceneKeys.phrase);
@@ -74,6 +78,9 @@ const runPracticeControlsScenario = (): void => {
   assert(practiceConfig.duration.presetId === practiceDurationPresetIds.standard, 'expected default duration preset to preserve the standard practice length');
   assert(practiceConfig.duration.practiceSeconds === 90, 'expected standard duration preset to preserve current practice seconds');
   assert(practiceConfig.duration.customMinutes === customPracticeDurationBounds.defaultMinutes, 'expected default custom duration minutes to be available');
+  assert(practiceConfig.ambientAudio.enabled === true, 'expected ambient audio toggle to feed practice config');
+  assert(practiceConfig.ambientAudio.volume === 36, 'expected ambient audio volume to feed practice config');
+  assert(practiceConfig.ambientAudio.presetId === ambientAudioPresetIds.clearBells, 'expected ambient audio preset to feed practice config');
   assert(practiceConfig.phases[1]?.seconds === 90, 'expected standard duration preset to feed the active practice phase');
   assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
   assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');
@@ -96,7 +103,9 @@ const runPracticeControlsScenario = (): void => {
   store.startPractice(practiceConfig);
   let runner = new PracticeRunner(practiceConfig);
   let snapshot = runner.getSnapshot();
+  const totalPracticeSeconds = practiceConfig.phases.reduce((totalSeconds, phase) => totalSeconds + phase.seconds, 0);
   assert(snapshot.phase === 'settle', 'expected the practice flow to begin with settle');
+  assert(snapshot.totalSecondsRemaining === totalPracticeSeconds, 'expected the runner to expose whole-exercise remaining seconds at start');
   assert(snapshot.paused === false, 'expected practice to start unpaused');
 
   snapshot = runner.pause();
@@ -106,6 +115,21 @@ const runPracticeControlsScenario = (): void => {
   snapshot = runner.resume();
   store.setPracticePaused(snapshot.paused);
   assert(snapshot.paused === false, 'expected resume control to resume the runner');
+
+  snapshot = runner.tick(20_000);
+  assert(snapshot.phase === 'phrase', 'expected runner to advance into the active phrase phase after settle');
+  assert(snapshot.secondsRemaining === 90, 'expected phase-local remaining seconds to reset at the phrase phase boundary');
+  assert(snapshot.totalSecondsRemaining === 110, 'expected total remaining seconds not to reset upward at the phrase phase boundary');
+
+  snapshot = runner.tick(85_000);
+  assert(snapshot.phase === 'phrase', 'expected runner to remain in phrase practice before the final phrase seconds complete');
+  assert(snapshot.secondsRemaining === 5, 'expected phase-local remaining seconds to reach the final phrase window');
+  assert(snapshot.totalSecondsRemaining === 25, 'expected total remaining seconds to include the later recovery phase');
+
+  snapshot = runner.tick(5_000);
+  assert(snapshot.phase === 'recovery', 'expected runner to advance into recovery after phrase practice');
+  assert(snapshot.secondsRemaining === 20, 'expected phase-local remaining seconds to reset at recovery');
+  assert(snapshot.totalSecondsRemaining === 20, 'expected total remaining seconds to continue monotonically into recovery');
 
   while (!snapshot.complete) {
     snapshot = runner.tick(30_000);
@@ -309,6 +333,89 @@ const runExerciseBranchingScenario = (): void => {
   assert(orientingConfig.copy.reflectionPrompt.includes('wider space'), 'expected orienting reflection prompt to stay orienting-aware');
 };
 
+const runAmbientPracticeFitScenario = (): void => {
+  const expectedAmbientPresetIds = [...ambientAudioPresetOrder];
+  const catalogPresetIds = ambientAudioPresetCatalog.map(({ id }) => id);
+
+  assert(catalogPresetIds.length === expectedAmbientPresetIds.length, 'expected ambient practice catalog to expose only canonical preset ids');
+  expectedAmbientPresetIds.forEach((presetId, index) => {
+    assert(catalogPresetIds[index] === presetId, `expected ambient preset ${presetId} to keep canonical catalog ordering`);
+  });
+
+  Object.values(exerciseIds).forEach((exerciseId) => {
+    assert(
+      ambientAudioPresetCatalog.some(({ practiceFit }) => practiceFit.recommendedExercises.includes(exerciseId)),
+      `expected at least one canonical ambient preset to include practice-fit metadata for ${exerciseId}`,
+    );
+  });
+
+  ambientAudioPresetCatalog.forEach((preset) => {
+    assert(preset.title.length > 0 && preset.summary.length > 0, `expected ${preset.id} to expose user-facing catalog copy`);
+    assert(preset.musicTheory.harmonicPalette.length >= 3, `expected ${preset.id} to expose a coherent harmonic palette`);
+    assert(preset.musicTheory.tonalCenter.length > 0, `expected ${preset.id} to declare a tonal center`);
+    assert(/meter|metric|pulse|sustained|free-time/i.test(preset.musicTheory.rhythmFeel), `expected ${preset.id} to describe a bounded musical rhythm feel`);
+    assert(preset.layers.length >= 3, `expected ${preset.id} to expose layered musical metadata rather than a single-tone recipe`);
+    assert(preset.layers.every(({ kind }) => kind !== 'air' && kind !== 'field'), `expected ${preset.id} metadata to avoid raw air/field layers`);
+    assert(preset.layers.every(({ texture }) => !/static/i.test(texture)), `expected ${preset.id} texture metadata not to describe static`);
+    assert(preset.practiceFit.avoids.some((avoidance) => /pulse|transient|motif|melody|bass|motion|subdivision/i.test(avoidance)), `expected ${preset.id} to document musical boundary conditions`);
+    assert(preset.practiceFit.recommendedExercises.length > 0, `expected ${preset.id} to recommend at least one practice mode`);
+    preset.practiceFit.recommendedExercises.forEach((exerciseId) => {
+      assert(Object.values(exerciseIds).includes(exerciseId), `expected ${preset.id} to recommend only known practice modes`);
+    });
+  });
+
+  const store = createSessionStore();
+  const defaultAmbientConfig = store.createPracticeConfig().ambientAudio;
+
+  assert(defaultAmbientConfig.enabled === false, 'expected ambient audio to remain off by default');
+  assert(defaultAmbientConfig.volume === ambientAudioVolumeBounds.defaultValue, 'expected ambient audio to use the safe bounded default volume');
+  assert(defaultAmbientConfig.presetId === ambientAudioPresetIds.openHorizon, 'expected ambient audio to use the default canonical preset');
+  assert(defaultAmbientConfig.description.includes('Off by default'), 'expected disabled ambient metadata to clearly state that playback is off by default');
+  assert(!/noise|static/i.test(defaultAmbientConfig.label), 'expected ambient control label to avoid noise/static wording');
+  assert(!/noise|static/i.test(defaultAmbientConfig.description), 'expected disabled ambient control copy to avoid noise/static wording');
+
+  store.setAmbientAudioEnabled(true);
+  store.setAmbientAudioVolume(41);
+
+  ([
+    [exerciseIds.phraseAnchor, ambientAudioPresetIds.openHorizon],
+    [exerciseIds.movingBall, ambientAudioPresetIds.clearBells],
+    [exerciseIds.breathingReset, ambientAudioPresetIds.emberDrift],
+    [exerciseIds.bilateralRhythm, ambientAudioPresetIds.emberDrift],
+    [exerciseIds.orienting, ambientAudioPresetIds.openHorizon],
+  ] as const).forEach(([exerciseId, presetId]) => {
+    store.setSelectedExercise(exerciseId);
+    store.setAmbientAudioPreset(presetId);
+    if (exerciseId === exerciseIds.phraseAnchor) {
+      store.setPhrase('steady phrase');
+    }
+
+    const practiceConfig = store.createPracticeConfig();
+    const selectedPreset = practiceConfig.ambientAudio.availablePresets.find(({ id }) => id === presetId);
+
+    assert(practiceConfig.ambientAudio.enabled === true, `expected ambient enabled state to feed ${exerciseId} practice config`);
+    assert(practiceConfig.ambientAudio.volume === 41, `expected ambient volume to feed ${exerciseId} practice config`);
+    assert(practiceConfig.ambientAudio.presetId === presetId, `expected selected ambient preset to feed ${exerciseId} practice config`);
+    assert(selectedPreset, `expected selected ambient preset metadata to be available for ${exerciseId}`);
+    assert(selectedPreset.practiceFit.recommendedExercises.includes(exerciseId), `expected selected ambient preset to retain practice-fit metadata for ${exerciseId}`);
+    assert(selectedPreset.layers.some(({ kind, density }) => kind === 'drone' && density === 'continuous'), `expected selected ambient preset to include a continuous tonal anchor for ${exerciseId}`);
+    assert(selectedPreset.layers.some(({ kind, density }) => kind === 'pad' && (density === 'continuous' || density === 'slow')), `expected selected ambient preset to include a sustained musical pad for ${exerciseId}`);
+    assert(selectedPreset.layers.every(({ kind }) => kind !== 'air' && kind !== 'field'), `expected selected ambient preset metadata for ${exerciseId} not to rely on raw air/field layers`);
+    assert(practiceConfig.ambientAudio.description.includes('Volume 41%'), `expected ambient description to reflect selected volume for ${exerciseId}`);
+    assert(!/noise|static/i.test(practiceConfig.ambientAudio.label), `expected ambient control label for ${exerciseId} to avoid noise/static wording`);
+    assert(!/noise|static/i.test(practiceConfig.ambientAudio.description), `expected ambient enabled copy for ${exerciseId} to avoid noise/static wording`);
+  });
+
+  store.setAmbientAudioPreset(ambientAudioPresetIds.clearBells);
+  store.setAmbientAudioEnabled(false);
+  const disabledAmbientConfig = store.createPracticeConfig();
+
+  assert(disabledAmbientConfig.ambientAudio.enabled === false, 'expected disabled ambient state to feed practice config');
+  assert(disabledAmbientConfig.ambientAudio.presetId === ambientAudioPresetIds.clearBells, 'expected disabled ambient state to preserve the selected non-default canonical preset');
+  assert(disabledAmbientConfig.ambientAudio.volume === 41, 'expected disabled ambient state to preserve the selected volume');
+  assert(disabledAmbientConfig.ambientAudio.description.includes('Off by default'), 'expected disabled ambient description to avoid implying playback');
+};
+
 const runReflectionAndReloadScenario = (): void => {
   const storage = new MemoryStorage();
   const repository = createSessionRepository(storage);
@@ -400,6 +507,7 @@ const runOperatorErrorReportingScenario = (): void => {
 assertSceneFlow();
 runPracticeControlsScenario();
 runExerciseBranchingScenario();
+runAmbientPracticeFitScenario();
 runReflectionAndReloadScenario();
 runBreathingSelectionReturnScenario();
 runOperatorErrorReportingScenario();

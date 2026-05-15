@@ -126,6 +126,7 @@
   .session-overlay__textarea:focus-visible,
   .preferences-shell__launcher:focus-visible,
   .preferences-shell__button:focus-visible,
+  .preferences-shell__range:focus-visible,
   .preferences-shell__select:focus-visible,
   .preferences-shell__checkbox:focus-visible,
   .wellness-focus:focus-visible {

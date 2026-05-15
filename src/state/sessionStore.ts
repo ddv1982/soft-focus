@@ -8,13 +8,16 @@ import {
   createDefaultPracticeSettings,
   exerciseIds,
   getSessionFlowIdForExercise,
+  isAmbientAudioPresetId,
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
+  sanitizeAmbientAudioVolume,
   sanitizeCustomBreathingSeconds,
   sanitizeCustomPracticeDurationMinutes,
   customBreathingTimingBounds,
   type BreathingPresetId,
+  type AmbientAudioPresetId,
   type ExerciseId,
   type MovingBallPresetId,
   type PracticeDurationPresetId,
@@ -107,6 +110,22 @@ export class SessionStore {
 
   setGazeGuidanceEnabled(enabled: boolean): SessionState {
     return this.updateSettings({ gazeGuidanceEnabled: enabled });
+  }
+
+  setAmbientAudioEnabled(enabled: boolean): SessionState {
+    return this.updateSettings({ ambientAudioEnabled: enabled });
+  }
+
+  setAmbientAudioVolume(volume: number): SessionState {
+    return this.updateSettings({ ambientAudioVolume: sanitizeAmbientAudioVolume(volume) });
+  }
+
+  setAmbientAudioPreset(ambientAudioPresetId: AmbientAudioPresetId): SessionState {
+    if (!isAmbientAudioPresetId(ambientAudioPresetId)) {
+      return this.state;
+    }
+
+    return this.updateSettings({ ambientAudioPresetId });
   }
 
   setPracticeDurationPreset(practiceDurationPresetId: PracticeDurationPresetId): SessionState {

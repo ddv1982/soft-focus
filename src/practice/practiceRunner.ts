@@ -7,6 +7,7 @@ export interface PracticeRunnerSnapshot {
   phase: PracticeRunnerPhase;
   phaseIndex: number;
   secondsRemaining: number;
+  totalSecondsRemaining: number;
   paused: boolean;
   complete: boolean;
 }
@@ -79,6 +80,7 @@ export class PracticeRunner {
         phase: 'complete',
         phaseIndex: this.phases.length,
         secondsRemaining: 0,
+        totalSecondsRemaining: 0,
         paused: false,
         complete: true,
       };
@@ -86,10 +88,16 @@ export class PracticeRunner {
 
     const timerState = this.timer.getState();
 
+    const secondsRemaining = Math.ceil(timerState.remainingMs / 1000);
+    const futurePhaseSeconds = this.phases
+      .slice(this.phaseIndex + 1)
+      .reduce((totalSeconds, phase) => totalSeconds + phase.seconds, 0);
+
     return {
       phase: this.phases[this.phaseIndex].key,
       phaseIndex: this.phaseIndex,
-      secondsRemaining: Math.ceil(timerState.remainingMs / 1000),
+      secondsRemaining,
+      totalSecondsRemaining: secondsRemaining + futurePhaseSeconds,
       paused: timerState.paused,
       complete: false,
     };

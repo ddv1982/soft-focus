@@ -45,6 +45,20 @@ export const practiceDurationPresetIds = {
 
 export type PracticeDurationPresetId = (typeof practiceDurationPresetIds)[keyof typeof practiceDurationPresetIds];
 
+export const ambientAudioPresetIds = {
+  openHorizon: 'open-horizon',
+  emberDrift: 'ember-drift',
+  clearBells: 'clear-bells',
+} as const;
+
+export type AmbientAudioPresetId = (typeof ambientAudioPresetIds)[keyof typeof ambientAudioPresetIds];
+
+export const ambientAudioPresetOrder = [
+  ambientAudioPresetIds.openHorizon,
+  ambientAudioPresetIds.emberDrift,
+  ambientAudioPresetIds.clearBells,
+] as const satisfies readonly AmbientAudioPresetId[];
+
 export const isExerciseId = (value: string): value is ExerciseId => (
   Object.values(exerciseIds) as readonly string[]
 ).includes(value);
@@ -69,10 +83,17 @@ export const isPracticeDurationPresetId = (value: string): value is PracticeDura
   Object.values(practiceDurationPresetIds) as readonly string[]
 ).includes(value);
 
+export const isAmbientAudioPresetId = (value: string): value is AmbientAudioPresetId => (
+  ambientAudioPresetOrder as readonly string[]
+).includes(value);
+
 export interface PracticeSettings {
   lowIntensityMode: boolean;
   reducedMotionEnabled: boolean;
   gazeGuidanceEnabled: boolean;
+  ambientAudioEnabled: boolean;
+  ambientAudioVolume: number;
+  ambientAudioPresetId: AmbientAudioPresetId;
   practiceDurationPresetId: PracticeDurationPresetId;
   customPracticeDurationMinutes: number;
   movingBallPresetId: MovingBallPresetId;
@@ -152,6 +173,12 @@ export const customBreathingTimingBounds = {
   defaultExhaleSeconds: 6,
 } as const;
 
+export const ambientAudioVolumeBounds = {
+  min: 0,
+  max: 100,
+  defaultValue: 40,
+} as const;
+
 export const normalizePhrase = (phrase: string): string => phrase.trim().replace(/\s+/g, ' ');
 
 export const normalizeReflection = (reflection: string): string => reflection
@@ -187,10 +214,24 @@ export const sanitizeCustomBreathingSeconds = (seconds: unknown, fallbackSeconds
   );
 };
 
+export const sanitizeAmbientAudioVolume = (volume: unknown): number => {
+  if (typeof volume !== 'number' || !Number.isFinite(volume)) {
+    return ambientAudioVolumeBounds.defaultValue;
+  }
+
+  return Math.min(
+    ambientAudioVolumeBounds.max,
+    Math.max(ambientAudioVolumeBounds.min, Math.round(volume)),
+  );
+};
+
 export const defaultPracticeSettings = (): PracticeSettings => ({
   lowIntensityMode: true,
   reducedMotionEnabled: false,
   gazeGuidanceEnabled: false,
+  ambientAudioEnabled: false,
+  ambientAudioVolume: ambientAudioVolumeBounds.defaultValue,
+  ambientAudioPresetId: ambientAudioPresetIds.openHorizon,
   practiceDurationPresetId: practiceDurationPresetIds.standard,
   customPracticeDurationMinutes: customPracticeDurationBounds.defaultMinutes,
   movingBallPresetId: movingBallPresetIds.steadyCenter,

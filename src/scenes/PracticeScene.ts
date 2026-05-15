@@ -1,5 +1,13 @@
 import * as Phaser from 'phaser';
 
+import {
+  AmbientAudioUnavailableError,
+  createAmbientAudioEngine,
+  getPracticeDurationSeconds,
+  type AmbientAudioEngine,
+  type AmbientAudioSettings,
+  type AmbientAudioStartHandle,
+} from '../audio/ambientAudio';
 import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
 import { sceneKeys } from '../game/sceneKeys';
@@ -33,6 +41,7 @@ const focusControlsRevealMs = 300;
 interface PracticeSceneData {
   practiceConfig?: PracticeConfig;
   snapshot?: PracticeRunnerSnapshot;
+  ambientAudioStart?: AmbientAudioStartHandle;
 }
 
 export class PracticeScene extends Phaser.Scene {
@@ -47,6 +56,8 @@ export class PracticeScene extends Phaser.Scene {
   private timerText?: Phaser.GameObjects.Text;
 
   private statusText?: Phaser.GameObjects.Text;
+
+  private ambientAudioNoticeText?: Phaser.GameObjects.Text;
 
   private focusHeaderObjects: (Phaser.GameObjects.Container | Phaser.GameObjects.Text)[] = [];
 
@@ -67,6 +78,14 @@ export class PracticeScene extends Phaser.Scene {
   private controls?: PracticeControls;
 
   private stagePresenter: PracticeStagePresenterController = createIdlePracticeStagePresenter();
+
+  private ambientAudio: AmbientAudioEngine | null = null;
+
+  private ambientAudioSettings: AmbientAudioSettings | null = null;
+
+  private totalPracticeDurationSeconds = 0;
+
+  private unsubscribePracticeSettings: (() => void) | null = null;
 
   private presenterLoadId = 0;
 
@@ -171,6 +190,7 @@ export class PracticeScene extends Phaser.Scene {
     this.practiceConfig = practiceConfig;
     this.practiceRunner = new PracticeRunner(practiceConfig, data?.snapshot);
     this.snapshot = this.practiceRunner.getSnapshot();
+    this.totalPracticeDurationSeconds = getPracticeDurationSeconds(practiceConfig);
     this.layoutSize = {
       width: this.scale.width,
       height: this.scale.height,
@@ -264,6 +284,19 @@ export class PracticeScene extends Phaser.Scene {
     this.focusControlsTextVisibleAlpha = compactPractice ? 0 : 0.55;
     this.statusText.setAlpha(this.focusControlsTextVisibleAlpha);
 
+    this.ambientAudioNoticeText = this.add.text(contentCenterX, practiceBottom - (compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl), '', {
+      color: uiTheme.colors.coral,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '12px',
+      fontStyle: '700',
+      align: 'center',
+      wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
+      lineSpacing: 4,
+    });
+    this.ambientAudioNoticeText.setOrigin(0.5, 1);
+    this.ambientAudioNoticeText.setAlpha(0.92);
+    this.ambientAudioNoticeText.setVisible(false);
+
     void this.loadStagePresenter({
       x: contentCenterX,
       y: guideCenterY,
@@ -312,6 +345,13 @@ export class PracticeScene extends Phaser.Scene {
     });
 
     this.refreshView(this.snapshot);
+    this.ambientAudioSettings = this.getAmbientAudioSettings(practiceConfig.ambientAudio);
+    if (!this.adoptPrestartedAmbientAudio(data?.ambientAudioStart)) {
+      void this.startAmbientAudio(this.ambientAudioSettings);
+    }
+    this.unsubscribePracticeSettings = sessionStore.subscribe(() => {
+      this.reconcileAmbientAudioSettings(this.getAmbientAudioSettings(sessionStore.createPracticeConfig().ambientAudio));
+    });
     this.input.on('pointerdown', this.handlePracticePointerDown);
     this.input.on('pointermove', this.handlePracticePointerMove);
     this.scheduleFocusHeaderFade();
@@ -333,7 +373,10 @@ export class PracticeScene extends Phaser.Scene {
       this.focusControlsHideEvent?.remove(false);
       this.focusControlsTween?.stop();
       this.focusControlsTextTween?.stop();
+      this.unsubscribePracticeSettings?.();
+      this.unsubscribePracticeSettings = null;
       window.removeEventListener('soft-focus:themechange', this.handleThemeChange);
+      this.stopAmbientAudio({ immediate: true });
       this.stagePresenter.destroy();
       this.stagePresenter = createIdlePracticeStagePresenter();
     });
@@ -386,6 +429,7 @@ export class PracticeScene extends Phaser.Scene {
     this.pauseOverlay?.setVisible(snapshot.paused);
     this.stagePresenter.setActive(Boolean(activePhase?.activatesStagePresenter) && !snapshot.complete);
     this.stagePresenter.setPaused(snapshot.paused);
+    this.syncAmbientAudio(snapshot, wasPaused);
 
     if (snapshot.paused) {
       this.revealFocusHeader(false);
@@ -398,6 +442,201 @@ export class PracticeScene extends Phaser.Scene {
     const sessionStore = getSessionStore(this);
     sessionStore.setPracticePhase(snapshot.phase, snapshot.phaseIndex, snapshot.secondsRemaining);
     sessionStore.setPracticePaused(snapshot.paused);
+  }
+
+  private getAmbientAudioSettings(settings: PracticeConfig['ambientAudio']): AmbientAudioSettings {
+    return {
+      enabled: settings.enabled,
+      presetId: settings.presetId,
+      volume: settings.volume,
+    };
+  }
+
+  private ambientAudioSettingsMatch(left: AmbientAudioSettings, right: AmbientAudioSettings): boolean {
+    return left.enabled === right.enabled
+      && left.presetId === right.presetId
+      && left.volume === right.volume;
+  }
+
+  private reconcileAmbientAudioSettings(settings: AmbientAudioSettings): void {
+    const previousSettings = this.ambientAudioSettings;
+
+    if (previousSettings && this.ambientAudioSettingsMatch(previousSettings, settings)) {
+      return;
+    }
+
+    this.ambientAudioSettings = settings;
+
+    if (!settings.enabled || this.snapshot?.complete) {
+      this.setAmbientAudioNotice(null);
+      this.stopAmbientAudio({ immediate: !this.snapshot?.complete });
+      return;
+    }
+
+    if (this.ambientAudio) {
+      this.ambientAudio.setPreset(settings.presetId);
+      this.ambientAudio.setVolume(settings.volume);
+      this.syncAmbientAudioClock();
+
+      if (!this.snapshot?.paused && !this.ambientAudio.isPlaying()) {
+        void this.resumeAmbientAudio();
+      }
+
+      return;
+    }
+
+    if (!this.snapshot?.paused) {
+      void this.startAmbientAudio(settings);
+    }
+  }
+
+  private adoptPrestartedAmbientAudio(handle: AmbientAudioStartHandle | undefined): boolean {
+    if (!handle || !this.ambientAudioSettings) {
+      return false;
+    }
+
+    if (
+      !this.ambientAudioSettings.enabled
+      || !this.ambientAudioSettingsMatch(handle.settings, this.ambientAudioSettings)
+      || handle.totalDurationSeconds !== this.totalPracticeDurationSeconds
+    ) {
+      handle.engine.dispose({ fadeOutSeconds: 0 });
+      return false;
+    }
+
+    handle.engine.setPlaybackErrorHandler((error) => {
+      this.handleAmbientAudioFailure('Soft Focus could not continue ambient music.', error, handle.engine);
+    });
+    this.ambientAudio = handle.engine;
+    this.syncAmbientAudioClock();
+    void handle.startResult.then((result) => {
+      if (this.ambientAudio !== handle.engine) {
+        return;
+      }
+
+      if (result.ok) {
+        this.setAmbientAudioNotice(null);
+        return;
+      }
+
+      this.handleAmbientAudioFailure('Soft Focus could not start ambient music.', result.error, handle.engine);
+    });
+
+    return true;
+  }
+
+  private async startAmbientAudio(settings: AmbientAudioSettings | null = this.ambientAudioSettings): Promise<void> {
+    if (!settings?.enabled || this.snapshot?.paused || this.snapshot?.complete) {
+      return;
+    }
+
+    const engine = createAmbientAudioEngine({
+      enabled: settings.enabled,
+      presetId: settings.presetId,
+      volume: settings.volume,
+    }, {
+      onPlaybackError: (error) => {
+        this.handleAmbientAudioFailure('Soft Focus could not continue ambient music.', error, engine);
+      },
+    });
+    this.ambientAudio = engine;
+
+    try {
+      await engine.start();
+      this.syncAmbientAudioClock();
+      this.setAmbientAudioNotice(null);
+    } catch (error) {
+      this.handleAmbientAudioFailure('Soft Focus could not start ambient music.', error, engine);
+    }
+  }
+
+  private syncAmbientAudio(snapshot: PracticeRunnerSnapshot, wasPaused: boolean): void {
+    if (!this.ambientAudio) {
+      return;
+    }
+
+    this.syncAmbientAudioClock(snapshot);
+
+    if (snapshot.complete) {
+      return;
+    }
+
+    if (snapshot.paused) {
+      this.ambientAudio.pause();
+      return;
+    }
+
+    if (wasPaused) {
+      void this.resumeAmbientAudio();
+    }
+  }
+
+  private syncAmbientAudioClock(snapshot: PracticeRunnerSnapshot | null = this.snapshot): void {
+    if (!this.ambientAudio || !snapshot) {
+      return;
+    }
+
+    this.ambientAudio.syncExerciseClock({
+      totalSecondsRemaining: snapshot.totalSecondsRemaining,
+      totalDurationSeconds: this.totalPracticeDurationSeconds,
+    });
+  }
+
+  private async resumeAmbientAudio(): Promise<void> {
+    if (!this.ambientAudio) {
+      return;
+    }
+
+    const engine = this.ambientAudio;
+
+    try {
+      await engine.resume();
+      this.syncAmbientAudioClock();
+      this.setAmbientAudioNotice(null);
+    } catch (error) {
+      this.handleAmbientAudioFailure('Soft Focus could not resume ambient music.', error, engine);
+    }
+  }
+
+  private handleAmbientAudioFailure(message: string, error: unknown, engine: AmbientAudioEngine): void {
+    reportOperatorError(message, error);
+    this.setAmbientAudioNotice(this.getAmbientAudioFailureNotice(error));
+
+    if (this.ambientAudio === engine) {
+      engine.dispose({ fadeOutSeconds: 0 });
+      this.ambientAudio = null;
+    }
+  }
+
+  private getAmbientAudioFailureNotice(error: unknown): string {
+    if (error instanceof AmbientAudioUnavailableError && error.reason === 'empty-playlist') {
+      return 'Ambient music is enabled, but no bundled tracks are available.';
+    }
+
+    return 'Ambient music was blocked by the browser. Open Preferences and toggle Ambient audio off and on to retry.';
+  }
+
+  private setAmbientAudioNotice(message: string | null): void {
+    if (!this.ambientAudioNoticeText) {
+      return;
+    }
+
+    this.ambientAudioNoticeText.setText(message ?? '');
+    this.ambientAudioNoticeText.setVisible(Boolean(message));
+  }
+
+  private stopAmbientAudio({ immediate = false }: { immediate?: boolean } = {}): void {
+    if (!this.ambientAudio) {
+      return;
+    }
+
+    if (immediate) {
+      this.ambientAudio.dispose({ fadeOutSeconds: 0.08 });
+    } else {
+      this.ambientAudio.stop();
+    }
+
+    this.ambientAudio = null;
   }
 
   private isPointerInHeaderRevealZone(pointerY: number): boolean {
@@ -554,6 +793,7 @@ export class PracticeScene extends Phaser.Scene {
 
   private finishPractice(outcome: 'completed' | 'stopped'): void {
     const sessionStore = getSessionStore(this);
+    this.stopAmbientAudio({ immediate: outcome === 'completed' });
 
     if (outcome === 'stopped') {
       sessionStore.stopPractice();

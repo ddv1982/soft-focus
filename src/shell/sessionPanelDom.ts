@@ -193,6 +193,77 @@ export const createPreferenceSelect = ({
   return row;
 };
 
+export const createPreferenceRange = ({
+  label,
+  description,
+  value,
+  min,
+  max,
+  step = 1,
+  valueLabel,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  valueLabel: string;
+  onChange: (value: number) => void;
+}): HTMLLabelElement => {
+  const row = document.createElement('label');
+  row.className = 'preferences-shell__toggle preferences-shell__range-row';
+
+  const copy = document.createElement('div');
+  copy.className = 'preferences-shell__toggle-copy';
+
+  const title = document.createElement('span');
+  title.className = 'preferences-shell__toggle-title';
+  title.textContent = label;
+
+  const body = document.createElement('span');
+  body.className = 'preferences-shell__toggle-body';
+  body.textContent = description;
+
+  copy.append(title, body);
+
+  const control = document.createElement('div');
+  control.className = 'preferences-shell__range-control';
+
+  const output = document.createElement('span');
+  output.className = 'preferences-shell__range-value';
+  output.setAttribute('aria-hidden', 'true');
+  output.textContent = valueLabel;
+
+  const input = document.createElement('input');
+  input.type = 'range';
+  input.className = 'preferences-shell__range';
+  input.min = String(min);
+  input.max = String(max);
+  input.step = String(step);
+  input.value = String(value);
+  input.setAttribute('aria-label', label);
+  input.setAttribute('aria-valuetext', valueLabel);
+  input.addEventListener('input', () => {
+    const nextValue = Number(input.value);
+    const nextLabel = `${nextValue}%`;
+    output.textContent = nextLabel;
+    input.setAttribute('aria-valuetext', nextLabel);
+  });
+  input.addEventListener('change', () => {
+    const nextValue = Number(input.value);
+    const nextLabel = `${nextValue}%`;
+    output.textContent = nextLabel;
+    input.setAttribute('aria-valuetext', nextLabel);
+    onChange(nextValue);
+  });
+
+  control.append(output, input);
+  row.append(copy, control);
+  return row;
+};
+
 export const createThemeToggleButton = ({
   theme,
   onToggle,

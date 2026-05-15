@@ -1,6 +1,8 @@
 import {
+  ambientAudioPresetOrder,
   practiceDurationPresetIds,
   sanitizeCustomPracticeDurationMinutes,
+  type AmbientAudioPresetId,
   type BreathingPresetId,
   type ExerciseId,
   type MovingBallPresetId,
@@ -9,6 +11,7 @@ import {
   type SessionState,
 } from '../state/types';
 
+import { ambientCompositionPresets, type AmbientCompositionPreset } from '../audio/ambientAudio';
 import { defaultLowIntensityConfig, getPracticeDurationPresetDefinition, practiceDurationPresetCatalog } from './defaultPracticeConfig';
 import { getExerciseDefinition } from './exercises';
 import { buildPracticeFamilyConfig } from './practiceFamilies';
@@ -104,6 +107,25 @@ export interface PracticeDurationConfig {
     id: PracticeDurationPresetId;
     title: string;
     summary: string;
+  }[];
+}
+
+export interface PracticeAmbientAudioConfig {
+  enabled: boolean;
+  presetId: AmbientAudioPresetId;
+  label: string;
+  description: string;
+  volume: number;
+  availablePresets: readonly {
+    id: AmbientAudioPresetId;
+    title: string;
+    summary: string;
+    description: string;
+    musicTheory: AmbientCompositionPreset['musicTheory'];
+    layers: AmbientCompositionPreset['layers'];
+    soundDesign: AmbientCompositionPreset['soundDesign'];
+    spatialProfile: AmbientCompositionPreset['spatialProfile'];
+    practiceFit: AmbientCompositionPreset['practiceFit'];
   }[];
 }
 
@@ -230,7 +252,26 @@ export interface PracticeConfig {
   capabilities: PracticeCapabilities;
   reducedMotion: PracticeReducedMotionConfig;
   duration: PracticeDurationConfig;
+  ambientAudio: PracticeAmbientAudioConfig;
 }
+
+export const ambientAudioPresetCatalog: readonly PracticeAmbientAudioConfig['availablePresets'][number][] = [
+  ...ambientAudioPresetOrder,
+].map((id) => {
+  const preset = ambientCompositionPresets[id];
+
+  return {
+    id: preset.id,
+    title: preset.title,
+    summary: preset.summary,
+    description: preset.description,
+    musicTheory: preset.musicTheory,
+    layers: preset.layers,
+    soundDesign: preset.soundDesign,
+    spatialProfile: preset.spatialProfile,
+    practiceFit: preset.practiceFit,
+  };
+});
 
 export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pick<SessionState, 'selectedExercise' | 'phrase' | 'settings'>): PracticeConfig => {
   const exercise = getExerciseDefinition(selectedExercise);
@@ -263,6 +304,17 @@ export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pic
     lowIntensity,
     settings,
   });
+  const ambientPreset = ambientAudioPresetCatalog.find(({ id }) => id === settings.ambientAudioPresetId) ?? ambientAudioPresetCatalog[0];
+  const ambientAudio: PracticeAmbientAudioConfig = {
+    enabled: settings.ambientAudioEnabled,
+    presetId: ambientPreset.id,
+    label: 'Ambient music',
+    description: settings.ambientAudioEnabled
+      ? `${ambientPreset.summary} Volume ${settings.ambientAudioVolume}%.`
+      : 'Optional gentle tonal music for practice. Off by default.',
+    volume: settings.ambientAudioVolume,
+    availablePresets: ambientAudioPresetCatalog,
+  };
 
   return {
     exercise,
@@ -279,6 +331,7 @@ export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pic
     capabilities: familyConfig.capabilities,
     reducedMotion: familyConfig.reducedMotion,
     duration,
+    ambientAudio,
   };
 };
 

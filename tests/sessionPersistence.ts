@@ -2,7 +2,7 @@ import { createSessionRepository } from '../src/persistence/sessionRepository.ts
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
-import { breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { ambientAudioPresetIds, ambientAudioVolumeBounds, breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -50,6 +50,9 @@ const runRehydrationScenario = (): void => {
   store.setPhrase('  steady   phrase  ');
   store.setLowIntensityMode(false);
   store.setReducedMotionEnabled(true);
+  store.setAmbientAudioEnabled(true);
+  store.setAmbientAudioVolume(42);
+  store.setAmbientAudioPreset(ambientAudioPresetIds.emberDrift);
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
   store.setBreathingPreset(breathingPresetIds.custom);
   store.setCustomBreathingInhaleSeconds(5);
@@ -70,6 +73,9 @@ const runRehydrationScenario = (): void => {
   assert(rehydratedState.selectedExercise === exerciseIds.movingBall, 'expected selected exercise to rehydrate from local persistence');
   assert(rehydratedState.settings.lowIntensityMode === false, 'expected low-intensity setting to rehydrate');
   assert(rehydratedState.settings.reducedMotionEnabled === true, 'expected reduced-motion setting to rehydrate');
+  assert(rehydratedState.settings.ambientAudioEnabled === true, 'expected ambient audio enabled setting to rehydrate');
+  assert(rehydratedState.settings.ambientAudioVolume === 42, 'expected ambient audio volume setting to rehydrate');
+  assert(rehydratedState.settings.ambientAudioPresetId === ambientAudioPresetIds.emberDrift, 'expected ambient audio preset setting to rehydrate');
   assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.settlingSteps, 'expected moving-ball preset setting to rehydrate');
   assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.custom, 'expected breathing preset setting to rehydrate');
   assert(rehydratedState.settings.customBreathingInhaleSeconds === 5, 'expected custom breathing inhale setting to rehydrate');
@@ -191,6 +197,9 @@ const runPartialSettingsFallbackScenario = (): void => {
   assert(rehydratedState.settings.lowIntensityMode === true, 'expected missing persisted low-intensity setting to preserve the app default');
   assert(rehydratedState.settings.reducedMotionEnabled === false, 'expected missing persisted reduced-motion setting to preserve the app default');
   assert(rehydratedState.settings.gazeGuidanceEnabled === false, 'expected missing persisted gaze-guidance setting to preserve the app default');
+  assert(rehydratedState.settings.ambientAudioEnabled === false, 'expected missing persisted ambient audio toggle to preserve the app default');
+  assert(rehydratedState.settings.ambientAudioVolume === ambientAudioVolumeBounds.defaultValue, 'expected missing persisted ambient audio volume to preserve the app default');
+  assert(rehydratedState.settings.ambientAudioPresetId === ambientAudioPresetIds.openHorizon, 'expected missing persisted ambient audio preset to use the app default');
   assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.steadyCenter, 'expected missing persisted moving-ball preset to preserve the app default');
   assert(rehydratedState.settings.breathingPresetId === breathingPresetIds.longExhale, 'expected missing persisted breathing preset to preserve the app default');
   assert(rehydratedState.settings.customBreathingInhaleSeconds === 4, 'expected missing custom breathing inhale to preserve the app default');
@@ -222,6 +231,99 @@ const runCustomBreathingSettingsSanitizationScenario = (): void => {
   assert(rehydratedState.settings.customBreathingInhaleSeconds === 12, 'expected persisted custom inhale to clamp to the upper bound');
   assert(rehydratedState.settings.customBreathingHoldSeconds === 1, 'expected persisted custom hold to clamp to the lower bound');
   assert(rehydratedState.settings.customBreathingExhaleSeconds === 6, 'expected invalid persisted custom exhale to fall back to the default');
+};
+
+const runAmbientAudioSettingsSanitizationScenario = (): void => {
+  const storage = new MemoryStorage();
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.phraseAnchor,
+    phrase: 'steady phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      ambientAudioEnabled: true,
+      ambientAudioVolume: 160,
+      ambientAudioPresetId: 'not-a-preset',
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.settings.ambientAudioEnabled === true, 'expected valid ambient audio toggle to rehydrate');
+  assert(rehydratedState.settings.ambientAudioVolume === ambientAudioVolumeBounds.max, 'expected ambient audio volume to clamp to the upper bound');
+  assert(rehydratedState.settings.ambientAudioPresetId === ambientAudioPresetIds.openHorizon, 'expected invalid ambient audio preset to fall back to the default');
+
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.phraseAnchor,
+    phrase: 'steady phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      ambientAudioEnabled: false,
+      ambientAudioVolume: -15,
+      ambientAudioPresetId: ambientAudioPresetIds.clearBells,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [],
+  }));
+
+  const lowerBoundState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(lowerBoundState.settings.ambientAudioEnabled === false, 'expected disabled ambient audio state to rehydrate without forcing playback on');
+  assert(lowerBoundState.settings.ambientAudioVolume === ambientAudioVolumeBounds.min, 'expected ambient audio volume to clamp to the lower bound');
+  assert(lowerBoundState.settings.ambientAudioPresetId === ambientAudioPresetIds.clearBells, 'expected valid canonical ambient preset to survive lower-bound sanitization');
+
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.phraseAnchor,
+    phrase: 'steady phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      ambientAudioEnabled: true,
+      ambientAudioVolume: Number.NaN,
+      ambientAudioPresetId: ambientAudioPresetIds.emberDrift,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [],
+  }));
+
+  const fallbackVolumeState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(fallbackVolumeState.settings.ambientAudioVolume === ambientAudioVolumeBounds.defaultValue, 'expected invalid ambient audio volume to fall back to the safe default');
+  assert(fallbackVolumeState.settings.ambientAudioPresetId === ambientAudioPresetIds.emberDrift, 'expected valid musical ambient preset to survive invalid-volume sanitization');
+};
+
+const runCanonicalAmbientPresetPersistenceScenario = (): void => {
+  const storage = new MemoryStorage();
+  const store = createSessionStore(undefined, createSessionRepository(storage));
+
+  [
+    ambientAudioPresetIds.openHorizon,
+    ambientAudioPresetIds.emberDrift,
+    ambientAudioPresetIds.clearBells,
+  ].forEach((presetId, index) => {
+    const volume = 20 + (index * 15);
+
+    store.setSelectedExercise(index === 1 ? exerciseIds.breathingReset : exerciseIds.orienting);
+    store.setAmbientAudioEnabled(index !== 0);
+    store.setAmbientAudioVolume(volume);
+    store.setAmbientAudioPreset(presetId);
+
+    const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+    assert(rehydratedState.settings.ambientAudioEnabled === (index !== 0), `expected ambient enabled setting for ${presetId} to persist`);
+    assert(rehydratedState.settings.ambientAudioVolume === volume, `expected ambient volume setting for ${presetId} to persist`);
+    assert(rehydratedState.settings.ambientAudioPresetId === presetId, `expected canonical ambient preset ${presetId} to persist`);
+    assert(rehydratedState.selectedExercise === (index === 1 ? exerciseIds.breathingReset : exerciseIds.orienting), `expected selected practice mode to persist with ambient preset ${presetId}`);
+  });
 };
 
 const runInvalidSummaryDurationScenario = (): void => {
@@ -286,6 +388,8 @@ runClearRecentSessionSummariesScenario();
 runInvalidSummarySceneKeyScenario();
 runPartialSettingsFallbackScenario();
 runCustomBreathingSettingsSanitizationScenario();
+runAmbientAudioSettingsSanitizationScenario();
+runCanonicalAmbientPresetPersistenceScenario();
 runInvalidSummaryDurationScenario();
 runFractionalSummaryDurationScenario();
 
