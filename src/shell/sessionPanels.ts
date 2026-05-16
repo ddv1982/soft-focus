@@ -6,6 +6,7 @@ import {
   ambientAudioVolumeBounds,
   exerciseIds,
   normalizeReflection,
+  sanitizeAmbientAudioVolume,
   reflectionMaxLength,
   type AmbientAudioPresetId,
   type BreathingPresetId,
@@ -33,6 +34,77 @@ import {
   formatDuration,
   supportCopy,
 } from './sessionPanelDom';
+
+export const ambientAudioVolumePreviewEventName = 'soft-focus:ambient-volume-preview';
+
+interface PreferencesRenderSnapshot {
+  readonly open: boolean;
+  readonly selectedExercise: string;
+  readonly phrase: string;
+  readonly theme: 'light' | 'dark';
+  readonly lowIntensityMode: boolean;
+  readonly reducedMotionEnabled: boolean;
+  readonly gazeGuidanceEnabled: boolean;
+  readonly ambientAudioEnabled: boolean;
+  readonly ambientAudioVolume: number;
+  readonly ambientAudioPresetId: string;
+  readonly practiceDurationPresetId: string;
+  readonly customPracticeDurationMinutes: number;
+  readonly movingBallPresetId: string;
+  readonly breathingPresetId: string;
+  readonly customBreathingInhaleSeconds: number;
+  readonly customBreathingHoldSeconds: number;
+  readonly customBreathingExhaleSeconds: number;
+}
+
+const createPreferencesRenderSnapshot = (
+  game: SoftFocusGame,
+  preferencesOpen: boolean,
+): PreferencesRenderSnapshot => {
+  const state = game.sessionStore.getState();
+  const { settings } = state;
+
+  return {
+    open: preferencesOpen,
+    selectedExercise: state.selectedExercise,
+    phrase: state.phrase,
+    theme: getEffectiveThemePreference(),
+    lowIntensityMode: settings.lowIntensityMode,
+    reducedMotionEnabled: settings.reducedMotionEnabled,
+    gazeGuidanceEnabled: settings.gazeGuidanceEnabled,
+    ambientAudioEnabled: settings.ambientAudioEnabled,
+    ambientAudioVolume: sanitizeAmbientAudioVolume(settings.ambientAudioVolume),
+    ambientAudioPresetId: settings.ambientAudioPresetId,
+    practiceDurationPresetId: settings.practiceDurationPresetId,
+    customPracticeDurationMinutes: settings.customPracticeDurationMinutes,
+    movingBallPresetId: settings.movingBallPresetId,
+    breathingPresetId: settings.breathingPresetId,
+    customBreathingInhaleSeconds: settings.customBreathingInhaleSeconds,
+    customBreathingHoldSeconds: settings.customBreathingHoldSeconds,
+    customBreathingExhaleSeconds: settings.customBreathingExhaleSeconds,
+  };
+};
+
+const preferencesSnapshotsMatch = (
+  previous: PreferencesRenderSnapshot | null,
+  next: PreferencesRenderSnapshot,
+): boolean => {
+  if (!previous) {
+    return false;
+  }
+
+  return Object.entries(next).every(([key, value]) => (
+    previous[key as keyof PreferencesRenderSnapshot] === value
+  ));
+};
+
+const dispatchAmbientVolumePreview = (volume: number): void => {
+  window.dispatchEvent(new CustomEvent(ambientAudioVolumePreviewEventName, {
+    detail: {
+      volume: sanitizeAmbientAudioVolume(volume),
+    },
+  }));
+};
 
 const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => {
   const state = game.sessionStore.getState();
@@ -193,6 +265,7 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
   const preferencesRoot = createPreferencesRoot(parent);
   let preferencesOpen = false;
   let preferencesScrollTop = 0;
+  let lastPreferencesSnapshot: PreferencesRenderSnapshot | null = null;
 
   const renderPreferences = (): void => {
     const previousPanel = preferencesRoot.querySelector<HTMLElement>('.preferences-shell__panel');
@@ -202,6 +275,7 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     }
 
     const state = game.sessionStore.getState();
+    const nextSnapshot = createPreferencesRenderSnapshot(game, preferencesOpen);
     const practiceConfig = createPracticeConfigFromSettings(state.selectedExercise, state.phrase, state.settings);
 
     const launcher = createSecondaryButton('Preferences', () => {
@@ -363,6 +437,9 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
         min: ambientAudioVolumeBounds.min,
         max: ambientAudioVolumeBounds.max,
         valueLabel: `${practiceConfig.ambientAudio.volume}%`,
+        onInput: (nextValue) => {
+          dispatchAmbientVolumePreview(nextValue);
+        },
         onChange: (nextValue) => {
           game.sessionStore.setAmbientAudioVolume(nextValue);
         },
@@ -375,12 +452,23 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
 
     panel.append(header, body, toggles, support);
     preferencesRoot.replaceChildren(launcher, panel);
+    lastPreferencesSnapshot = nextSnapshot;
 
     if (preferencesOpen) {
       panel.scrollTop = preferencesScrollTop;
     } else {
       preferencesScrollTop = 0;
     }
+  };
+
+  const renderPreferencesIfNeeded = (): void => {
+    const nextSnapshot = createPreferencesRenderSnapshot(game, preferencesOpen);
+
+    if (preferencesSnapshotsMatch(lastPreferencesSnapshot, nextSnapshot)) {
+      return;
+    }
+
+    renderPreferences();
   };
 
   const render = (): void => {
@@ -405,7 +493,7 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
   renderPreferences();
   const unsubscribe = game.sessionStore.subscribe(() => {
     render();
-    renderPreferences();
+    renderPreferencesIfNeeded();
   });
 
   return () => {

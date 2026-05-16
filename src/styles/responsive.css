@@ -1,4 +1,28 @@
 @media (max-width: 640px) {
+  .setup-shell {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--app-viewport-width);
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .setup-shell :where(main, header, section, article, form, label, div, p, h1, h2, h3, button, input, select, textarea) {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  .setup-shell :where(main, header, section, article, form, label, div) {
+    min-width: 0;
+  }
+
+  .setup-shell :where(p, h1, h2, h3, button) {
+    overflow-wrap: anywhere;
+  }
+
   .session-overlay {
     align-items: flex-end;
     padding: 14px;
@@ -25,10 +49,10 @@
   }
 
   .preferences-shell {
-    top: max(1.5rem, env(safe-area-inset-top));
-    right: max(1.25rem, env(safe-area-inset-right));
-    left: auto;
-    align-items: flex-end;
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
+    align-items: stretch;
   }
 
   .preferences-shell__launcher {
@@ -36,8 +60,14 @@
   }
 
   .preferences-shell__panel {
+    box-sizing: border-box;
     width: 100%;
-    max-height: calc(var(--app-viewport-height) - 6.5rem);
+    max-width: none;
+    max-height: calc(var(--app-viewport-height) - 5.75rem);
+    padding: 18px;
+    border-radius: 26px;
+    overflow-x: hidden;
+    touch-action: pan-y;
   }
 
   .preferences-shell__toggle {
@@ -46,6 +76,21 @@
 
   .preferences-shell__select {
     width: 100%;
+  }
+}
+
+@media (max-width: 640px) and (pointer: coarse) {
+  .preferences-shell__panel {
+    backdrop-filter: none;
+  }
+
+  .preferences-shell__panel::before {
+    background: none;
+  }
+
+  .preferences-shell__toggle {
+    background: rgba(255, 255, 255, 0.055);
+    transition: border-color 180ms ease, background 180ms ease;
   }
 }
 

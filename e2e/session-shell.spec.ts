@@ -1,9 +1,73 @@
 import { expect, type Page, test } from '@playwright/test';
 
+declare global {
+  interface Window {
+    __softFocusAudioInstances?: Array<{ volume: number; playCalls: number }>;
+  }
+}
+
 const openSoftFocus = async (page: Page): Promise<void> => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Open Soft Focus' }).click();
   await page.waitForFunction(() => Boolean(window.__softFocusGame));
+};
+
+const startBreathingResetPractice = async (page: Page): Promise<void> => {
+  await page.getByRole('button', { name: 'Start Breathing reset' }).click();
+  await page.getByRole('button', { name: 'Start practice' }).click();
+  await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
+};
+
+const installAudioStub = async (page: Page): Promise<void> => {
+  await page.addInitScript(() => {
+    class FakeAudio {
+      preload = '';
+
+      src = '';
+
+      currentTime = 0;
+
+      volume = 0;
+
+      playCalls = 0;
+
+      paused = true;
+
+      onended: (() => void) | null = null;
+
+      onerror: (() => void) | null = null;
+
+      constructor() {
+        window.__softFocusAudioInstances ??= [];
+        window.__softFocusAudioInstances.push(this);
+      }
+
+      async play(): Promise<void> {
+        this.playCalls += 1;
+        this.paused = false;
+      }
+
+      pause(): void {
+        this.paused = true;
+      }
+
+      removeAttribute(qualifiedName: string): void {
+        if (qualifiedName === 'src') {
+          this.src = '';
+        }
+      }
+
+      load(): void {
+        // Test stub: no network fetch is needed for bundled audio URLs.
+      }
+    }
+
+    window.__softFocusAudioInstances = [];
+    Object.defineProperty(window, 'Audio', {
+      configurable: true,
+      value: FakeAudio,
+    });
+  });
 };
 
 test('welcome title is not focused on initial load', async ({ page }) => {
@@ -13,6 +77,95 @@ test('welcome title is not focused on initial load', async ({ page }) => {
 
   await expect(title).toBeVisible();
   await expect(title).not.toBeFocused();
+});
+
+test('exercise library is horizontally contained on narrow iPhone widths', async ({ page }) => {
+  for (const viewport of [
+    { width: 375, height: 812 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await openSoftFocus(page);
+
+    await expect(page.getByRole('heading', { name: 'Choose one gentle focus' })).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      const setupShell = document.querySelector<HTMLElement>('.setup-shell');
+
+      return {
+        documentClientWidth: document.documentElement.clientWidth,
+        documentScrollWidth: document.documentElement.scrollWidth,
+        setupClientWidth: setupShell?.clientWidth ?? 0,
+        setupScrollWidth: setupShell?.scrollWidth ?? 0,
+      };
+    });
+
+    expect(overflow.documentScrollWidth).toBeLessThanOrEqual(overflow.documentClientWidth + 1);
+    expect(overflow.setupScrollWidth).toBeLessThanOrEqual(overflow.setupClientWidth + 1);
+  }
+});
+
+test('preferences panel is scrollable after opening on iPhone 13 mini width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openSoftFocus(page);
+  await startBreathingResetPractice(page);
+
+  await page.getByRole('button', { name: 'Preferences' }).click();
+  const panel = page.locator('.preferences-shell__panel:not(.preferences-shell__panel--hidden)');
+  await expect(panel).toBeVisible();
+
+  const scrollMetrics = await panel.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+
+  await panel.evaluate((element) => {
+    element.scrollTop = 96;
+    element.dispatchEvent(new Event('scroll'));
+  });
+  await expect.poll(() => panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+});
+
+test('ambient volume slider updates playing audio during input before change', async ({ page }) => {
+  await installAudioStub(page);
+  await openSoftFocus(page);
+  await page.getByRole('button', { name: 'Start Breathing reset' }).click();
+  await page.evaluate(() => {
+    const game = window.__softFocusGame;
+
+    if (!game) {
+      throw new Error('Soft Focus game not available on window');
+    }
+
+    game.sessionStore.setAmbientAudioEnabled(true);
+    game.sessionStore.setAmbientAudioVolume(80);
+  });
+  await page.getByRole('button', { name: 'Start practice' }).click();
+  await page.waitForFunction(() => {
+    const audio = window.__softFocusAudioInstances?.at(-1);
+
+    return Boolean(audio && audio.playCalls > 0 && audio.volume > 0);
+  });
+
+  const initialVolume = await page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 0);
+  await page.getByRole('button', { name: 'Preferences' }).click();
+
+  const ambientVolume = page.getByLabel('Ambient volume');
+  await expect(ambientVolume).toBeVisible();
+  await ambientVolume.evaluate((element) => {
+    const input = element as HTMLInputElement;
+    input.value = '20';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  await expect.poll(() => page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 0))
+    .toBeLessThan(initialVolume);
+  expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(80);
+
+  await ambientVolume.dispatchEvent('change');
+  await expect.poll(() => page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume))
+    .toBe(20);
 });
 
 const putGameIntoCompletion = async (

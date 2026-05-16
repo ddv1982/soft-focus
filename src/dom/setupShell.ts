@@ -328,31 +328,31 @@ export const mountSetupShell = ({
 
   const renderExerciseSelection = (): void => {
     const groups = [...new Set(exerciseCatalog.map((exercise) => exercise.phase))];
-    const main = createElement('main', 'mx-auto flex w-full max-w-5xl flex-col gap-7 pb-12');
+    const main = createElement('main', 'mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-5 pb-12 sm:gap-7');
     main.append(createBackButton('Back to welcome', () => goTo(sceneKeys.entry)));
     main.append(createHeader('Exercises', 'Choose one gentle focus'));
 
-    const grid = createElement('div', 'grid gap-5 lg:grid-cols-2 lg:items-start');
+    const grid = createElement('div', 'grid min-w-0 gap-4 sm:gap-5 lg:grid-cols-2 lg:items-start');
     groups.forEach((group) => {
       const exercises = exerciseCatalog.filter((exercise) => exercise.phase === group);
       const phase = exercises[0];
-      const section = createElement('section', `${panelClass} p-5 sm:p-6`);
+      const section = createElement('section', `${panelClass} min-w-0 overflow-hidden p-4 sm:p-6`);
       section.append(
         createElement('p', eyebrowClass, phase.phaseLabel),
-        createElement('p', 'mt-3 max-w-md text-base font-semibold leading-7 text-[var(--text-muted)] sm:text-lg', phase.phaseSummary),
+        createElement('p', 'mt-3 max-w-full min-w-0 break-words text-sm font-semibold leading-6 text-[var(--text-muted)] sm:max-w-md sm:text-lg sm:leading-7', phase.phaseSummary),
       );
-      const list = createElement('div', 'mt-5 grid gap-3');
+      const list = createElement('div', 'mt-4 grid min-w-0 gap-3 sm:mt-5');
       exercises.forEach((exercise) => {
         const selected = game.sessionStore.getState().selectedExercise === exercise.id;
-        const card = createElement('article', `rounded-3xl border p-4 transition motion-reduce:transition-none ${selected ? 'border-wellness-mist/55 bg-white/[0.075]' : 'border-[var(--line)] bg-white/[0.04]'}`);
-        const cardHeader = createElement('div', 'flex flex-wrap items-center justify-between gap-2');
-        cardHeader.append(createElement('p', 'text-base font-semibold text-wellness-foam', exercise.title));
+        const card = createElement('article', `min-w-0 overflow-hidden rounded-[1.5rem] border p-3 transition motion-reduce:transition-none sm:rounded-3xl sm:p-4 ${selected ? 'border-wellness-mist/55 bg-white/[0.075]' : 'border-[var(--line)] bg-white/[0.04]'}`);
+        const cardHeader = createElement('div', 'flex min-w-0 flex-wrap items-center justify-between gap-2');
+        cardHeader.append(createElement('p', 'min-w-0 break-words text-base font-semibold text-wellness-foam', exercise.title));
         card.append(cardHeader);
         const button = createButton(`Start ${exercise.title}`, selected ? primaryButtonClass : secondaryButtonClass, () => {
           game.sessionStore.setSelectedExercise(exercise.id);
           goTo(getExerciseStartScene(exercise.id) as SetupSceneKey);
         });
-        button.classList.add('mt-4', 'w-full');
+        button.classList.add('mt-4', 'w-full', 'min-w-0', 'max-w-full', 'whitespace-normal', 'text-center', 'leading-snug');
         card.append(button);
         list.append(card);
       });

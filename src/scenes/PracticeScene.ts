@@ -19,6 +19,8 @@ import {
   loadPracticeStagePresenter,
   type PracticeStagePresenterController,
 } from '../practice/stagePresenter';
+import { ambientAudioVolumePreviewEventName } from '../shell/sessionPanels';
+import { sanitizeAmbientAudioVolume } from '../state/types';
 import { createPracticeControls, getPracticeControlsLayout, type PracticeControls } from '../ui/components/PracticeControls';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { getLayoutFrame } from '../ui/layout';
@@ -177,6 +179,13 @@ export class PracticeScene extends Phaser.Scene {
       practiceConfig: this.practiceConfig,
       snapshot: this.snapshot,
     } satisfies PracticeSceneData);
+  };
+
+  private readonly handleAmbientVolumePreview = (event: Event): void => {
+    const detail = (event as CustomEvent<{ volume?: unknown }>).detail;
+    const volume = sanitizeAmbientAudioVolume(detail?.volume);
+
+    this.previewAmbientAudioVolume(volume);
   };
 
   constructor() {
@@ -357,6 +366,7 @@ export class PracticeScene extends Phaser.Scene {
     this.scheduleFocusHeaderFade();
     this.scheduleFocusControlsFade();
     window.addEventListener('soft-focus:themechange', this.handleThemeChange);
+    window.addEventListener(ambientAudioVolumePreviewEventName, this.handleAmbientVolumePreview);
     this.scale.on('resize', this.handleScaleResize);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -376,6 +386,7 @@ export class PracticeScene extends Phaser.Scene {
       this.unsubscribePracticeSettings?.();
       this.unsubscribePracticeSettings = null;
       window.removeEventListener('soft-focus:themechange', this.handleThemeChange);
+      window.removeEventListener(ambientAudioVolumePreviewEventName, this.handleAmbientVolumePreview);
       this.stopAmbientAudio({ immediate: true });
       this.stagePresenter.destroy();
       this.stagePresenter = createIdlePracticeStagePresenter();
@@ -456,6 +467,14 @@ export class PracticeScene extends Phaser.Scene {
     return left.enabled === right.enabled
       && left.presetId === right.presetId
       && left.volume === right.volume;
+  }
+
+  private previewAmbientAudioVolume(volume: number): void {
+    if (!this.ambientAudio || !this.ambientAudioSettings?.enabled || this.snapshot?.complete) {
+      return;
+    }
+
+    this.ambientAudio.setVolume(volume);
   }
 
   private reconcileAmbientAudioSettings(settings: AmbientAudioSettings): void {

@@ -1,5 +1,5 @@
 export const shellClass = [
-  'setup-shell absolute inset-0 z-10 overflow-y-auto px-5 py-6 text-[var(--text)] sm:px-8 lg:px-10',
+  'setup-shell absolute inset-0 z-10 w-full max-w-full overflow-y-auto overflow-x-hidden px-5 py-6 text-[var(--text)] overscroll-y-contain sm:px-8 lg:px-10',
   'bg-transparent',
 ].join(' ');
 

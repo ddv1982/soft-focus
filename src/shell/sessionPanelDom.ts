@@ -201,6 +201,7 @@ export const createPreferenceRange = ({
   max,
   step = 1,
   valueLabel,
+  onInput,
   onChange,
 }: {
   label: string;
@@ -210,6 +211,7 @@ export const createPreferenceRange = ({
   max: number;
   step?: number;
   valueLabel: string;
+  onInput?: (value: number) => void;
   onChange: (value: number) => void;
 }): HTMLLabelElement => {
   const row = document.createElement('label');
@@ -245,18 +247,20 @@ export const createPreferenceRange = ({
   input.value = String(value);
   input.setAttribute('aria-label', label);
   input.setAttribute('aria-valuetext', valueLabel);
-  input.addEventListener('input', () => {
+
+  const syncValueLabel = (): number => {
     const nextValue = Number(input.value);
     const nextLabel = `${nextValue}%`;
     output.textContent = nextLabel;
     input.setAttribute('aria-valuetext', nextLabel);
+    return nextValue;
+  };
+
+  input.addEventListener('input', () => {
+    onInput?.(syncValueLabel());
   });
   input.addEventListener('change', () => {
-    const nextValue = Number(input.value);
-    const nextLabel = `${nextValue}%`;
-    output.textContent = nextLabel;
-    input.setAttribute('aria-valuetext', nextLabel);
-    onChange(nextValue);
+    onChange(syncValueLabel());
   });
 
   control.append(output, input);

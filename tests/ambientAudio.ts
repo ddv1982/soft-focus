@@ -193,6 +193,22 @@ const runExerciseClockScenarios = async (): Promise<void> => {
   assert(fakeAudio.volume === 0, 'expected final exercise fade to reach zero at completion');
 };
 
+const runVolumeChangeScenario = async (): Promise<void> => {
+  const { engine, fakeAudio } = createEngine();
+
+  await engine.start();
+  const initialVolume = fakeAudio.volume;
+
+  engine.setVolume(25);
+  const loweredVolume = fakeAudio.volume;
+  assert(loweredVolume > 0, 'expected lowered ambient volume to remain audible');
+  assert(loweredVolume < initialVolume, 'expected setVolume to lower the fake audio element volume after playback starts');
+
+  engine.setVolume(90);
+  assert(fakeAudio.volume > loweredVolume, 'expected setVolume to raise the fake audio element volume after playback starts');
+  assert(fakeAudio.volume <= 1, 'expected raised ambient volume to stay within browser audio volume bounds');
+};
+
 const runBundledTrackManifestScenario = (): void => {
   assert(ambientAudioTracks.length >= 2, 'expected bundled ambient track manifest to expose both MP3s outside Vite runtime');
   assert(ambientAudioTracks[0]?.url.length, 'expected bundled ambient track 1 to expose a usable URL');
@@ -216,6 +232,7 @@ const runDurationHelperScenario = (): void => {
 await runStartAndFailureScenarios();
 await runPlaylistScenarios();
 await runExerciseClockScenarios();
+await runVolumeChangeScenario();
 runBundledTrackManifestScenario();
 runDurationHelperScenario();
 
