@@ -177,18 +177,19 @@ const runExerciseClockScenarios = async (): Promise<void> => {
   await engine.start();
   const initialVolume = fakeAudio.volume;
 
-  engine.syncExerciseClock({ totalDurationSeconds: 130, totalSecondsRemaining: 66 });
-  assert(fakeAudio.src === tracks[0]?.url, 'expected first track to continue before the second exercise segment starts');
+  engine.syncExerciseClock({ totalSecondsRemaining: 72 });
+  assert(fakeAudio.src === tracks[0]?.url, 'expected exercise clock sync not to interrupt the current song');
 
-  engine.syncExerciseClock({ totalDurationSeconds: 130, totalSecondsRemaining: 65 });
-  assert(fakeAudio.src === tracks[1]?.url, 'expected exercise-aware playlist scheduling to introduce track 2 halfway through');
-  assert(fakeAudio.playCalls === 2, 'expected scheduled track introduction to call play for the second track');
+  engine.syncExerciseClock({ totalSecondsRemaining: 70 });
+  assert(fakeAudio.src === tracks[0]?.url, 'expected first track to keep playing past the exercise midpoint');
+  assert(fakeAudio.playCalls === 1, 'expected exercise clock sync not to start the next song early');
 
-  engine.syncExerciseClock({ totalDurationSeconds: 130, totalSecondsRemaining: 4 });
+  engine.syncExerciseClock({ totalSecondsRemaining: 4 });
+  assert(fakeAudio.src === tracks[0]?.url, 'expected final fade to preserve the current song position');
   assert(fakeAudio.volume > 0, 'expected final fade to remain audible before the exercise reaches zero');
   assert(fakeAudio.volume < initialVolume, 'expected final fade to reduce volume inside the last five exercise seconds');
 
-  engine.syncExerciseClock({ totalDurationSeconds: 130, totalSecondsRemaining: 0 });
+  engine.syncExerciseClock({ totalSecondsRemaining: 0 });
   assert(fakeAudio.volume === 0, 'expected final exercise fade to reach zero at completion');
 };
 

@@ -91,7 +91,7 @@ export interface AmbientAudioElement {
 }
 
 export interface AmbientPlaybackErrorContext {
-  action: 'start' | 'resume' | 'scheduled-track-switch' | 'natural-track-advance' | 'track-error-skip';
+  action: 'start' | 'resume' | 'natural-track-advance' | 'track-error-skip';
   trackIndex: number;
   track?: AmbientAudioTrack;
 }
@@ -280,8 +280,6 @@ export class AmbientAudioEngine {
 
   private failedTrackIndexes = new Set<number>();
 
-  private highestExerciseTrackIndexIntroduced = 0;
-
   constructor(settings: AmbientAudioSettings, options: AmbientAudioEngineOptions = {}) {
     this.currentSettings = settings;
     this.tracks = options.tracks ?? ambientAudioTracks;
@@ -302,7 +300,6 @@ export class AmbientAudioEngine {
     this.fadeMultiplier = 1;
     this.playing = true;
     this.failedTrackIndexes.clear();
-    this.highestExerciseTrackIndexIntroduced = 0;
     this.loadTrack(this.trackIndex);
     this.applyVolume();
     await this.playCurrentTrack();
@@ -391,33 +388,15 @@ export class AmbientAudioEngine {
 
   syncExerciseClock({
     totalSecondsRemaining,
-    totalDurationSeconds,
   }: {
     totalSecondsRemaining: number;
-    totalDurationSeconds: number;
   }): void {
-    if (!Number.isFinite(totalSecondsRemaining) || !Number.isFinite(totalDurationSeconds)) {
+    if (!Number.isFinite(totalSecondsRemaining)) {
       return;
     }
 
     this.fadeMultiplier = clampFadeMultiplier(totalSecondsRemaining);
     this.applyVolume();
-
-    if (!this.playing || this.tracks.length <= 1 || totalDurationSeconds <= 0) {
-      return;
-    }
-
-    const clampedRemaining = Math.min(Math.max(0, totalSecondsRemaining), totalDurationSeconds);
-    const elapsedSeconds = totalDurationSeconds - clampedRemaining;
-    const segmentSeconds = totalDurationSeconds / this.tracks.length;
-    const scheduledTrackIndex = Math.min(this.tracks.length - 1, Math.floor(elapsedSeconds / Math.max(segmentSeconds, 1)));
-
-    if (scheduledTrackIndex <= this.highestExerciseTrackIndexIntroduced) {
-      return;
-    }
-
-    this.highestExerciseTrackIndexIntroduced = scheduledTrackIndex;
-    this.switchToTrack(scheduledTrackIndex, 'scheduled-track-switch');
   }
 
   isPlaying(): boolean {

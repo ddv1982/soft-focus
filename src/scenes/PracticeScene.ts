@@ -578,7 +578,6 @@ export class PracticeScene extends Phaser.Scene {
 
     this.ambientAudio.syncExerciseClock({
       totalSecondsRemaining: snapshot.totalSecondsRemaining,
-      totalDurationSeconds: this.totalPracticeDurationSeconds,
     });
   }
 
