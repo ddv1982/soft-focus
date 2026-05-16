@@ -90,13 +90,13 @@ export const createSelect = ({
   options: readonly { id: string; title: string }[];
   onChange: (value: string) => void;
 }): HTMLLabelElement => {
-  const row = createElement('label', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4');
+  const row = createElement('label', 'grid min-w-0 gap-3 overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4');
   row.append(
-    createElement('span', 'text-base font-bold text-[var(--text)]', label),
-    createElement('span', 'text-sm leading-6 text-[var(--text-muted)]', description),
+    createElement('span', 'block min-w-0 max-w-full break-words text-base font-bold text-[var(--text)]', label),
+    createElement('span', 'block min-w-0 max-w-full break-words text-sm leading-6 text-[var(--text-muted)]', description),
   );
 
-  const select = createElement('select', 'wellness-focus min-h-12 rounded-2xl border border-[var(--line)] bg-[var(--surface-control)] px-4 font-bold text-[var(--text)]');
+  const select = createElement('select', 'wellness-focus min-h-12 w-full min-w-0 max-w-full rounded-2xl border border-[var(--line)] bg-[var(--surface-control)] px-4 font-bold text-[var(--text)]');
   options.forEach((option) => {
     const optionElement = createElement('option', undefined, option.title);
     optionElement.value = option.id;
@@ -128,20 +128,20 @@ export const createRangeSlider = ({
   valueLabel: string;
   onChange: (value: number) => void;
 }): HTMLLabelElement => {
-  const row = createElement('label', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4');
-  const header = createElement('span', 'grid gap-1 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4');
+  const row = createElement('label', 'grid min-w-0 gap-3 overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4');
+  const header = createElement('span', 'grid min-w-0 gap-1 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4');
   const valueOutput = createElement('output', 'rounded-full border border-[var(--line)] bg-[var(--surface-control)] px-3 py-1 text-sm font-black text-[var(--text)]', valueLabel);
   valueOutput.ariaLive = 'polite';
   header.append(
-    createElement('span', 'text-base font-bold text-[var(--text)]', label),
+    createElement('span', 'min-w-0 break-words text-base font-bold text-[var(--text)]', label),
     valueOutput,
   );
   row.append(
     header,
-    createElement('span', 'text-sm leading-6 text-[var(--text-muted)]', description),
+    createElement('span', 'min-w-0 break-words text-sm leading-6 text-[var(--text-muted)]', description),
   );
 
-  const input = createElement('input', 'wellness-focus min-h-12 w-full accent-wellness-mist');
+  const input = createElement('input', 'wellness-focus min-h-12 w-full min-w-0 max-w-full accent-wellness-mist');
   input.type = 'range';
   input.min = String(min);
   input.max = String(max);

@@ -105,6 +105,42 @@ test('exercise library is horizontally contained on narrow iPhone widths', async
   }
 });
 
+test('setup instruction controls stay within cards on iPhone 13 mini width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openSoftFocus(page);
+  await page.getByRole('button', { name: 'Start Breathing reset' }).click();
+
+  const breathingPreset = page.locator('.setup-shell label', { hasText: 'Breathing preset' }).locator('select');
+  await expect(breathingPreset).toBeVisible();
+
+  const metrics = await breathingPreset.evaluate((element) => {
+    const select = element as HTMLSelectElement;
+    const card = select.closest('label');
+
+    if (!card) {
+      throw new Error('Breathing preset control card was not found');
+    }
+
+    const cardRect = card.getBoundingClientRect();
+    const selectRect = select.getBoundingClientRect();
+
+    return {
+      cardClientWidth: card.clientWidth,
+      cardScrollWidth: card.scrollWidth,
+      cardLeft: cardRect.left,
+      cardRight: cardRect.right,
+      selectLeft: selectRect.left,
+      selectRight: selectRect.right,
+      selectWidth: selectRect.width,
+    };
+  });
+
+  expect(metrics.cardScrollWidth).toBeLessThanOrEqual(metrics.cardClientWidth + 1);
+  expect(metrics.selectLeft).toBeGreaterThanOrEqual(metrics.cardLeft - 1);
+  expect(metrics.selectRight).toBeLessThanOrEqual(metrics.cardRight + 1);
+  expect(metrics.selectWidth).toBeLessThanOrEqual(metrics.cardClientWidth);
+});
+
 test('preferences panel is scrollable after opening on iPhone 13 mini width', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await openSoftFocus(page);
