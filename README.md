@@ -1,5 +1,11 @@
 # Soft Focus
 
+[Open Soft Focus](https://soft-focus.net/)
+
+![TypeScript 6.0.3](https://img.shields.io/badge/TypeScript-6.0.3-3178c6?style=flat-square&logo=typescript&logoColor=white)
+![Phaser 4.0.0](https://img.shields.io/badge/Phaser-4.0.0-6aa84f?style=flat-square)
+![Vite 8.0.10](https://img.shields.io/badge/Vite-8.0.10-8b5cf6?style=flat-square&logo=vite&logoColor=white)
+
 Soft Focus is a small guided-practice app for short, quiet attention resets. It offers simple visual and written cues, then gives you a place to pause, finish, and reflect.
 
 Soft Focus is not a medical tool, a diagnosis tool, or a substitute for care from a qualified professional. It does not make health claims. It is meant to support brief personal practice in a calm, low-pressure way.
