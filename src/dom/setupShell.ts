@@ -24,6 +24,7 @@ import {
   phraseMaxLength,
   phraseMinLength,
   practiceDurationPresetIds,
+  sanitizeAmbientAudioVolume,
   type AmbientAudioPresetId,
   type BreathingPresetId,
   type MovingBallPresetId,
@@ -97,6 +98,7 @@ export const mountSetupShell = ({
 
   let currentSceneKey: SetupScreenKey = sceneKeys.entry;
   let phraseDraft = game.sessionStore.getState().phrase;
+  let ambientAudioVolumeDraft: number | null = null;
   let setupNavigationToken = 0;
   let practiceStartInFlight = false;
 
@@ -174,10 +176,25 @@ export const mountSetupShell = ({
     return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} sec`;
   };
 
+  const commitAmbientAudioVolumeDraft = (): void => {
+    if (ambientAudioVolumeDraft === null) {
+      return;
+    }
+
+    const volume = ambientAudioVolumeDraft;
+    ambientAudioVolumeDraft = null;
+
+    if (game.sessionStore.getState().settings.ambientAudioVolume !== volume) {
+      game.sessionStore.setAmbientAudioVolume(volume);
+    }
+  };
+
   const startPractice = async (): Promise<void> => {
     if (practiceStartInFlight) {
       return;
     }
+
+    commitAmbientAudioVolumeDraft();
 
     const navigationToken = setupNavigationToken;
     const practiceConfig = game.sessionStore.createPracticeConfig();
@@ -503,12 +520,15 @@ export const mountSetupShell = ({
       description: previewConfig.ambientAudio.description,
       checked: state.settings.ambientAudioEnabled,
       onChange: (checked) => {
+        ambientAudioVolumeDraft = null;
         game.sessionStore.setAmbientAudioEnabled(checked);
         renderInstructions();
       },
     }));
 
     if (state.settings.ambientAudioEnabled) {
+      const ambientAudioVolume = ambientAudioVolumeDraft ?? state.settings.ambientAudioVolume;
+
       audioSettings.append(
         createSelect({
           label: 'Ambient music preset',
@@ -525,11 +545,15 @@ export const mountSetupShell = ({
         createRangeSlider({
           label: 'Ambient music volume',
           description: 'Adjust before practice starts. The value updates while you drag and commits when released; start near 40% and lower if you want more space.',
-          value: state.settings.ambientAudioVolume,
+          value: ambientAudioVolume,
           min: ambientAudioVolumeBounds.min,
           max: ambientAudioVolumeBounds.max,
-          valueLabel: `${state.settings.ambientAudioVolume}%`,
+          valueLabel: `${ambientAudioVolume}%`,
+          onInput: (volume) => {
+            ambientAudioVolumeDraft = sanitizeAmbientAudioVolume(volume);
+          },
           onChange: (volume) => {
+            ambientAudioVolumeDraft = null;
             game.sessionStore.setAmbientAudioVolume(volume);
             renderInstructions();
           },

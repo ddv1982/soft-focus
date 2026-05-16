@@ -163,6 +163,42 @@ test('preferences panel is scrollable after opening on iPhone 13 mini width', as
   await expect.poll(() => panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 });
 
+test('setup ambient music volume input is applied to the MP3 when practice starts', async ({ page }) => {
+  await installAudioStub(page);
+  await openSoftFocus(page);
+  await page.getByRole('button', { name: 'Start Breathing reset' }).click();
+  await page.evaluate(() => {
+    const game = window.__softFocusGame;
+
+    if (!game) {
+      throw new Error('Soft Focus game not available on window');
+    }
+
+    game.sessionStore.setAmbientAudioEnabled(true);
+    game.sessionStore.setAmbientAudioVolume(80);
+  });
+
+  const setupAmbientVolume = page.locator('.setup-shell label:has-text("Ambient music volume") input[type="range"]');
+  await expect(setupAmbientVolume).toBeVisible();
+  await setupAmbientVolume.evaluate((element) => {
+    const input = element as HTMLInputElement;
+    input.value = '20';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(80);
+
+  await page.getByRole('button', { name: 'Start practice' }).click();
+  await page.waitForFunction(() => {
+    const audio = window.__softFocusAudioInstances?.at(-1);
+
+    return Boolean(audio && audio.playCalls > 0);
+  });
+
+  expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(20);
+  await expect.poll(() => page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 1))
+    .toBeLessThan(0.4);
+});
+
 test('ambient volume slider updates playing audio during input before change', async ({ page }) => {
   await installAudioStub(page);
   await openSoftFocus(page);

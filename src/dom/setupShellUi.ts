@@ -117,6 +117,7 @@ export const createRangeSlider = ({
   max,
   step = 1,
   valueLabel,
+  onInput,
   onChange,
 }: {
   label: string;
@@ -126,6 +127,7 @@ export const createRangeSlider = ({
   max: number;
   step?: number;
   valueLabel: string;
+  onInput?: (value: number) => void;
   onChange: (value: number) => void;
 }): HTMLLabelElement => {
   const row = createElement('label', 'grid min-w-0 gap-3 overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4');
@@ -147,10 +149,17 @@ export const createRangeSlider = ({
   input.max = String(max);
   input.step = String(step);
   input.value = String(value);
+  const syncValueLabel = (): number => {
+    const nextValue = Number(input.value);
+    valueOutput.textContent = `${nextValue}%`;
+    return nextValue;
+  };
+
   input.addEventListener('input', () => {
-    valueOutput.textContent = `${input.value}%`;
+    const nextValue = syncValueLabel();
+    onInput?.(nextValue);
   });
-  input.addEventListener('change', () => onChange(Number(input.value)));
+  input.addEventListener('change', () => onChange(syncValueLabel()));
   row.append(input);
 
   return row;
