@@ -9,6 +9,8 @@ const domSetupSceneKeys = new Set<SceneKey>([
   sceneKeys.instructions,
 ]);
 
+const nextSessionTransitions = new WeakMap<SessionPanelGameLike, Promise<void>>();
+
 declare global {
   interface Window {
     __softFocusShowSetupScene?: (sceneKey: SceneKey) => void;
@@ -53,15 +55,34 @@ export const navigateToManagedScene = async (
 };
 
 export const beginNextSessionFromScene = async (game: SessionPanelGameLike, sceneKey: SceneKey): Promise<void> => {
-  game.sessionStore.prepareForNextSession();
+  const activeTransition = nextSessionTransitions.get(game);
 
-  if (domSetupSceneKeys.has(sceneKey) && typeof window !== 'undefined' && window.__softFocusShowSetupScene) {
-    window.__softFocusShowSetupScene(sceneKey);
-    return;
+  if (activeTransition) {
+    return activeTransition;
   }
 
-  await ensureManagedSceneRegistered(game, sceneKey);
-  startManagedScene(game, sceneKey);
+  const transition = (async (): Promise<void> => {
+    await ensureManagedSceneRegistered(game, sceneKey);
+
+    game.sessionStore.prepareForNextSession();
+
+    if (domSetupSceneKeys.has(sceneKey) && typeof window !== 'undefined' && window.__softFocusShowSetupScene) {
+      window.__softFocusShowSetupScene(sceneKey);
+      return;
+    }
+
+    startManagedScene(game, sceneKey);
+  })();
+
+  nextSessionTransitions.set(game, transition);
+
+  try {
+    await transition;
+  } finally {
+    if (nextSessionTransitions.get(game) === transition) {
+      nextSessionTransitions.delete(game);
+    }
+  }
 };
 
 export const continueToReflection = (game: SessionPanelGameLike): Promise<void> => (
@@ -73,6 +94,12 @@ export const chooseAnotherExercise = (game: SessionPanelGameLike): Promise<void>
 );
 
 export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection: string): Promise<void> => {
+  const activeTransition = nextSessionTransitions.get(game);
+
+  if (activeTransition) {
+    return activeTransition;
+  }
+
   game.sessionStore.saveReflection(reflection);
   const restartSceneKey = getSessionFlowForExercise(game.sessionStore.getState().selectedExercise).restartSceneKey;
 
@@ -80,6 +107,12 @@ export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection:
 };
 
 export const saveReflectionAndChooseAnotherExercise = (game: SessionPanelGameLike, reflection: string): Promise<void> => {
+  const activeTransition = nextSessionTransitions.get(game);
+
+  if (activeTransition) {
+    return activeTransition;
+  }
+
   game.sessionStore.saveReflection(reflection);
 
   return chooseAnotherExercise(game);

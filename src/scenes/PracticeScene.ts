@@ -7,6 +7,7 @@ import {
   type AmbientAudioEngine,
   type AmbientAudioSettings,
   type AmbientAudioStartHandle,
+  type AmbientAudioStartResult,
 } from '../audio/ambientAudio';
 import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
@@ -84,6 +85,12 @@ export class PracticeScene extends Phaser.Scene {
   private ambientAudio: AmbientAudioEngine | null = null;
 
   private ambientAudioSettings: AmbientAudioSettings | null = null;
+
+  private ambientAudioStartResult: Promise<AmbientAudioStartResult> | null = null;
+
+  private pendingAmbientAudioRestartHandoff: AmbientAudioStartHandle | null = null;
+
+  private ambientAudioResumeAttempt = 0;
 
   private totalPracticeDurationSeconds = 0;
 
@@ -163,10 +170,7 @@ export class PracticeScene extends Phaser.Scene {
 
       const snapshot = this.practiceRunner?.getSnapshot() ?? this.snapshot;
 
-      this.scene.restart({
-        practiceConfig: this.practiceConfig,
-        snapshot,
-      } satisfies PracticeSceneData);
+      this.scene.restart(this.createRestartData(snapshot));
     });
   };
 
@@ -175,10 +179,9 @@ export class PracticeScene extends Phaser.Scene {
       return;
     }
 
-    this.scene.restart({
-      practiceConfig: this.practiceConfig,
-      snapshot: this.snapshot,
-    } satisfies PracticeSceneData);
+    const snapshot = this.practiceRunner?.getSnapshot() ?? this.snapshot;
+
+    this.scene.restart(this.createRestartData(snapshot));
   };
 
   private readonly handleAmbientVolumePreview = (event: Event): void => {
@@ -387,7 +390,7 @@ export class PracticeScene extends Phaser.Scene {
       this.unsubscribePracticeSettings = null;
       window.removeEventListener('soft-focus:themechange', this.handleThemeChange);
       window.removeEventListener(ambientAudioVolumePreviewEventName, this.handleAmbientVolumePreview);
-      this.stopAmbientAudio({ immediate: true });
+      this.releaseAmbientAudioRestartHandoff();
       this.stagePresenter.destroy();
       this.stagePresenter = createIdlePracticeStagePresenter();
     });
@@ -469,6 +472,65 @@ export class PracticeScene extends Phaser.Scene {
       && left.volume === right.volume;
   }
 
+  private createRestartData(snapshot: PracticeRunnerSnapshot): PracticeSceneData {
+    const practiceConfig = this.practiceConfig
+      ? {
+        ...this.practiceConfig,
+        ambientAudio: {
+          ...this.practiceConfig.ambientAudio,
+          ...(this.ambientAudioSettings ?? {}),
+        },
+      }
+      : undefined;
+
+    return {
+      practiceConfig,
+      snapshot,
+      ambientAudioStart: this.createAmbientAudioRestartHandoff(snapshot),
+    };
+  }
+
+  private createAmbientAudioRestartHandoff(snapshot: PracticeRunnerSnapshot): AmbientAudioStartHandle | undefined {
+    if (
+      snapshot.complete
+      || !this.practiceConfig
+      || !this.ambientAudio
+      || !this.ambientAudioSettings?.enabled
+    ) {
+      this.pendingAmbientAudioRestartHandoff = null;
+      return undefined;
+    }
+
+    const handoff: AmbientAudioStartHandle = {
+      engine: this.ambientAudio,
+      settings: this.ambientAudioSettings,
+      startResult: this.ambientAudioStartResult ?? Promise.resolve({ ok: true }),
+      totalDurationSeconds: this.totalPracticeDurationSeconds,
+    };
+
+    handoff.engine.setPlaybackErrorHandler((error) => {
+      reportOperatorError('Soft Focus could not continue ambient music.', error);
+    });
+    this.pendingAmbientAudioRestartHandoff = handoff;
+
+    return handoff;
+  }
+
+  private releaseAmbientAudioRestartHandoff(): void {
+    if (
+      this.pendingAmbientAudioRestartHandoff
+      && this.ambientAudio === this.pendingAmbientAudioRestartHandoff.engine
+    ) {
+      this.ambientAudio = null;
+      this.ambientAudioStartResult = null;
+      this.pendingAmbientAudioRestartHandoff = null;
+      return;
+    }
+
+    this.pendingAmbientAudioRestartHandoff = null;
+    this.stopAmbientAudio({ immediate: true });
+  }
+
   private previewAmbientAudioVolume(volume: number): void {
     if (!this.ambientAudio || !this.ambientAudioSettings?.enabled || this.snapshot?.complete) {
       return;
@@ -527,7 +589,11 @@ export class PracticeScene extends Phaser.Scene {
       this.handleAmbientAudioFailure('Soft Focus could not continue ambient music.', error, handle.engine);
     });
     this.ambientAudio = handle.engine;
+    this.ambientAudioStartResult = handle.startResult;
     this.syncAmbientAudioClock();
+    if (this.snapshot?.paused) {
+      handle.engine.pause();
+    }
     void handle.startResult.then((result) => {
       if (this.ambientAudio !== handle.engine) {
         return;
@@ -535,6 +601,10 @@ export class PracticeScene extends Phaser.Scene {
 
       if (result.ok) {
         this.setAmbientAudioNotice(null);
+        this.syncAmbientAudioClock();
+        if (!this.snapshot?.paused && !this.snapshot?.complete && !handle.engine.isPlaying()) {
+          void this.resumeAmbientAudio();
+        }
         return;
       }
 
@@ -559,14 +629,24 @@ export class PracticeScene extends Phaser.Scene {
       },
     });
     this.ambientAudio = engine;
+    const startResult = engine.start().then<AmbientAudioStartResult, AmbientAudioStartResult>(
+      () => ({ ok: true }),
+      (error: unknown) => ({ ok: false, error }),
+    );
+    this.ambientAudioStartResult = startResult;
 
-    try {
-      await engine.start();
+    const result = await startResult;
+    if (this.ambientAudio !== engine) {
+      return;
+    }
+
+    if (result.ok) {
       this.syncAmbientAudioClock();
       this.setAmbientAudioNotice(null);
-    } catch (error) {
-      this.handleAmbientAudioFailure('Soft Focus could not start ambient music.', error, engine);
+      return;
     }
+
+    this.handleAmbientAudioFailure('Soft Focus could not start ambient music.', result.error, engine);
   }
 
   private syncAmbientAudio(snapshot: PracticeRunnerSnapshot, wasPaused: boolean): void {
@@ -581,6 +661,7 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     if (snapshot.paused) {
+      this.ambientAudioResumeAttempt += 1;
       this.ambientAudio.pause();
       return;
     }
@@ -606,12 +687,20 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     const engine = this.ambientAudio;
+    const resumeAttempt = ++this.ambientAudioResumeAttempt;
 
     try {
       await engine.resume();
+      if (this.ambientAudio !== engine || this.ambientAudioResumeAttempt !== resumeAttempt) {
+        return;
+      }
       this.syncAmbientAudioClock();
       this.setAmbientAudioNotice(null);
     } catch (error) {
+      if (this.ambientAudio !== engine || this.ambientAudioResumeAttempt !== resumeAttempt) {
+        return;
+      }
+
       this.handleAmbientAudioFailure('Soft Focus could not resume ambient music.', error, engine);
     }
   }
@@ -623,6 +712,8 @@ export class PracticeScene extends Phaser.Scene {
     if (this.ambientAudio === engine) {
       engine.dispose({ fadeOutSeconds: 0 });
       this.ambientAudio = null;
+      this.ambientAudioStartResult = null;
+      this.ambientAudioResumeAttempt += 1;
     }
   }
 
@@ -655,6 +746,8 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     this.ambientAudio = null;
+    this.ambientAudioStartResult = null;
+    this.ambientAudioResumeAttempt += 1;
   }
 
   private isPointerInHeaderRevealZone(pointerY: number): boolean {

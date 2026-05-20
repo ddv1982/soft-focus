@@ -209,6 +209,36 @@ const runVolumeChangeScenario = async (): Promise<void> => {
   assert(fakeAudio.volume <= 1, 'expected raised ambient volume to stay within browser audio volume bounds');
 };
 
+const runPlaybackHandlerReplacementScenario = async (): Promise<void> => {
+  const firstErrors: unknown[] = [];
+  const secondErrors: unknown[] = [];
+  const { engine, fakeAudio } = createEngine({ errors: firstErrors });
+
+  await engine.start();
+  engine.setPlaybackErrorHandler((error) => {
+    secondErrors.push(error);
+  });
+  fakeAudio.nextPlayError = new Error('blocked on advance');
+  fakeAudio.triggerEnded();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert(firstErrors.length === 0, 'expected replaced playback error handler not to receive later failures');
+  assert(secondErrors.length === 1, 'expected replacement playback error handler to receive later failures');
+};
+
+const runPlaybackPreservingControlScenario = async (): Promise<void> => {
+  const { engine, fakeAudio } = createEngine();
+
+  await engine.start();
+  engine.syncExerciseClock({ totalSecondsRemaining: 3 });
+  engine.setVolume(40);
+  engine.setPreset(ambientAudioPresetIds.clearBells);
+
+  assert(fakeAudio.playCalls === 1, 'expected clock, volume, and preset updates not to replay started audio');
+  assert(engine.isPlaying(), 'expected engine to keep playing after non-start control updates');
+};
+
 const runBundledTrackManifestScenario = (): void => {
   assert(ambientAudioTracks.length >= 2, 'expected bundled ambient track manifest to expose both MP3s outside Vite runtime');
   assert(ambientAudioTracks[0]?.url.length, 'expected bundled ambient track 1 to expose a usable URL');
@@ -233,6 +263,8 @@ await runStartAndFailureScenarios();
 await runPlaylistScenarios();
 await runExerciseClockScenarios();
 await runVolumeChangeScenario();
+await runPlaybackHandlerReplacementScenario();
+await runPlaybackPreservingControlScenario();
 runBundledTrackManifestScenario();
 runDurationHelperScenario();
 

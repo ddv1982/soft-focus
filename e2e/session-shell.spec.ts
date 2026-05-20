@@ -2,7 +2,14 @@ import { expect, type Page, test } from '@playwright/test';
 
 declare global {
   interface Window {
-    __softFocusAudioInstances?: Array<{ volume: number; playCalls: number }>;
+    __softFocusAudioInstances?: Array<{
+      volume: number;
+      playCalls: number;
+      pauseCalls: number;
+      loadCalls: number;
+      removedAttributes: string[];
+      paused: boolean;
+    }>;
   }
 }
 
@@ -31,6 +38,12 @@ const installAudioStub = async (page: Page): Promise<void> => {
 
       playCalls = 0;
 
+      pauseCalls = 0;
+
+      loadCalls = 0;
+
+      removedAttributes: string[] = [];
+
       paused = true;
 
       onended: (() => void) | null = null;
@@ -48,17 +61,20 @@ const installAudioStub = async (page: Page): Promise<void> => {
       }
 
       pause(): void {
+        this.pauseCalls += 1;
         this.paused = true;
       }
 
       removeAttribute(qualifiedName: string): void {
+        this.removedAttributes.push(qualifiedName);
+
         if (qualifiedName === 'src') {
           this.src = '';
         }
       }
 
       load(): void {
-        // Test stub: no network fetch is needed for bundled audio URLs.
+        this.loadCalls += 1;
       }
     }
 
@@ -238,6 +254,72 @@ test('ambient volume slider updates playing audio during input before change', a
   await ambientVolume.dispatchEvent('change');
   await expect.poll(() => page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume))
     .toBe(20);
+});
+
+test('theme restart preserves ambient audio without replaying the MP3', async ({ page }) => {
+  await installAudioStub(page);
+  await openSoftFocus(page);
+  await page.getByRole('button', { name: 'Start Breathing reset' }).click();
+  await page.evaluate(() => {
+    const game = window.__softFocusGame;
+
+    if (!game) {
+      throw new Error('Soft Focus game not available on window');
+    }
+
+    game.sessionStore.setAmbientAudioEnabled(true);
+    game.sessionStore.setAmbientAudioVolume(80);
+  });
+  await page.getByRole('button', { name: 'Start practice' }).click();
+  await page.waitForFunction(() => {
+    const audio = window.__softFocusAudioInstances?.at(-1);
+
+    return Boolean(audio && audio.playCalls > 0 && !audio.paused);
+  });
+  await page.evaluate(() => {
+    window.__softFocusGame?.sessionStore.setAmbientAudioVolume(20);
+  });
+  await expect.poll(() => page.evaluate(() => window.__softFocusAudioInstances?.[0]?.volume ?? 1))
+    .toBeLessThan(0.4);
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('soft-focus:themechange'));
+  });
+  await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
+
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.length)).toBe(1);
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.playCalls)).toBe(1);
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.removedAttributes.includes('src'))).toBe(false);
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.loadCalls)).toBe(0);
+});
+
+test('resize restart preserves ambient audio without replaying the MP3', async ({ page }) => {
+  await installAudioStub(page);
+  await openSoftFocus(page);
+  await page.getByRole('button', { name: 'Start Breathing reset' }).click();
+  await page.evaluate(() => {
+    const game = window.__softFocusGame;
+
+    if (!game) {
+      throw new Error('Soft Focus game not available on window');
+    }
+
+    game.sessionStore.setAmbientAudioEnabled(true);
+  });
+  await page.getByRole('button', { name: 'Start practice' }).click();
+  await page.waitForFunction(() => {
+    const audio = window.__softFocusAudioInstances?.at(-1);
+
+    return Boolean(audio && audio.playCalls > 0 && !audio.paused);
+  });
+
+  await page.setViewportSize({ width: 900, height: 720 });
+  await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
+
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.length)).toBe(1);
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.playCalls)).toBe(1);
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.removedAttributes.includes('src'))).toBe(false);
+  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.loadCalls)).toBe(0);
 });
 
 const putGameIntoCompletion = async (
