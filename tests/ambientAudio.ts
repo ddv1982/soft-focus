@@ -3,6 +3,7 @@ import {
   AmbientAudioUnavailableError,
   ambientAudioTracks,
   getPracticeDurationSeconds,
+  type AmbientAudioContext,
   type AmbientAudioElement,
   type AmbientAudioSettings,
   type AmbientAudioTrack,
@@ -25,6 +26,169 @@ const settings: AmbientAudioSettings = {
   presetId: ambientAudioPresetIds.openHorizon,
   volume: 100,
 };
+
+class FakeWebAudioContext {
+  constructor({
+    deferResume = false,
+    failCreateMediaElementSource = false,
+    failCreateGain = false,
+    failSourceConnect = false,
+    failGainConnect = false,
+    resumeError = null,
+    closeError = null,
+  }: {
+    deferResume?: boolean;
+    failCreateMediaElementSource?: boolean;
+    failCreateGain?: boolean;
+    failSourceConnect?: boolean;
+    failGainConnect?: boolean;
+    resumeError?: unknown;
+    closeError?: unknown;
+  } = {}) {
+    this.deferResume = deferResume;
+    this.failCreateMediaElementSource = failCreateMediaElementSource;
+    this.failCreateGain = failCreateGain;
+    this.failSourceConnect = failSourceConnect;
+    this.failGainConnect = failGainConnect;
+    this.resumeError = resumeError;
+    this.closeError = closeError;
+  }
+
+  currentTime = 12;
+
+  destination = {};
+
+  state: AudioContextState = 'suspended';
+
+  gainValue = 0;
+
+  resumeCalls = 0;
+
+  closeCalls = 0;
+
+  sourceConnectCalls = 0;
+
+  sourceDisconnectCalls = 0;
+
+  gainConnectCalls = 0;
+
+  gainDisconnectCalls = 0;
+
+  get gainDirectValue(): number {
+    return this.gainNode.gain.value;
+  }
+
+  private readonly deferResume: boolean;
+
+  private readonly failCreateMediaElementSource: boolean;
+
+  private readonly failCreateGain: boolean;
+
+  private readonly failSourceConnect: boolean;
+
+  private readonly failGainConnect: boolean;
+
+  private readonly resumeError: unknown;
+
+  private readonly closeError: unknown;
+
+  private resumeResolver: (() => void) | null = null;
+
+  private readonly sourceNode = {
+    connect: (destinationNode: AudioNode): AudioNode => {
+      this.sourceConnectCalls += 1;
+
+      if (this.failSourceConnect) {
+        throw new Error('source connect failed');
+      }
+
+      return destinationNode;
+    },
+    disconnect: (): void => {
+      this.sourceDisconnectCalls += 1;
+    },
+  } as MediaElementAudioSourceNode;
+
+  private readonly gainNode = {
+    gain: {
+      value: 1,
+      cancelScheduledValues: () => this.gainNode.gain,
+      setTargetAtTime: (target: number) => {
+        this.gainValue = target;
+        return this.gainNode.gain;
+      },
+      setValueAtTime: (value: number) => {
+        this.gainValue = value;
+        this.gainNode.gain.value = value;
+        return this.gainNode.gain;
+      },
+    },
+    connect: (destinationNode: AudioNode): AudioNode => {
+      this.gainConnectCalls += 1;
+
+      if (this.failGainConnect) {
+        throw new Error('gain connect failed');
+      }
+
+      return destinationNode;
+    },
+    disconnect: (): void => {
+      this.gainDisconnectCalls += 1;
+    },
+  } as unknown as GainNode;
+
+  createGain(): GainNode {
+    if (this.failCreateGain) {
+      throw new Error('create gain failed');
+    }
+
+    return this.gainNode;
+  }
+
+  createMediaElementSource(): MediaElementAudioSourceNode {
+    if (this.failCreateMediaElementSource) {
+      throw new Error('media element source failed');
+    }
+
+    return this.sourceNode;
+  }
+
+  resume(): Promise<void> {
+    this.resumeCalls += 1;
+
+    if (this.resumeError) {
+      return Promise.reject(this.resumeError);
+    }
+
+    if (this.deferResume) {
+      return new Promise((resolve) => {
+        this.resumeResolver = () => {
+          this.state = 'running';
+          resolve();
+        };
+      });
+    }
+
+    this.state = 'running';
+    return Promise.resolve();
+  }
+
+  resolveResume(): void {
+    this.resumeResolver?.();
+    this.resumeResolver = null;
+  }
+
+  close(): Promise<void> {
+    this.closeCalls += 1;
+    this.state = 'closed';
+
+    if (this.closeError) {
+      return Promise.reject(this.closeError);
+    }
+
+    return Promise.resolve();
+  }
+}
 
 class FakeAudioElement implements AmbientAudioElement {
   preload = '';
@@ -97,16 +261,24 @@ const createEngine = ({
   fakeAudio = new FakeAudioElement(),
   playlist = tracks,
   errors = [],
+  audioContext = null,
+  audioContextFactory,
+  audioFactory,
 }: {
   fakeAudio?: FakeAudioElement;
   playlist?: readonly AmbientAudioTrack[];
   errors?: unknown[];
-} = {}): { engine: AmbientAudioEngine; fakeAudio: FakeAudioElement; errors: unknown[] } => ({
+  audioContext?: FakeWebAudioContext | null;
+  audioContextFactory?: () => AmbientAudioContext | null;
+  audioFactory?: () => AmbientAudioElement | null;
+} = {}): { engine: AmbientAudioEngine; fakeAudio: FakeAudioElement; errors: unknown[]; audioContext: FakeWebAudioContext | null } => ({
   fakeAudio,
   errors,
+  audioContext,
   engine: new AmbientAudioEngine(settings, {
     tracks: playlist,
-    audioFactory: () => fakeAudio,
+    audioFactory: audioFactory ?? (() => fakeAudio),
+    audioContextFactory: audioContextFactory ?? (() => audioContext as AmbientAudioContext | null),
     onPlaybackError: (error) => {
       errors.push(error);
     },
@@ -209,6 +381,118 @@ const runVolumeChangeScenario = async (): Promise<void> => {
   assert(fakeAudio.volume <= 1, 'expected raised ambient volume to stay within browser audio volume bounds');
 };
 
+const runWebAudioGainScenario = async (): Promise<void> => {
+  const audioContext = new FakeWebAudioContext({ deferResume: true });
+  const { engine, fakeAudio } = createEngine({ audioContext });
+
+  const startPromise = engine.start();
+  assert(fakeAudio.playCalls === 1, 'expected playback to start before awaiting Web Audio resume');
+  audioContext.resolveResume();
+  await startPromise;
+  const initialGain = audioContext.gainValue;
+
+  assert(audioContext.sourceConnectCalls === 1, 'expected Web Audio source to connect once during ambient start');
+  assert(audioContext.gainConnectCalls === 1, 'expected Web Audio gain node to connect once during ambient start');
+  assert(audioContext.resumeCalls === 1, 'expected suspended Web Audio context to resume before playback');
+  assert(fakeAudio.volume === 1, 'expected media element volume to stay full when Web Audio gain is active');
+  assert(initialGain > 0 && initialGain <= 1, 'expected initial Web Audio gain to receive the resolved output volume');
+  assert(audioContext.gainDirectValue === initialGain, 'expected initial Web Audio gain to be assigned before scheduled volume automation');
+
+  engine.setVolume(25);
+  assert(audioContext.gainValue > 0, 'expected lowered Web Audio gain to remain audible');
+  assert(audioContext.gainValue < initialGain, 'expected volume change to lower Web Audio gain');
+  assert(fakeAudio.volume === 1, 'expected media element volume to remain full after gain updates');
+
+  engine.syncExerciseClock({ totalSecondsRemaining: 0 });
+  assert(audioContext.gainValue === 0, 'expected exercise fade to reach zero through Web Audio gain');
+  assert(audioContext.gainDirectValue === 0, 'expected exercise fade completion to set Web Audio gain exactly to zero');
+
+  engine.dispose({ fadeOutSeconds: 0 });
+  assert(audioContext.sourceDisconnectCalls === 1, 'expected Web Audio source to disconnect on dispose');
+  assert(audioContext.gainDisconnectCalls === 1, 'expected Web Audio gain node to disconnect on dispose');
+  assert(audioContext.closeCalls === 1, 'expected Web Audio context to close on dispose');
+};
+
+const runWebAudioFallbackScenarios = async (): Promise<void> => {
+  const constructionFailureAudio = new FakeAudioElement();
+  const constructionFailure = createEngine({
+    fakeAudio: constructionFailureAudio,
+    audioContextFactory: () => {
+      throw new Error('audio context construction failed');
+    },
+  });
+
+  await constructionFailure.engine.start();
+  assert(constructionFailureAudio.playCalls === 1, 'expected playback to continue when AudioContext construction fails');
+  assert(constructionFailureAudio.volume > 0 && constructionFailureAudio.volume < 1, 'expected direct media element volume fallback after AudioContext construction failure');
+
+  const sourceFailureAudio = new FakeAudioElement();
+  const sourceFailureContext = new FakeWebAudioContext({ failCreateMediaElementSource: true });
+  const sourceFailure = createEngine({
+    fakeAudio: sourceFailureAudio,
+    audioContext: sourceFailureContext,
+  });
+
+  await sourceFailure.engine.start();
+  assert(sourceFailureAudio.playCalls === 1, 'expected playback to continue when media source creation fails');
+  assert(sourceFailureAudio.volume > 0 && sourceFailureAudio.volume < 1, 'expected direct media element volume fallback after media source creation failure');
+  assert(sourceFailureContext.closeCalls === 1, 'expected failed Web Audio context to close after source creation failure');
+};
+
+const runWebAudioResumeRejectionScenario = async (): Promise<void> => {
+  const resumeError = new Error('resume failed');
+  const audioContext = new FakeWebAudioContext({ resumeError });
+  const { engine, fakeAudio } = createEngine({ audioContext });
+  let surfacedError: unknown = null;
+
+  try {
+    await engine.start();
+  } catch (error) {
+    surfacedError = error;
+  }
+
+  assert(surfacedError === resumeError, 'expected resume rejection to surface the original error');
+  assert(fakeAudio.playCalls === 1, 'expected playback to be attempted in the same activation turn as resume');
+  assert(fakeAudio.pauseCalls >= 1, 'expected resume rejection cleanup to pause the media element');
+  assert(fakeAudio.paused, 'expected media element to be paused after resume rejection cleanup');
+  assert(!engine.isPlaying(), 'expected engine to stop after resume rejection');
+  assert(audioContext.closeCalls === 1, 'expected Web Audio context to close after resume rejection');
+};
+
+const runPartialGraphFailureUsesFreshAudioScenario = async (): Promise<void> => {
+  const firstAudio = new FakeAudioElement();
+  const fallbackAudio = new FakeAudioElement();
+  const audioContext = new FakeWebAudioContext({ failCreateGain: true });
+  const audioElements = [firstAudio, fallbackAudio];
+  const { engine } = createEngine({
+    fakeAudio: fallbackAudio,
+    audioContext,
+    audioFactory: () => audioElements.shift() ?? null,
+  });
+
+  await engine.start();
+
+  assert(firstAudio.playCalls === 0, 'expected rerouted media element not to be used for fallback playback');
+  assert(firstAudio.pauseCalls >= 1, 'expected rerouted media element to be retired after graph setup failure');
+  assert(firstAudio.loadCalls >= 1, 'expected rerouted media element to be unloaded after graph setup failure');
+  assert(fallbackAudio.playCalls === 1, 'expected fresh media element to be used for direct fallback playback');
+  assert(fallbackAudio.src === tracks[0]?.url, 'expected fresh fallback audio to receive the current track source');
+  assert(fallbackAudio.volume > 0 && fallbackAudio.volume < 1, 'expected fresh fallback audio to use direct element volume');
+  assert(engine.isPlaying(), 'expected engine to keep playing through fresh direct fallback');
+  assert(audioContext.closeCalls === 1, 'expected failed Web Audio context to close after partial graph setup failure');
+};
+
+const runRejectedClosePromiseScenario = async (): Promise<void> => {
+  const audioContext = new FakeWebAudioContext({ closeError: new Error('close failed') });
+  const { engine } = createEngine({ audioContext });
+
+  await engine.start();
+  engine.dispose({ fadeOutSeconds: 0 });
+  await Promise.resolve();
+
+  assert(audioContext.closeCalls === 1, 'expected rejected close promise to be observed and suppressed');
+};
+
 const runPlaybackHandlerReplacementScenario = async (): Promise<void> => {
   const firstErrors: unknown[] = [];
   const secondErrors: unknown[] = [];
@@ -263,6 +547,11 @@ await runStartAndFailureScenarios();
 await runPlaylistScenarios();
 await runExerciseClockScenarios();
 await runVolumeChangeScenario();
+await runWebAudioGainScenario();
+await runWebAudioFallbackScenarios();
+await runWebAudioResumeRejectionScenario();
+await runPartialGraphFailureUsesFreshAudioScenario();
+await runRejectedClosePromiseScenario();
 await runPlaybackHandlerReplacementScenario();
 await runPlaybackPreservingControlScenario();
 runBundledTrackManifestScenario();

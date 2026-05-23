@@ -90,6 +90,20 @@ export interface AmbientAudioElement {
   load: () => void;
 }
 
+export type AmbientAudioParam = Pick<AudioParam, 'value' | 'setTargetAtTime' | 'setValueAtTime' | 'cancelScheduledValues'>;
+
+export type AmbientGainNode = Pick<GainNode, 'gain' | 'connect' | 'disconnect'>;
+
+export type AmbientMediaElementAudioSourceNode = Pick<MediaElementAudioSourceNode, 'connect' | 'disconnect'>;
+
+export type AmbientAudioContext = Pick<AudioContext, 'currentTime' | 'destination' | 'state' | 'createGain' | 'createMediaElementSource' | 'resume' | 'close'>;
+
+interface WebKitAudioGlobal {
+  webkitAudioContext?: typeof AudioContext;
+}
+
+type AudioOutputConnectionResult = 'web-audio-connected' | 'direct-fallback-safe' | 'fresh-audio-required';
+
 export interface AmbientPlaybackErrorContext {
   action: 'start' | 'resume' | 'natural-track-advance' | 'track-error-skip';
   trackIndex: number;
@@ -99,6 +113,7 @@ export interface AmbientPlaybackErrorContext {
 export interface AmbientAudioEngineOptions {
   tracks?: readonly AmbientAudioTrack[];
   audioFactory?: () => AmbientAudioElement | null;
+  audioContextFactory?: () => AmbientAudioContext | null;
   onPlaybackError?: (error: unknown, context: AmbientPlaybackErrorContext) => void;
 }
 
@@ -252,6 +267,51 @@ const getDefaultAudioFactory = (): AmbientAudioElement | null => {
   return new Audio();
 };
 
+const getDefaultAudioContextFactory = (): AmbientAudioContext | null => {
+  const AudioContextConstructor = globalThis.AudioContext ?? (globalThis as typeof globalThis & WebKitAudioGlobal).webkitAudioContext;
+
+  if (!AudioContextConstructor) {
+    return null;
+  }
+
+  return new AudioContextConstructor();
+};
+
+const setGainValue = (gain: AmbientAudioParam, value: number, currentTime: number): void => {
+  gain.cancelScheduledValues?.(currentTime);
+
+  if (value === 0) {
+    if (gain.setValueAtTime) {
+      gain.setValueAtTime(0, currentTime);
+      return;
+    }
+
+    gain.value = 0;
+    return;
+  }
+
+  if (gain.setTargetAtTime) {
+    gain.setTargetAtTime(value, currentTime, 0.015);
+    return;
+  }
+
+  if (gain.setValueAtTime) {
+    gain.setValueAtTime(value, currentTime);
+    return;
+  }
+
+  gain.value = value;
+};
+
+const closeAudioContextSafely = (audioContext: AmbientAudioContext | null): void => {
+  try {
+    const closeResult = audioContext?.close?.();
+    closeResult?.catch?.(() => undefined);
+  } catch {
+    // Best-effort cleanup should not mask playback errors.
+  }
+};
+
 const getNow = (): number => globalThis.performance?.now() ?? Date.now();
 
 export const getPracticeDurationSeconds = ({ phases }: { phases: readonly { seconds: number }[] }): number => phases.reduce(
@@ -276,6 +336,16 @@ export class AmbientAudioEngine {
 
   private readonly audioFactory: () => AmbientAudioElement | null;
 
+  private readonly audioContextFactory: () => AmbientAudioContext | null;
+
+  private audioContext: AmbientAudioContext | null = null;
+
+  private audioSource: AmbientMediaElementAudioSourceNode | null = null;
+
+  private gainNode: AmbientGainNode | null = null;
+
+  private webAudioUnavailable = false;
+
   private onPlaybackError: (error: unknown, context: AmbientPlaybackErrorContext) => void;
 
   private failedTrackIndexes = new Set<number>();
@@ -284,6 +354,7 @@ export class AmbientAudioEngine {
     this.currentSettings = settings;
     this.tracks = options.tracks ?? ambientAudioTracks;
     this.audioFactory = options.audioFactory ?? getDefaultAudioFactory;
+    this.audioContextFactory = options.audioContextFactory ?? getDefaultAudioContextFactory;
     this.onPlaybackError = options.onPlaybackError ?? (() => undefined);
   }
 
@@ -343,11 +414,12 @@ export class AmbientAudioEngine {
     this.playing = false;
 
     if (!this.audio) {
+      this.disposeAudioOutput();
       return;
     }
 
     if (fadeOutSeconds > 0) {
-      this.audio.volume = 0;
+      this.setOutputVolume(0, { immediate: true });
     }
 
     this.audio.pause();
@@ -356,6 +428,7 @@ export class AmbientAudioEngine {
     this.audio.onended = null;
     this.audio.onerror = null;
     this.audio = null;
+    this.disposeAudioOutput();
   }
 
   setPlaybackErrorHandler(handler: (error: unknown, context: AmbientPlaybackErrorContext) => void): void {
@@ -409,6 +482,59 @@ export class AmbientAudioEngine {
     }
   }
 
+  private createAudioElement(): AmbientAudioElement {
+    const audio = this.audioFactory();
+
+    if (!audio) {
+      throw new AmbientAudioUnavailableError('audio-unavailable');
+    }
+
+    audio.preload = 'auto';
+    return audio;
+  }
+
+  private retireAudioElement(audio: AmbientAudioElement): void {
+    try {
+      audio.pause();
+    } catch {
+      // Ignore cleanup failures.
+    }
+
+    try {
+      audio.removeAttribute('src');
+    } catch {
+      // Ignore cleanup failures.
+    }
+
+    try {
+      audio.load();
+    } catch {
+      // Ignore cleanup failures.
+    }
+
+    audio.onended = null;
+    audio.onerror = null;
+  }
+
+  private createAudioElementWithOutput(): AmbientAudioElement {
+    const audio = this.createAudioElement();
+    const connectionResult = this.connectAudioOutput(audio);
+
+    if (connectionResult !== 'fresh-audio-required') {
+      return audio;
+    }
+
+    this.retireAudioElement(audio);
+    const fallbackAudio = this.createAudioElement();
+
+    if (fallbackAudio === audio) {
+      this.retireAudioElement(fallbackAudio);
+      throw new AmbientAudioUnavailableError('audio-unavailable');
+    }
+
+    return fallbackAudio;
+  }
+
   private loadTrack(index: number): void {
     const track = this.tracks[index % this.tracks.length];
 
@@ -417,11 +543,7 @@ export class AmbientAudioEngine {
     }
 
     if (!this.audio) {
-      this.audio = this.audioFactory();
-      if (!this.audio) {
-        throw new AmbientAudioUnavailableError('audio-unavailable');
-      }
-      this.audio.preload = 'auto';
+      this.audio = this.createAudioElementWithOutput();
     }
 
     this.audio.onended = () => {
@@ -479,11 +601,30 @@ export class AmbientAudioEngine {
     }
 
     try {
-      await this.audio.play();
+      const resumeResult = this.resumeAudioOutput();
+      const playResult = this.audio.play();
+
+      if (resumeResult) {
+        await Promise.all([resumeResult, playResult]);
+        return;
+      }
+
+      await playResult;
     } catch (error) {
-      this.playing = false;
+      this.cleanupFailedPlaybackAttempt();
       throw error;
     }
+  }
+
+  private cleanupFailedPlaybackAttempt(): void {
+    this.playing = false;
+
+    if (this.audio) {
+      this.retireAudioElement(this.audio);
+      this.audio = null;
+    }
+
+    this.disposeAudioOutput();
   }
 
   private getPlaybackErrorContext(action: AmbientPlaybackErrorContext['action']): AmbientPlaybackErrorContext {
@@ -499,7 +640,99 @@ export class AmbientAudioEngine {
       return;
     }
 
-    this.audio.volume = Math.min(1, Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier));
+    this.setOutputVolume(Math.min(1, Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier)));
+  }
+
+  private connectAudioOutput(audio: AmbientAudioElement): AudioOutputConnectionResult {
+    if (this.webAudioUnavailable) {
+      return 'direct-fallback-safe';
+    }
+
+    if (this.audioContext || this.audioSource || this.gainNode) {
+      return 'web-audio-connected';
+    }
+
+    let audioContext: AmbientAudioContext | null = null;
+    let source: AmbientMediaElementAudioSourceNode | null = null;
+    let gainNode: AmbientGainNode | null = null;
+    let mediaElementWasRerouted = false;
+
+    try {
+      audioContext = this.audioContextFactory();
+
+      if (!audioContext) {
+        this.webAudioUnavailable = true;
+        return 'direct-fallback-safe';
+      }
+
+      source = audioContext.createMediaElementSource(audio as HTMLMediaElement);
+      mediaElementWasRerouted = true;
+      gainNode = audioContext.createGain();
+      source.connect(gainNode as unknown as AudioNode);
+      gainNode.connect(audioContext.destination);
+      const outputVolume = Math.min(1, Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier));
+      gainNode.gain.cancelScheduledValues?.(audioContext.currentTime);
+      gainNode.gain.value = outputVolume;
+      this.audioContext = audioContext;
+      this.audioSource = source;
+      this.gainNode = gainNode;
+      return 'web-audio-connected';
+    } catch {
+      this.webAudioUnavailable = true;
+      this.disconnectAudioNodeSafely(source);
+      this.disconnectAudioNodeSafely(gainNode);
+      closeAudioContextSafely(audioContext);
+      this.audioContext = null;
+      this.audioSource = null;
+      this.gainNode = null;
+      return mediaElementWasRerouted ? 'fresh-audio-required' : 'direct-fallback-safe';
+    }
+  }
+
+  private resumeAudioOutput(): Promise<void> | void {
+    if (this.audioContext?.state === 'suspended') {
+      return this.audioContext.resume?.();
+    }
+
+    return undefined;
+  }
+
+  private setOutputVolume(volume: number, { immediate = false }: { immediate?: boolean } = {}): void {
+    if (!this.audio) {
+      return;
+    }
+
+    if (!this.gainNode || !this.audioContext) {
+      this.audio.volume = volume;
+      return;
+    }
+
+    this.audio.volume = 1;
+
+    if (immediate) {
+      this.gainNode.gain.cancelScheduledValues?.(this.audioContext.currentTime);
+      this.gainNode.gain.value = volume;
+      return;
+    }
+
+    setGainValue(this.gainNode.gain, volume, this.audioContext.currentTime);
+  }
+
+  private disconnectAudioNodeSafely(node: AmbientMediaElementAudioSourceNode | AmbientGainNode | null): void {
+    try {
+      node?.disconnect?.();
+    } catch {
+      // Best-effort cleanup.
+    }
+  }
+
+  private disposeAudioOutput(): void {
+    this.disconnectAudioNodeSafely(this.audioSource);
+    this.disconnectAudioNodeSafely(this.gainNode);
+    closeAudioContextSafely(this.audioContext);
+    this.audioContext = null;
+    this.audioSource = null;
+    this.gainNode = null;
   }
 
   private fadeTo(targetMultiplier: number, durationMs: number, onComplete: () => void): void {
