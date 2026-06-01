@@ -104,7 +104,16 @@ const installAudioStub = async (
     }
 
     class FakeAudioParam {
-      value = 0;
+      private currentValue = 0;
+
+      get value(): number {
+        return this.currentValue;
+      }
+
+      set value(value: number) {
+        this.currentValue = value;
+        window.__softFocusAudioGainValues?.push(value);
+      }
 
       cancelScheduledValues(): void {
         // No-op in the deterministic test double.
@@ -112,12 +121,10 @@ const installAudioStub = async (
 
       setTargetAtTime(value: number): void {
         this.value = value;
-        window.__softFocusAudioGainValues?.push(value);
       }
 
       setValueAtTime(value: number): void {
         this.value = value;
-        window.__softFocusAudioGainValues?.push(value);
       }
     }
 
