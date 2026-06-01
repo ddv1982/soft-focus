@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { withTextResolution } from '../../ui/textResolution';
+import { withPracticeTextContrast } from '../../ui/textResolution';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -42,7 +42,7 @@ export const createPhraseAnchorStagePresenter = ({
   const haloRestScale = motionEnabled ? 0.92 : 1;
   const haloInhaleScale = lowIntensity ? 1.02 : 1.18;
 
-  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase anchor practice', withTextResolution({
+  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase anchor practice', withPracticeTextContrast({
     color: uiTheme.colors.seaGlass,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
@@ -59,7 +59,7 @@ export const createPhraseAnchorStagePresenter = ({
     .setOrigin(0.5)
     .setStrokeStyle(1, border, lowIntensity ? 0.14 : 0.2);
 
-  const phrasePreview = scene.add.text(x, y - 10, `“${displayPhrase}”`, withTextResolution({
+  const phrasePreview = scene.add.text(x, y - 10, `“${displayPhrase}”`, withPracticeTextContrast({
     color: uiTheme.colors.foam,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
@@ -69,7 +69,7 @@ export const createPhraseAnchorStagePresenter = ({
   }));
   phrasePreview.setOrigin(0.5);
 
-  const phraseHint = scene.add.text(x, y + 18, 'Repeat it silently at an easy pace.', withTextResolution({
+  const phraseHint = scene.add.text(x, y + 18, 'Repeat it silently at an easy pace.', withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '12px',
@@ -78,7 +78,7 @@ export const createPhraseAnchorStagePresenter = ({
   }));
   phraseHint.setOrigin(0.5);
 
-  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Notice what is here', withTextResolution({
+  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Notice what is here', withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
@@ -87,7 +87,7 @@ export const createPhraseAnchorStagePresenter = ({
   }));
   breathLabel.setOrigin(0.5);
 
-  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Feel the body, then return to the phrase.', withTextResolution({
+  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Feel the body, then return to the phrase.', withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',

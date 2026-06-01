@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { withTextResolution } from '../ui/textResolution';
+import { withPracticeTextContrast } from '../ui/textResolution';
 import { hexToNumber, uiTheme } from '../ui/theme';
 
 export interface GazeGuidanceController {
@@ -27,7 +27,7 @@ export const createGazeGuidance = ({
   lowIntensity,
   prompt,
 }: CreateGazeGuidanceOptions): GazeGuidanceController => {
-  const label = scene.add.text(x, y, prompt, withTextResolution({
+  const label = scene.add.text(x, y, prompt, withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',

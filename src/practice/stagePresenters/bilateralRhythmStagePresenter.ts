@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { withTextResolution } from '../../ui/textResolution';
+import { withPracticeTextContrast } from '../../ui/textResolution';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -37,7 +37,7 @@ export const createBilateralRhythmStagePresenter = ({
   const rightMarker = scene.add.circle(x + offset, y, radius, accent, lowIntensity ? 0.28 : 0.36);
   const pulse = scene.add.circle(x - offset, y, radius * 0.86, accent, lowIntensity ? 0.9 : 1);
 
-  const rhythmLabel = scene.add.text(x, y - glowRadius - 30, 'Follow the visual left-right rhythm', withTextResolution({
+  const rhythmLabel = scene.add.text(x, y - glowRadius - 30, 'Follow the visual left-right rhythm', withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
@@ -45,7 +45,7 @@ export const createBilateralRhythmStagePresenter = ({
   }));
   rhythmLabel.setOrigin(0.5);
 
-  const leftLabel = scene.add.text(x - offset, y + radius + 22, 'Left', withTextResolution({
+  const leftLabel = scene.add.text(x - offset, y + radius + 22, 'Left', withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
@@ -53,7 +53,7 @@ export const createBilateralRhythmStagePresenter = ({
   }));
   leftLabel.setOrigin(0.5);
 
-  const rightLabel = scene.add.text(x + offset, y + radius + 22, 'Right', withTextResolution({
+  const rightLabel = scene.add.text(x + offset, y + radius + 22, 'Right', withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',

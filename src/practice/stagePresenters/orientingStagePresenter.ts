@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { withTextResolution } from '../../ui/textResolution';
+import { withPracticeTextContrast } from '../../ui/textResolution';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -40,7 +40,7 @@ export const createOrientingStagePresenter = ({
   const focusHalo = scene.add.circle(x - span, y, (lowIntensity ? 34 : 40) * reducedMotion.amplitudeScale, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.28 : 0.36);
 
-  const promptText = scene.add.text(x, y + 56, prompts[0], withTextResolution({
+  const promptText = scene.add.text(x, y + 56, prompts[0], withPracticeTextContrast({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
