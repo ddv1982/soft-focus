@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { withPracticeTextContrast } from '../../ui/textResolution';
+import { createDomText } from '../../ui/domText';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -69,7 +69,8 @@ export const createBreathingResetStagePresenter = ({
   const fill = scene.add.circle(x, y, fillRadius, accent, lowIntensity ? 0.2 : 0.28);
   const guide = scene.add.rectangle(x, y, guideWidth, 2, border, 0.18).setOrigin(0.5);
 
-  const inhaleLabel = scene.add.text(
+  const inhaleLabel = createDomText(
+    scene,
     x,
     y - ringRadius - labelGap,
     pattern === 'cyclic-sighing'
@@ -81,16 +82,17 @@ export const createBreathingResetStagePresenter = ({
         : pattern === 'balanced'
           ? 'Balanced inhale'
           : 'Easy inhale',
-    withPracticeTextContrast({
+    {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${guideFontSize}px`,
     align: 'center',
-  }));
+  });
   inhaleLabel.setOrigin(0.5);
   inhaleLabel.setVisible(showBreathGuideLabels);
 
-  const exhaleLabel = scene.add.text(
+  const exhaleLabel = createDomText(
+    scene,
     x,
     y + ringRadius + labelGap,
     pattern === 'box'
@@ -100,22 +102,22 @@ export const createBreathingResetStagePresenter = ({
       : pattern === 'balanced'
         ? 'Balanced exhale'
         : 'Long easy exhale',
-    withPracticeTextContrast({
+    {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${guideFontSize}px`,
     align: 'center',
-  }));
+  });
   exhaleLabel.setOrigin(0.5);
   exhaleLabel.setVisible(showBreathGuideLabels);
 
-  const phaseLabel = scene.add.text(x, y, pattern === 'box' ? 'Inhale' : 'Easy inhale', withPracticeTextContrast({
+  const phaseLabel = createDomText(scene, x, y, pattern === 'box' ? 'Inhale' : 'Easy inhale', {
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${lowIntensity ? Math.max(17, phaseFontSize - 2) : phaseFontSize}px`,
     fontStyle: '600',
     align: 'center',
-  }));
+  });
   phaseLabel.setOrigin(0.5);
 
   ring.setScale(exhaleScale);
@@ -196,10 +198,14 @@ export const createBreathingResetStagePresenter = ({
 
   const applyState = (): void => {
     const visible = active;
+    const labelVisible = visible && !paused;
     const shouldRun = active && !paused;
 
     ring.setAlpha(visible ? (lowIntensity ? 0.84 : 0.96) : 0.2);
     fill.setAlpha(visible ? 1 : 0.28);
+    inhaleLabel.setVisible(showBreathGuideLabels && labelVisible);
+    exhaleLabel.setVisible(showBreathGuideLabels && labelVisible);
+    phaseLabel.setVisible(labelVisible);
     inhaleLabel.setAlpha(showBreathGuideLabels && visible ? 1 : 0.32);
     exhaleLabel.setAlpha(showBreathGuideLabels && visible ? 1 : 0.32);
     phaseLabel.setAlpha(visible ? 1 : 0.3);

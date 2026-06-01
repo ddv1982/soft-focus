@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { withPracticeTextContrast } from '../../ui/textResolution';
+import { createDomText } from '../../ui/domText';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -37,28 +37,28 @@ export const createBilateralRhythmStagePresenter = ({
   const rightMarker = scene.add.circle(x + offset, y, radius, accent, lowIntensity ? 0.28 : 0.36);
   const pulse = scene.add.circle(x - offset, y, radius * 0.86, accent, lowIntensity ? 0.9 : 1);
 
-  const rhythmLabel = scene.add.text(x, y - glowRadius - 30, 'Follow the visual left-right rhythm', withPracticeTextContrast({
+  const rhythmLabel = createDomText(scene, x, y - glowRadius - 30, 'Follow the visual left-right rhythm', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
     align: 'center',
-  }));
+  });
   rhythmLabel.setOrigin(0.5);
 
-  const leftLabel = scene.add.text(x - offset, y + radius + 22, 'Left', withPracticeTextContrast({
+  const leftLabel = createDomText(scene, x - offset, y + radius + 22, 'Left', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
     align: 'center',
-  }));
+  });
   leftLabel.setOrigin(0.5);
 
-  const rightLabel = scene.add.text(x + offset, y + radius + 22, 'Right', withPracticeTextContrast({
+  const rightLabel = createDomText(scene, x + offset, y + radius + 22, 'Right', {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
     align: 'center',
-  }));
+  });
   rightLabel.setOrigin(0.5);
 
   let active = false;
@@ -68,6 +68,7 @@ export const createBilateralRhythmStagePresenter = ({
 
   const applyState = (): void => {
     const visible = active;
+    const labelVisible = visible && !paused;
     const shouldRun = active && !paused;
     const activeMarkerAlpha = lowIntensity ? 0.68 : 0.82;
     const inactiveMarkerAlpha = visible ? (lowIntensity ? 0.22 : 0.3) : 0.12;
@@ -85,6 +86,9 @@ export const createBilateralRhythmStagePresenter = ({
     rightMarker.setAlpha(rightIsActive ? activeMarkerAlpha : inactiveMarkerAlpha);
     leftMarker.setScale(leftIsActive ? 1.08 : 0.96);
     rightMarker.setScale(rightIsActive ? 1.08 : 0.96);
+    rhythmLabel.setVisible(labelVisible);
+    leftLabel.setVisible(labelVisible);
+    rightLabel.setVisible(labelVisible);
     rhythmLabel.setAlpha(visible ? 0.88 : 0.3);
     leftLabel.setAlpha(visible ? 1 : 0.32);
     rightLabel.setAlpha(visible ? 1 : 0.32);

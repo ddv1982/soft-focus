@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-import { withPracticeTextContrast } from '../../ui/textResolution';
+import { createDomText } from '../../ui/domText';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -40,12 +40,12 @@ export const createOrientingStagePresenter = ({
   const focusHalo = scene.add.circle(x - span, y, (lowIntensity ? 34 : 40) * reducedMotion.amplitudeScale, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.28 : 0.36);
 
-  const promptText = scene.add.text(x, y + 56, prompts[0], withPracticeTextContrast({
+  const promptText = createDomText(scene, x, y + 56, prompts[0], {
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
     align: 'center',
-  }));
+  });
   promptText.setOrigin(0.5);
 
   let stepIndex = 0;
@@ -94,10 +94,12 @@ export const createOrientingStagePresenter = ({
 
   const applyState = (): void => {
     const visible = active;
+    const labelVisible = visible && !paused;
     const shouldRun = active && !paused;
 
     anchor.setAlpha(visible ? 0.96 : 0.22);
     focusHalo.setAlpha(visible ? (lowIntensity ? 0.72 : 0.88) : 0.18);
+    promptText.setVisible(labelVisible);
     promptText.setAlpha(visible ? 1 : 0.32);
     guide.setAlpha(visible ? 0.16 : 0.06);
     stepTween.paused = !shouldRun;

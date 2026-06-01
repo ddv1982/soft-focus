@@ -10,6 +10,7 @@ declare global {
       removedAttributes: string[];
       paused: boolean;
     }>;
+    __softFocusAudioGainValues?: number[];
   }
 }
 
@@ -25,8 +26,8 @@ const startBreathingResetPractice = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
 };
 
-const installAudioStub = async (page: Page): Promise<void> => {
-  await page.addInitScript(() => {
+const installAudioStub = async (page: Page, mode: 'direct' | 'web-audio' = 'direct'): Promise<void> => {
+  await page.addInitScript((stubMode) => {
     class FakeAudio {
       preload = '';
 
@@ -79,12 +80,110 @@ const installAudioStub = async (page: Page): Promise<void> => {
     }
 
     window.__softFocusAudioInstances = [];
+    window.__softFocusAudioGainValues = [];
     Object.defineProperty(window, 'Audio', {
       configurable: true,
       value: FakeAudio,
     });
-  });
+
+    if (stubMode === 'direct') {
+      Object.defineProperty(window, 'AudioContext', {
+        configurable: true,
+        value: undefined,
+      });
+      Object.defineProperty(window, 'webkitAudioContext', {
+        configurable: true,
+        value: undefined,
+      });
+      return;
+    }
+
+    class FakeAudioParam {
+      value = 0;
+
+      cancelScheduledValues(): void {
+        // No-op in the deterministic test double.
+      }
+
+      setTargetAtTime(value: number): void {
+        this.value = value;
+        window.__softFocusAudioGainValues?.push(value);
+      }
+
+      setValueAtTime(value: number): void {
+        this.value = value;
+        window.__softFocusAudioGainValues?.push(value);
+      }
+    }
+
+    class FakeGainNode {
+      gain = new FakeAudioParam();
+
+      connect(): void {
+        // No-op in the deterministic test double.
+      }
+
+      disconnect(): void {
+        // No-op in the deterministic test double.
+      }
+    }
+
+    class FakeMediaElementAudioSourceNode {
+      connect(): void {
+        // No-op in the deterministic test double.
+      }
+
+      disconnect(): void {
+        // No-op in the deterministic test double.
+      }
+    }
+
+    class FakeAudioContext {
+      currentTime = 0;
+
+      destination = {};
+
+      state = 'running';
+
+      createMediaElementSource(): FakeMediaElementAudioSourceNode {
+        return new FakeMediaElementAudioSourceNode();
+      }
+
+      createGain(): FakeGainNode {
+        const node = new FakeGainNode();
+        window.__softFocusAudioGainValues?.push(node.gain.value);
+        return node;
+      }
+
+      async resume(): Promise<void> {
+        this.state = 'running';
+      }
+
+      async close(): Promise<void> {
+        this.state = 'closed';
+      }
+    }
+
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+    Object.defineProperty(window, 'webkitAudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+  }, mode);
 };
+
+const getLatestAmbientOutputVolume = async (page: Page): Promise<number> => page.evaluate(() => {
+  const gainValue = window.__softFocusAudioGainValues?.at(-1);
+
+  if (typeof gainValue === 'number') {
+    return gainValue;
+  }
+
+  return window.__softFocusAudioInstances?.at(-1)?.volume ?? 0;
+});
 
 test('welcome title is not focused on initial load', async ({ page }) => {
   await page.goto('/');
@@ -216,7 +315,7 @@ test('setup ambient music volume input is applied to the MP3 when practice start
 });
 
 test('ambient volume slider updates playing audio during input before change', async ({ page }) => {
-  await installAudioStub(page);
+  await installAudioStub(page, 'web-audio');
   await openSoftFocus(page);
   await page.getByRole('button', { name: 'Start Breathing reset' }).click();
   await page.evaluate(() => {
@@ -236,7 +335,7 @@ test('ambient volume slider updates playing audio during input before change', a
     return Boolean(audio && audio.playCalls > 0 && audio.volume > 0);
   });
 
-  const initialVolume = await page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 0);
+  const initialVolume = await getLatestAmbientOutputVolume(page);
   await page.getByRole('button', { name: 'Preferences' }).click();
 
   const ambientVolume = page.getByLabel('Ambient volume');
@@ -247,7 +346,7 @@ test('ambient volume slider updates playing audio during input before change', a
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
-  await expect.poll(() => page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 0))
+  await expect.poll(() => getLatestAmbientOutputVolume(page))
     .toBeLessThan(initialVolume);
   expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(80);
 
