@@ -4,12 +4,10 @@ import {
   createDefaultPracticeSettings,
   isBreathingPresetId,
   isAmbientAudioPresetId,
-  exerciseIds,
-  getSessionFlowIdForExercise,
   isExerciseId,
   isMovingBallPresetId,
   isPracticeDurationPresetId,
-  isSessionFlowId,
+  isSessionEntryModeId,
   maxRecentSessionSummaries,
   normalizeReflection,
   normalizePhrase,
@@ -21,6 +19,7 @@ import {
   type SessionState,
   type SessionSummary,
 } from '../state/types';
+import { exerciseRequiresPhrase, getExerciseSessionEntryModeId } from '../practice/exercises';
 
 import { getBrowserStorage, readStorageItem, type StorageLike, writeStorageItem } from './storage';
 
@@ -81,6 +80,23 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
     return null;
   }
 
+  if (
+    Object.keys(value).some((key) => ![
+      'id',
+      'exerciseId',
+      'sessionEntryModeId',
+      'phrase',
+      'outcome',
+      'sceneKey',
+      'startedAt',
+      'completedAt',
+      'durationSeconds',
+      'reflection',
+    ].includes(key))
+  ) {
+    return null;
+  }
+
   const durationSeconds = value.durationSeconds;
   const hasValidDuration = durationSeconds === null
     || (
@@ -103,19 +119,33 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
     return null;
   }
 
+  const persistedSessionEntryModeId = value.sessionEntryModeId;
+  const persistedExerciseId = value.exerciseId;
+  const hasValidExerciseId = typeof persistedExerciseId === 'string' && isExerciseId(persistedExerciseId);
+
+  if (!hasValidExerciseId || typeof persistedSessionEntryModeId !== 'string') {
+    return null;
+  }
+
+  const exerciseId = persistedExerciseId;
+  const expectedSessionEntryModeId = getExerciseSessionEntryModeId(exerciseId);
+
+  if (
+    !isSessionEntryModeId(persistedSessionEntryModeId)
+    || persistedSessionEntryModeId !== expectedSessionEntryModeId
+  ) {
+    return null;
+  }
+
+  const phrase = exerciseRequiresPhrase(exerciseId)
+    ? normalizePhrase(value.phrase)
+    : '';
+
   return {
     id: value.id,
-    exerciseId: typeof value.exerciseId === 'string' && isExerciseId(value.exerciseId)
-      ? value.exerciseId
-      : exerciseIds.phraseAnchor,
-    flowId: typeof value.flowId === 'string' && isSessionFlowId(value.flowId)
-      ? value.flowId
-      : getSessionFlowIdForExercise(
-        typeof value.exerciseId === 'string' && isExerciseId(value.exerciseId)
-          ? value.exerciseId
-          : exerciseIds.phraseAnchor,
-      ),
-    phrase: normalizePhrase(value.phrase),
+    exerciseId,
+    sessionEntryModeId: expectedSessionEntryModeId,
+    phrase,
     outcome: value.outcome,
     sceneKey: value.sceneKey,
     startedAt: value.startedAt,

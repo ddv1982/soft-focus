@@ -1,13 +1,17 @@
 import type { SceneKey } from '../game/sceneKeys';
 import { createSessionRepository, type SessionRepository } from '../persistence/sessionRepository';
 import { createPracticeConfig, type PracticeConfig } from '../practice/practiceConfig';
-import { isSessionFlowRestartScene, isSessionFlowStartScene } from './sessionFlow';
+import {
+  exerciseRequiresPhrase,
+  getExerciseSessionEntryModeId,
+  getExerciseStartScene,
+} from '../practice/exercises';
+import { isSessionEntryModeRestartScene } from './sessionEntryMode';
 
 import {
   createInitialSessionState,
   createDefaultPracticeSettings,
   exerciseIds,
-  getSessionFlowIdForExercise,
   isAmbientAudioPresetId,
   maxRecentSessionSummaries,
   normalizeReflection,
@@ -24,7 +28,7 @@ import {
   type PracticePhase,
   type PracticeRuntimeState,
   type PracticeSettings,
-  type SessionFlowId,
+  type SessionEntryModeId,
   type SessionRecord,
   type SessionState,
   type SessionSummary,
@@ -241,12 +245,12 @@ export class SessionStore {
   startSession(
     sceneKey: SceneKey,
     startedAt = new Date().toISOString(),
-    flowId: SessionFlowId = getSessionFlowIdForExercise(this.state.selectedExercise),
+    sessionEntryModeId: SessionEntryModeId = getExerciseSessionEntryModeId(this.state.selectedExercise),
   ): SessionState {
     const currentSession: SessionRecord = {
       id: createSessionId(),
       exerciseId: this.state.selectedExercise ?? exerciseIds.phraseAnchor,
-      flowId,
+      sessionEntryModeId,
       sceneKey,
       startedAt,
       completedAt: null,
@@ -257,28 +261,28 @@ export class SessionStore {
   }
 
   updateCurrentScene(sceneKey: SceneKey): SessionState {
-    const nextFlowId = getSessionFlowIdForExercise(this.state.selectedExercise);
+    const nextSessionEntryModeId = getExerciseSessionEntryModeId(this.state.selectedExercise);
 
     if (!this.state.currentSession) {
-      if (!isSessionFlowStartScene(sceneKey, this.state.selectedExercise)) {
+      if (getExerciseStartScene(this.state.selectedExercise) !== sceneKey) {
         return this.state;
       }
 
-      return this.startSession(sceneKey, undefined, nextFlowId);
+      return this.startSession(sceneKey, undefined, nextSessionEntryModeId);
     }
 
-    const activeFlowId = this.state.currentSession.flowId ?? nextFlowId;
+    const activeSessionEntryModeId = this.state.currentSession.sessionEntryModeId ?? nextSessionEntryModeId;
     const shouldRestartSession = this.state.currentSession.completedAt
-      && isSessionFlowRestartScene(sceneKey, activeFlowId);
+      && isSessionEntryModeRestartScene(sceneKey, activeSessionEntryModeId);
 
     if (shouldRestartSession) {
-      return this.startSession(sceneKey, undefined, nextFlowId);
+      return this.startSession(sceneKey, undefined, nextSessionEntryModeId);
     }
 
     return this.patchState({
       currentSession: {
         ...this.state.currentSession,
-        flowId: activeFlowId,
+        sessionEntryModeId: activeSessionEntryModeId,
         sceneKey,
       },
     });
@@ -347,9 +351,9 @@ export class SessionStore {
     }
 
     const { currentSession, practice } = this.state;
-    const phrase = currentSession.exerciseId === exerciseIds.movingBall
-      ? ''
-      : normalizePhrase(practice?.phrase ?? this.state.phrase);
+    const phrase = exerciseRequiresPhrase(currentSession.exerciseId)
+      ? normalizePhrase(practice?.phrase ?? this.state.phrase)
+      : '';
     const startedAtMs = Date.parse(currentSession.startedAt);
     const completedAtMs = Date.parse(completedAt);
     const durationSeconds = Number.isFinite(startedAtMs) && Number.isFinite(completedAtMs) && completedAtMs >= startedAtMs
@@ -359,7 +363,7 @@ export class SessionStore {
     return {
       id: currentSession.id,
       exerciseId: currentSession.exerciseId,
-      flowId: currentSession.flowId,
+      sessionEntryModeId: currentSession.sessionEntryModeId,
       phrase,
       outcome: practice?.stopped ? 'stopped' : 'completed',
       sceneKey: currentSession.sceneKey,

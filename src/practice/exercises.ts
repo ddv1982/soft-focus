@@ -1,5 +1,6 @@
-import { exerciseIds, type ExerciseId } from '../state/types';
-import { sceneKeys, type SceneKey } from '../game/sceneKeys';
+import { exerciseIds, sessionEntryModeIds, type ExerciseId, type SessionEntryModeId } from '../state/types';
+import { getSessionEntryMode, type SessionEntryModeDefinition } from '../state/sessionEntryMode';
+import type { SceneKey } from '../game/sceneKeys';
 
 export const exercisePhaseIds = {
   maintenance: 'maintenance',
@@ -16,10 +17,13 @@ export interface ExerciseDefinition {
   phaseSummary: string;
   title: string;
   summary: string;
+  sessionEntryModeId: SessionEntryModeId;
   requiresPhrase: boolean;
 }
 
-export const exerciseCatalog: readonly ExerciseDefinition[] = [
+type ExerciseCatalogEntry = Omit<ExerciseDefinition, 'requiresPhrase'>;
+
+const exerciseCatalogEntries: readonly ExerciseCatalogEntry[] = [
   {
     id: exerciseIds.breathingReset,
     phase: exercisePhaseIds.reset,
@@ -27,7 +31,7 @@ export const exerciseCatalog: readonly ExerciseDefinition[] = [
     phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
     title: 'Breathing reset',
     summary: 'A paced breathing reset with a softer visual rhythm and a lower-motion fallback.',
-    requiresPhrase: false,
+    sessionEntryModeId: sessionEntryModeIds.directPractice,
   },
   {
     id: exerciseIds.orienting,
@@ -36,7 +40,7 @@ export const exerciseCatalog: readonly ExerciseDefinition[] = [
     phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
     title: 'Orienting',
     summary: 'A guided scan that invites you to notice the wider space around you without rushing.',
-    requiresPhrase: false,
+    sessionEntryModeId: sessionEntryModeIds.directPractice,
   },
   {
     id: exerciseIds.phraseAnchor,
@@ -45,7 +49,7 @@ export const exerciseCatalog: readonly ExerciseDefinition[] = [
     phaseSummary: 'Steady practices you can return to regularly to keep attention and ease anchored.',
     title: 'Phrase anchor',
     summary: 'A steady phrase-based maintenance practice in the current Soft Focus core toolkit.',
-    requiresPhrase: true,
+    sessionEntryModeId: sessionEntryModeIds.phrasePrompted,
   },
   {
     id: exerciseIds.movingBall,
@@ -54,7 +58,7 @@ export const exerciseCatalog: readonly ExerciseDefinition[] = [
     phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
     title: 'Moving ball',
     summary: 'A guided visual tracking reset and the current visual member of the Soft Focus reset toolkit.',
-    requiresPhrase: false,
+    sessionEntryModeId: sessionEntryModeIds.directPractice,
   },
   {
     id: exerciseIds.bilateralRhythm,
@@ -63,9 +67,14 @@ export const exerciseCatalog: readonly ExerciseDefinition[] = [
     phaseSummary: 'Gentle guided practices for easing and re-settling through calm sensory rhythm.',
     title: 'Bilateral rhythm',
     summary: 'An alternating left-right rhythm for a steadier reset with less visual travel than moving ball.',
-    requiresPhrase: false,
+    sessionEntryModeId: sessionEntryModeIds.directPractice,
   },
 ];
+
+export const exerciseCatalog: readonly ExerciseDefinition[] = exerciseCatalogEntries.map((exercise) => ({
+  ...exercise,
+  requiresPhrase: getSessionEntryMode(exercise.sessionEntryModeId).requiresPhrase,
+}));
 
 export const upcomingResetTools = [
   'Bilateral tapping',
@@ -83,6 +92,22 @@ export const getExerciseDefinition = (exerciseId: ExerciseId): ExerciseDefinitio
   exerciseCatalog.find((exercise) => exercise.id === exerciseId) ?? exerciseCatalog[0]
 );
 
+export const getExerciseSessionEntryModeId = (exerciseId: ExerciseId): SessionEntryModeId => (
+  getExerciseDefinition(exerciseId).sessionEntryModeId
+);
+
+export const getExerciseSessionEntryMode = (exerciseId: ExerciseId): SessionEntryModeDefinition => (
+  getSessionEntryMode(getExerciseSessionEntryModeId(exerciseId))
+);
+
+export const exerciseRequiresPhrase = (exerciseId: ExerciseId): boolean => (
+  getExerciseSessionEntryMode(exerciseId).requiresPhrase
+);
+
 export const getExerciseStartScene = (exerciseId: ExerciseId): SceneKey => (
-  getExerciseDefinition(exerciseId).requiresPhrase ? sceneKeys.phrase : sceneKeys.instructions
+  getExerciseSessionEntryMode(exerciseId).startSceneKey
+);
+
+export const getExerciseInstructionsBackScene = (exerciseId: ExerciseId): SceneKey => (
+  getExerciseSessionEntryMode(exerciseId).instructionsBackSceneKey
 );

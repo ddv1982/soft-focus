@@ -2,12 +2,12 @@ import {
   getInstructionsBackScene,
   getNextSceneKey,
   getPreviousSceneKey,
-  getSessionFlowForExercise,
+  getExerciseSessionEntryMode,
   guidedPracticeFlow,
 } from '../src/game/navigation.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
 import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { ambientAudioPresetIds, ambientAudioPresetOrder, ambientAudioVolumeBounds, breathingPresetIds, customPracticeDurationBounds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { ambientAudioPresetIds, ambientAudioPresetOrder, ambientAudioVolumeBounds, breathingPresetIds, customPracticeDurationBounds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionEntryModeIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { ambientAudioPresetCatalog } from '../src/practice/practiceConfig.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
@@ -240,8 +240,8 @@ const runExerciseBranchingScenario = (): void => {
   assert(getInstructionsBackScene(exerciseIds.breathingReset) === sceneKeys.exerciseSelection, 'expected breathing reset instructions to navigate back to exercise selection');
   assert(getInstructionsBackScene(exerciseIds.bilateralRhythm) === sceneKeys.exerciseSelection, 'expected bilateral rhythm instructions to navigate back to exercise selection');
   assert(getInstructionsBackScene(exerciseIds.orienting) === sceneKeys.exerciseSelection, 'expected orienting instructions to navigate back to exercise selection');
-  assert(getSessionFlowForExercise(exerciseIds.phraseAnchor).id === sessionFlowIds.phrasePrompted, 'expected phrase-anchor to use the phrase-prompted flow');
-  assert(getSessionFlowForExercise(exerciseIds.movingBall).id === sessionFlowIds.directPractice, 'expected moving-ball to use the direct-practice flow');
+  assert(getExerciseSessionEntryMode(exerciseIds.phraseAnchor).id === sessionEntryModeIds.phrasePrompted, 'expected phrase-anchor to use the phrase-prompted entry mode');
+  assert(getExerciseSessionEntryMode(exerciseIds.movingBall).id === sessionEntryModeIds.directPractice, 'expected moving-ball to use the direct-practice entry mode');
 
   store.setSelectedExercise(exerciseIds.breathingReset);
   store.setLowIntensityMode(false);
@@ -456,7 +456,7 @@ const runReflectionAndReloadScenario = (): void => {
   assert(rehydratedState.practice === null, 'expected practice runtime state not to persist across reloads');
   assert(latestSummary?.outcome === 'stopped', 'expected stopped outcome to persist into the recent session summary');
   assert(latestSummary?.exerciseId === exerciseIds.movingBall, 'expected selected exercise to persist into recent session summaries');
-  assert(latestSummary?.flowId === sessionFlowIds.directPractice, 'expected moving-ball summaries to persist the direct-practice flow id');
+  assert(latestSummary?.sessionEntryModeId === sessionEntryModeIds.directPractice, 'expected moving-ball summaries to persist the direct-practice entry mode id');
   assert(latestSummary?.phrase === '', 'expected moving-ball summaries not to carry phrase text');
   assert(
     latestSummary?.reflection === 'shoulders softened and the phrase stayed easy',

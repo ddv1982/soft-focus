@@ -46,17 +46,28 @@ export class PracticeRunner {
       initialSnapshot ? toMilliseconds(initialSnapshot.secondsRemaining) : toMilliseconds(this.phases[this.phaseIndex].seconds),
       Boolean(initialSnapshot?.paused),
     );
+    this.normalizeCompletePhases();
   }
 
   tick(deltaMs: number): PracticeRunnerSnapshot {
-    if (!this.timer) {
+    this.normalizeCompletePhases();
+
+    if (!this.timer || deltaMs <= 0) {
       return this.getSnapshot();
     }
 
-    const timerState = this.timer.tick(deltaMs);
+    let remainingDeltaMs = deltaMs;
 
-    if (timerState.complete) {
+    while (this.timer && remainingDeltaMs > 0) {
+      const timerState = this.timer.tick(remainingDeltaMs);
+
+      if (timerState.paused || !timerState.complete) {
+        break;
+      }
+
+      remainingDeltaMs = timerState.overshootMs;
       this.advancePhase();
+      this.normalizeCompletePhases();
     }
 
     return this.getSnapshot();
@@ -70,6 +81,7 @@ export class PracticeRunner {
 
   resume(): PracticeRunnerSnapshot {
     this.timer?.resume();
+    this.normalizeCompletePhases();
 
     return this.getSnapshot();
   }
@@ -112,5 +124,20 @@ export class PracticeRunner {
     }
 
     this.timer = new PracticeTimer(toMilliseconds(this.phases[this.phaseIndex].seconds));
+  }
+
+  private normalizeCompletePhases(): void {
+    let advancedPhases = 0;
+
+    while (advancedPhases < this.phases.length) {
+      const timerState = this.timer?.getState();
+
+      if (!timerState?.complete || timerState.paused) {
+        break;
+      }
+
+      this.advancePhase();
+      advancedPhases += 1;
+    }
   }
 }

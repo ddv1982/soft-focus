@@ -2,6 +2,7 @@ export interface PracticeTimerState {
   remainingMs: number;
   paused: boolean;
   complete: boolean;
+  overshootMs: number;
 }
 
 export class PracticeTimer {
@@ -15,13 +16,21 @@ export class PracticeTimer {
   }
 
   tick(deltaMs: number): PracticeTimerState {
-    if (this.paused || this.remainingMs === 0) {
+    if (this.paused) {
       return this.getState();
     }
 
-    this.remainingMs = Math.max(0, this.remainingMs - Math.max(0, deltaMs));
+    const elapsedMs = Math.max(0, deltaMs);
 
-    return this.getState();
+    if (this.remainingMs === 0) {
+      return this.getState(elapsedMs);
+    }
+
+    const overshootMs = Math.max(0, elapsedMs - this.remainingMs);
+
+    this.remainingMs = Math.max(0, this.remainingMs - elapsedMs);
+
+    return this.getState(overshootMs);
   }
 
   pause(): PracticeTimerState {
@@ -36,11 +45,12 @@ export class PracticeTimer {
     return this.getState();
   }
 
-  getState(): PracticeTimerState {
+  getState(overshootMs = 0): PracticeTimerState {
     return {
       remainingMs: this.remainingMs,
       paused: this.paused,
       complete: this.remainingMs === 0,
+      overshootMs,
     };
   }
 }

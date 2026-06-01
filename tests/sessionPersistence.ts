@@ -2,7 +2,8 @@ import { createSessionRepository } from '../src/persistence/sessionRepository.ts
 import type { StorageLike } from '../src/persistence/storage.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
-import { ambientAudioPresetIds, ambientAudioVolumeBounds, breathingPresetIds, exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { exerciseCatalog } from '../src/practice/exercises.ts';
+import { ambientAudioPresetIds, ambientAudioVolumeBounds, breathingPresetIds, exerciseIds, movingBallPresetIds, sessionEntryModeIds } from '../src/state/types.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -87,10 +88,187 @@ const runRehydrationScenario = (): void => {
 
   const [summary] = rehydratedState.recentSessionSummaries;
   assert(summary?.exerciseId === exerciseIds.movingBall, 'expected saved summary to preserve the selected exercise');
-  assert(summary?.flowId === sessionFlowIds.directPractice, 'expected saved summary to preserve the direct-practice flow');
+  assert(summary?.sessionEntryModeId === sessionEntryModeIds.directPractice, 'expected saved summary to preserve the direct-practice entry mode');
   assert(summary?.phrase === '', 'expected moving-ball summaries to omit phrase text');
   assert(summary?.outcome === 'stopped', 'expected saved summary to preserve the stopped outcome');
   assert(summary?.durationSeconds === 5, 'expected saved summary duration in seconds');
+};
+
+const runNonPhraseSummaryScenario = (): void => {
+  exerciseCatalog
+    .filter((exercise) => !exercise.requiresPhrase)
+    .forEach((exercise, index) => {
+      const storage = new MemoryStorage();
+      const store = createSessionStore(undefined, createSessionRepository(storage));
+
+      store.setSelectedExercise(exercise.id);
+      store.setPhrase(` stale ${exercise.id} phrase `);
+      store.startSession(sceneKeys.instructions, `2026-04-22T10:${String(index).padStart(2, '0')}:00.000Z`);
+      store.updateCurrentScene(sceneKeys.practice);
+      store.startPractice(store.createPracticeConfig());
+      store.completeSession(`2026-04-22T10:${String(index).padStart(2, '0')}:05.000Z`);
+
+      const summary = store.getState().recentSessionSummaries[0];
+
+      assert(summary?.exerciseId === exercise.id, `expected summary exercise to be ${exercise.id}`);
+      assert(summary?.sessionEntryModeId === sessionEntryModeIds.directPractice, `expected ${exercise.id} to use direct-practice entry mode`);
+      assert(summary?.phrase === '', `expected ${exercise.id} summary to omit stale phrase text`);
+    });
+};
+
+const runPersistedNonPhraseSummarySanitizationScenario = (): void => {
+  const storage = new MemoryStorage();
+
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.breathingReset,
+    phrase: 'current phrase may remain available',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [{
+      id: 'legacy-non-phrase-summary',
+      exerciseId: exerciseIds.breathingReset,
+      sessionEntryModeId: sessionEntryModeIds.directPractice,
+      phrase: 'legacy stale phrase',
+      outcome: 'completed',
+      sceneKey: sceneKeys.completion,
+      startedAt: '2026-04-22T10:00:00.000Z',
+      completedAt: '2026-04-22T10:00:05.000Z',
+      durationSeconds: 5,
+    }],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+  const [summary] = rehydratedState.recentSessionSummaries;
+
+  assert(summary?.exerciseId === exerciseIds.breathingReset, 'expected legacy non-phrase summary exercise to rehydrate');
+  assert(summary?.phrase === '', 'expected legacy non-phrase summary phrase to be sanitized during rehydration');
+};
+
+const runAmbiguousLegacyDirectPracticeSummaryScenario = (): void => {
+  const storage = new MemoryStorage();
+
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.phraseAnchor,
+    phrase: 'current phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [{
+      id: 'ambiguous-direct-practice-summary',
+      exerciseId: 'legacy-unknown-exercise',
+      sessionEntryModeId: sessionEntryModeIds.directPractice,
+      phrase: 'stale direct practice phrase',
+      outcome: 'completed',
+      sceneKey: sceneKeys.completion,
+      startedAt: '2026-04-22T10:00:00.000Z',
+      completedAt: '2026-04-22T10:00:05.000Z',
+      durationSeconds: 5,
+    }],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.recentSessionSummaries.length === 0, 'expected ambiguous direct-practice summary without a valid exercise to be dropped');
+};
+
+const runSessionEntryModeMigrationScenario = (): void => {
+  const storage = new MemoryStorage();
+
+  storage.setItem('soft-focus/session-state', JSON.stringify({
+    selectedExercise: exerciseIds.phraseAnchor,
+    phrase: 'current phrase',
+    settings: {
+      lowIntensityMode: true,
+      reducedMotionEnabled: false,
+      gazeGuidanceEnabled: false,
+      movingBallPresetId: movingBallPresetIds.steadyCenter,
+      breathingPresetId: breathingPresetIds.longExhale,
+    },
+    recentSessionSummaries: [
+      {
+        id: 'missing-entry-mode-summary',
+        exerciseId: exerciseIds.phraseAnchor,
+        phrase: 'legacy phrase',
+        outcome: 'completed',
+        sceneKey: sceneKeys.completion,
+        startedAt: '2026-04-22T10:00:00.000Z',
+        completedAt: '2026-04-22T10:00:05.000Z',
+        durationSeconds: 5,
+      },
+      {
+        id: 'new-entry-mode-summary',
+        exerciseId: exerciseIds.movingBall,
+        sessionEntryModeId: sessionEntryModeIds.directPractice,
+        phrase: 'stale direct practice phrase',
+        outcome: 'completed',
+        sceneKey: sceneKeys.completion,
+        startedAt: '2026-04-22T10:00:00.000Z',
+        completedAt: '2026-04-22T10:00:05.000Z',
+        durationSeconds: 5,
+      },
+      {
+        id: 'mismatched-entry-mode-summary',
+        exerciseId: exerciseIds.movingBall,
+        sessionEntryModeId: sessionEntryModeIds.phrasePrompted,
+        phrase: 'mismatched phrase',
+        outcome: 'completed',
+        sceneKey: sceneKeys.completion,
+        startedAt: '2026-04-22T10:00:00.000Z',
+        completedAt: '2026-04-22T10:00:05.000Z',
+        durationSeconds: 5,
+      },
+      {
+        id: 'invalid-entry-mode-summary',
+        exerciseId: exerciseIds.phraseAnchor,
+        sessionEntryModeId: 'not-an-entry-mode',
+        phrase: 'invalid entry mode',
+        outcome: 'completed',
+        sceneKey: sceneKeys.completion,
+        startedAt: '2026-04-22T10:00:00.000Z',
+        completedAt: '2026-04-22T10:00:05.000Z',
+        durationSeconds: 5,
+      },
+      {
+        id: 'unknown-key-summary',
+        exerciseId: exerciseIds.phraseAnchor,
+        sessionEntryModeId: sessionEntryModeIds.phrasePrompted,
+        phrase: 'unknown key should drop',
+        outcome: 'completed',
+        sceneKey: sceneKeys.completion,
+        startedAt: '2026-04-22T10:00:00.000Z',
+        completedAt: '2026-04-22T10:00:05.000Z',
+        durationSeconds: 5,
+        unexpectedSummaryKey: true,
+      },
+      {
+        id: 'stale-field-summary',
+        exerciseId: exerciseIds.phraseAnchor,
+        sessionEntryModeId: sessionEntryModeIds.phrasePrompted,
+        phrase: 'stale field should drop',
+        outcome: 'completed',
+        sceneKey: sceneKeys.completion,
+        startedAt: '2026-04-22T10:00:00.000Z',
+        completedAt: '2026-04-22T10:00:05.000Z',
+        durationSeconds: 5,
+        flowId: sessionEntryModeIds.phrasePrompted,
+      },
+    ],
+  }));
+
+  const rehydratedState = createSessionStore(undefined, createSessionRepository(storage)).getState();
+
+  assert(rehydratedState.recentSessionSummaries.length === 1, 'expected only the complete new-schema entry-mode summary to rehydrate');
+  assert(rehydratedState.recentSessionSummaries[0]?.sessionEntryModeId === sessionEntryModeIds.directPractice, 'expected new entry-mode summary to rehydrate');
+  assert(rehydratedState.recentSessionSummaries[0]?.phrase === '', 'expected migrated direct-practice summary phrase to be sanitized');
 };
 
 const runGracefulFailureScenario = (): void => {
@@ -383,6 +561,10 @@ const runFractionalSummaryDurationScenario = (): void => {
 };
 
 runRehydrationScenario();
+runNonPhraseSummaryScenario();
+runPersistedNonPhraseSummarySanitizationScenario();
+runAmbiguousLegacyDirectPracticeSummaryScenario();
+runSessionEntryModeMigrationScenario();
 runGracefulFailureScenario();
 runClearRecentSessionSummariesScenario();
 runInvalidSummarySceneKeyScenario();

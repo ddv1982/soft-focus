@@ -10,12 +10,12 @@ export const exerciseIds = {
 
 export type ExerciseId = (typeof exerciseIds)[keyof typeof exerciseIds];
 
-export const sessionFlowIds = {
+export const sessionEntryModeIds = {
   phrasePrompted: 'phrase-prompted',
   directPractice: 'direct-practice',
 } as const;
 
-export type SessionFlowId = (typeof sessionFlowIds)[keyof typeof sessionFlowIds];
+export type SessionEntryModeId = (typeof sessionEntryModeIds)[keyof typeof sessionEntryModeIds];
 
 export const movingBallPresetIds = {
   steadyCenter: 'steady-center-sweep',
@@ -63,13 +63,9 @@ export const isExerciseId = (value: string): value is ExerciseId => (
   Object.values(exerciseIds) as readonly string[]
 ).includes(value);
 
-export const isSessionFlowId = (value: string): value is SessionFlowId => (
-  Object.values(sessionFlowIds) as readonly string[]
+export const isSessionEntryModeId = (value: string): value is SessionEntryModeId => (
+  Object.values(sessionEntryModeIds) as readonly string[]
 ).includes(value);
-
-export const getSessionFlowIdForExercise = (exerciseId: ExerciseId): SessionFlowId => (
-  exerciseId === exerciseIds.phraseAnchor ? sessionFlowIds.phrasePrompted : sessionFlowIds.directPractice
-);
 
 export const isMovingBallPresetId = (value: string): value is MovingBallPresetId => (
   Object.values(movingBallPresetIds) as readonly string[]
@@ -106,7 +102,7 @@ export interface PracticeSettings {
 export interface SessionRecord {
   id: string;
   exerciseId: ExerciseId;
-  flowId: SessionFlowId;
+  sessionEntryModeId: SessionEntryModeId;
   sceneKey: SceneKey;
   startedAt: string;
   completedAt: string | null;
@@ -118,7 +114,7 @@ export type SessionOutcome = 'completed' | 'stopped';
 export interface SessionSummary {
   id: string;
   exerciseId: ExerciseId;
-  flowId: SessionFlowId;
+  sessionEntryModeId: SessionEntryModeId;
   phrase: string;
   outcome: SessionOutcome;
   sceneKey: SceneKey;

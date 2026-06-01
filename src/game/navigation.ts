@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 
 import { SessionStore } from '../state/sessionStore';
-import { getSessionFlowForExercise } from '../state/sessionFlow';
+import { getExerciseInstructionsBackScene } from '../practice/exercises';
 import type { ExerciseId } from '../state/types';
 
 import { sessionStoreRegistryKey } from './serviceKeys';
@@ -25,7 +25,8 @@ export interface NavigationRequest {
   data?: object;
 }
 
-export { getSessionFlow, getSessionFlowForExercise, isSessionFlowRestartScene, isSessionFlowStartScene } from '../state/sessionFlow';
+export { getSessionEntryMode, isSessionEntryModeRestartScene } from '../state/sessionEntryMode';
+export { getExerciseSessionEntryMode, getExerciseStartScene } from '../practice/exercises';
 
 export const getNextSceneKey = (sceneKey: SceneKey): SceneKey | null => nextSceneKeyByScene[sceneKey];
 
@@ -40,7 +41,7 @@ export const getPreviousSceneKey = (sceneKey: SceneKey): SceneKey | null => {
 };
 
 export const getInstructionsBackScene = (selectedExercise: ExerciseId): SceneKey => (
-  getSessionFlowForExercise(selectedExercise).instructionsBackSceneKey
+  getExerciseInstructionsBackScene(selectedExercise)
 );
 
 const assertRegisteredSceneKey = (scene: Phaser.Scene, sceneKey: SceneKey): void => {

@@ -1,6 +1,6 @@
 import { createSessionStore } from '../src/state/sessionStore.ts';
 import { sceneKeys } from '../src/game/sceneKeys.ts';
-import { exerciseIds, movingBallPresetIds, sessionFlowIds } from '../src/state/types.ts';
+import { exerciseIds, movingBallPresetIds, sessionEntryModeIds } from '../src/state/types.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -22,7 +22,7 @@ const runEntryToPhraseScenario = (): void => {
   const startedSession = store.getState().currentSession;
   assert(startedSession, 'expected a session to start when entering the phrase flow');
   assert(startedSession?.sceneKey === sceneKeys.phrase, 'expected the phrase scene to own the new session start');
-  assert(startedSession?.flowId === sessionFlowIds.phrasePrompted, 'expected the phrase scene to start the phrase-prompted flow');
+  assert(startedSession?.sessionEntryModeId === sessionEntryModeIds.phrasePrompted, 'expected the phrase scene to start the phrase-prompted entry mode');
 };
 
 const runCompletedRestartScenario = (): void => {
@@ -56,7 +56,7 @@ const runCompletedRestartScenario = (): void => {
 
   assert(restartedSession.id !== firstSessionId, 'restarting from phrase should create a new session id');
   assert(restartedSession.sceneKey === sceneKeys.phrase, 'restarted session should begin at the phrase scene');
-  assert(restartedSession.flowId === sessionFlowIds.phrasePrompted, 'phrase restart should keep the phrase-prompted flow');
+  assert(restartedSession.sessionEntryModeId === sessionEntryModeIds.phrasePrompted, 'phrase restart should keep the phrase-prompted entry mode');
   assert(restartedSession.completedAt === null, 'restarted session should not inherit completion state');
 }
 
@@ -97,7 +97,7 @@ const runStoppedRestartScenario = (): void => {
   assert(restartedSession.completedAt === null, 'restarted stopped round should not inherit completion state');
   assert(restartedSession.sceneKey === sceneKeys.practice, 'new session should continue through the new practice flow');
   assert(restartedSession.exerciseId === exerciseIds.movingBall, 'restarted session should preserve the selected exercise');
-  assert(restartedSession.flowId === sessionFlowIds.directPractice, 'moving-ball restart should keep the direct-practice flow');
+  assert(restartedSession.sessionEntryModeId === sessionEntryModeIds.directPractice, 'moving-ball restart should keep the direct-practice entry mode');
   assert(store.getState().settings.reducedMotionEnabled === true, 'restarted moving-ball flow should preserve reduced-motion preference');
   assert(store.createPracticeConfig().movingBall?.presetId === movingBallPresetIds.settlingSteps, 'restarted moving-ball flow should preserve the selected preset');
 }
@@ -122,7 +122,7 @@ const runExerciseReselectionClearsActiveDraftSessionScenario = (): void => {
 
   const summary = store.getLatestSessionSummary();
   assert(summary?.exerciseId === exerciseIds.phraseAnchor, 'expected reselected phrase-anchor summary to use the new exercise');
-  assert(summary?.flowId === sessionFlowIds.phrasePrompted, 'expected reselected phrase-anchor summary to use the phrase-prompted flow');
+  assert(summary?.sessionEntryModeId === sessionEntryModeIds.phrasePrompted, 'expected reselected phrase-anchor summary to use the phrase-prompted entry mode');
   assert(summary?.phrase === 'new anchor', 'expected reselected phrase-anchor summary to keep the phrase');
 }
 
@@ -138,7 +138,7 @@ const runDirectExerciseReselectionScenario = (): void => {
 
   const reselectedSession = store.getState().currentSession;
   assert(reselectedSession?.exerciseId === exerciseIds.breathingReset, 'expected direct-to-direct reselection to start a session for the new exercise');
-  assert(reselectedSession?.flowId === sessionFlowIds.directPractice, 'expected reselected direct practice to keep the direct-practice flow');
+  assert(reselectedSession?.sessionEntryModeId === sessionEntryModeIds.directPractice, 'expected reselected direct practice to keep the direct-practice entry mode');
 }
 
 const runCompletedExerciseReselectionScenario = (): void => {
@@ -164,7 +164,7 @@ const runCompletedExerciseReselectionScenario = (): void => {
   const summary = store.getLatestSessionSummary();
   assert(summary?.id !== completedSessionId, 'expected reselected exercise to create a fresh session summary');
   assert(summary?.exerciseId === exerciseIds.movingBall, 'expected reselected moving-ball summary to use the new exercise');
-  assert(summary?.flowId === sessionFlowIds.directPractice, 'expected reselected moving-ball summary to use the direct-practice flow');
+  assert(summary?.sessionEntryModeId === sessionEntryModeIds.directPractice, 'expected reselected moving-ball summary to use the direct-practice entry mode');
 }
 
 runEntryToPhraseScenario();

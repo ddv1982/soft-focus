@@ -27,6 +27,8 @@ import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { getLayoutFrame } from '../ui/layout';
 import { hexToNumber, uiTheme } from '../ui/theme';
 
+import { completeImmediatePracticeIfNeeded } from './practiceImmediateComplete';
+
 const getPhaseDefinition = (
   practiceConfig: PracticeConfig,
   snapshot: PracticeRunnerSnapshot,
@@ -210,6 +212,16 @@ export class PracticeScene extends Phaser.Scene {
 
     sessionStore.updateCurrentScene(sceneKeys.practice);
     sessionStore.startPractice(practiceConfig);
+
+    if (completeImmediatePracticeIfNeeded({
+      snapshot: this.snapshot,
+      ambientAudioStart: data?.ambientAudioStart,
+      finishPractice: () => {
+        this.finishPractice('completed');
+      },
+    })) {
+      return;
+    }
 
     const frame = getLayoutFrame({
       width: this.scale.width,

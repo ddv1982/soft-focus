@@ -1,5 +1,5 @@
 import type { ExerciseId } from '../state/types';
-import { getSessionFlowForExercise } from '../game/navigation';
+import { getExerciseSessionEntryMode } from '../game/navigation';
 import { sceneKeys, type SceneKey } from '../game/sceneKeys';
 
 const domSetupSceneKeys = new Set<SceneKey>([
@@ -101,7 +101,7 @@ export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection:
   }
 
   game.sessionStore.saveReflection(reflection);
-  const restartSceneKey = getSessionFlowForExercise(game.sessionStore.getState().selectedExercise).restartSceneKey;
+  const restartSceneKey = getExerciseSessionEntryMode(game.sessionStore.getState().selectedExercise).restartSceneKey;
 
   return beginNextSessionFromScene(game, restartSceneKey);
 };

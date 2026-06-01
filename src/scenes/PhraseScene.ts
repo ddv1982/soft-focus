@@ -4,7 +4,7 @@ import { createPhraseOverlay } from '../dom/phraseOverlay';
 import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
 import { sceneKeys } from '../game/sceneKeys';
-import { exerciseIds } from '../state/types';
+import { exerciseRequiresPhrase, getExerciseStartScene } from '../practice/exercises';
 import { createBackButton } from '../ui/components/BackButton';
 import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
@@ -29,10 +29,12 @@ export class PhraseScene extends Phaser.Scene {
   create(): void {
     const sessionStore = getSessionStore(this);
 
-    if (sessionStore.getState().selectedExercise === exerciseIds.movingBall) {
+    const selectedExercise = sessionStore.getState().selectedExercise;
+
+    if (!exerciseRequiresPhrase(selectedExercise)) {
       navigateToScene(this, {
         from: sceneKeys.phrase,
-        to: sceneKeys.instructions,
+        to: getExerciseStartScene(selectedExercise),
       });
       return;
     }
