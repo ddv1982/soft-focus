@@ -1,29 +1,26 @@
 import type { SceneKey } from '../game/sceneKeys';
 import { createSessionRepository, type SessionRepository } from '../persistence/sessionRepository';
-import { createPracticeConfig, type PracticeConfig } from '../practice/practiceConfig';
 import {
   exerciseRequiresPhrase,
   getExerciseSessionEntryModeId,
   getExerciseStartScene,
 } from '../practice/exercises';
+import { createPracticeConfig, type PracticeConfig } from '../practice/practiceConfig';
 import { isSessionEntryModeRestartScene } from './sessionEntryMode';
 
 import {
-  createInitialSessionState,
+  type AmbientAudioPresetId,
+  type BreathingPresetId,
   createDefaultPracticeSettings,
+  createInitialSessionState,
+  customBreathingTimingBounds,
+  type ExerciseId,
   exerciseIds,
   isAmbientAudioPresetId,
-  maxRecentSessionSummaries,
-  normalizeReflection,
-  normalizePhrase,
-  sanitizeAmbientAudioVolume,
-  sanitizeCustomBreathingSeconds,
-  sanitizeCustomPracticeDurationMinutes,
-  customBreathingTimingBounds,
-  type BreathingPresetId,
-  type AmbientAudioPresetId,
-  type ExerciseId,
   type MovingBallPresetId,
+  maxRecentSessionSummaries,
+  normalizePhrase,
+  normalizeReflection,
   type PracticeDurationPresetId,
   type PracticePhase,
   type PracticeRuntimeState,
@@ -32,6 +29,9 @@ import {
   type SessionRecord,
   type SessionState,
   type SessionSummary,
+  sanitizeAmbientAudioVolume,
+  sanitizeCustomBreathingSeconds,
+  sanitizeCustomPracticeDurationMinutes,
 } from './types';
 
 export type SessionStoreListener = (state: SessionState) => void;
@@ -73,8 +73,7 @@ export class SessionStore {
 
   setSelectedExercise(selectedExercise: ExerciseId): SessionState {
     const shouldClearSession = Boolean(
-      this.state.currentSession
-      && this.state.currentSession.exerciseId !== selectedExercise,
+      this.state.currentSession && this.state.currentSession.exerciseId !== selectedExercise,
     );
 
     return this.patchState({
@@ -138,7 +137,9 @@ export class SessionStore {
 
   setCustomPracticeDurationMinutes(customPracticeDurationMinutes: number): SessionState {
     return this.updateSettings({
-      customPracticeDurationMinutes: sanitizeCustomPracticeDurationMinutes(customPracticeDurationMinutes),
+      customPracticeDurationMinutes: sanitizeCustomPracticeDurationMinutes(
+        customPracticeDurationMinutes,
+      ),
     });
   }
 
@@ -216,7 +217,11 @@ export class SessionStore {
     return this.updatePractice({ paused });
   }
 
-  setPracticePhase(phase: PracticePhase, phaseIndex: number, secondsRemaining: number): SessionState {
+  setPracticePhase(
+    phase: PracticePhase,
+    phaseIndex: number,
+    secondsRemaining: number,
+  ): SessionState {
     return this.updatePractice({
       phase,
       phaseIndex,
@@ -245,7 +250,9 @@ export class SessionStore {
   startSession(
     sceneKey: SceneKey,
     startedAt = new Date().toISOString(),
-    sessionEntryModeId: SessionEntryModeId = getExerciseSessionEntryModeId(this.state.selectedExercise),
+    sessionEntryModeId: SessionEntryModeId = getExerciseSessionEntryModeId(
+      this.state.selectedExercise,
+    ),
   ): SessionState {
     const currentSession: SessionRecord = {
       id: createSessionId(),
@@ -271,9 +278,11 @@ export class SessionStore {
       return this.startSession(sceneKey, undefined, nextSessionEntryModeId);
     }
 
-    const activeSessionEntryModeId = this.state.currentSession.sessionEntryModeId ?? nextSessionEntryModeId;
-    const shouldRestartSession = this.state.currentSession.completedAt
-      && isSessionEntryModeRestartScene(sceneKey, activeSessionEntryModeId);
+    const activeSessionEntryModeId =
+      this.state.currentSession.sessionEntryModeId ?? nextSessionEntryModeId;
+    const shouldRestartSession =
+      this.state.currentSession.completedAt &&
+      isSessionEntryModeRestartScene(sceneKey, activeSessionEntryModeId);
 
     if (shouldRestartSession) {
       return this.startSession(sceneKey, undefined, nextSessionEntryModeId);
@@ -301,8 +310,10 @@ export class SessionStore {
         completedAt,
       },
       recentSessionSummaries: sessionSummary
-        ? [sessionSummary, ...this.state.recentSessionSummaries.filter(({ id }) => id !== sessionSummary.id)]
-          .slice(0, maxRecentSessionSummaries)
+        ? [
+            sessionSummary,
+            ...this.state.recentSessionSummaries.filter(({ id }) => id !== sessionSummary.id),
+          ].slice(0, maxRecentSessionSummaries)
         : this.state.recentSessionSummaries,
     });
   }
@@ -319,11 +330,11 @@ export class SessionStore {
         ...this.state.currentSession,
         reflection: nextReflection,
       },
-      recentSessionSummaries: this.state.recentSessionSummaries.map((summary) => (
+      recentSessionSummaries: this.state.recentSessionSummaries.map((summary) =>
         summary.id === this.state.currentSession?.id
           ? { ...summary, reflection: nextReflection }
-          : summary
-      )),
+          : summary,
+      ),
     });
   }
 
@@ -356,9 +367,10 @@ export class SessionStore {
       : '';
     const startedAtMs = Date.parse(currentSession.startedAt);
     const completedAtMs = Date.parse(completedAt);
-    const durationSeconds = Number.isFinite(startedAtMs) && Number.isFinite(completedAtMs) && completedAtMs >= startedAtMs
-      ? Math.round((completedAtMs - startedAtMs) / 1000)
-      : null;
+    const durationSeconds =
+      Number.isFinite(startedAtMs) && Number.isFinite(completedAtMs) && completedAtMs >= startedAtMs
+        ? Math.round((completedAtMs - startedAtMs) / 1000)
+        : null;
 
     return {
       id: currentSession.id,

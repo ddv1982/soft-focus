@@ -1,12 +1,12 @@
 import {
+  type AmbientAudioContext,
+  type AmbientAudioElement,
   AmbientAudioEngine,
+  type AmbientAudioSettings,
+  type AmbientAudioTrack,
   AmbientAudioUnavailableError,
   ambientAudioTracks,
   getPracticeDurationSeconds,
-  type AmbientAudioContext,
-  type AmbientAudioElement,
-  type AmbientAudioSettings,
-  type AmbientAudioTrack,
 } from '../src/audio/ambientAudio.ts';
 import { ambientAudioPresetIds } from '../src/state/types.ts';
 
@@ -271,7 +271,12 @@ const createEngine = ({
   audioContext?: FakeWebAudioContext | null;
   audioContextFactory?: () => AmbientAudioContext | null;
   audioFactory?: () => AmbientAudioElement | null;
-} = {}): { engine: AmbientAudioEngine; fakeAudio: FakeAudioElement; errors: unknown[]; audioContext: FakeWebAudioContext | null } => ({
+} = {}): {
+  engine: AmbientAudioEngine;
+  fakeAudio: FakeAudioElement;
+  errors: unknown[];
+  audioContext: FakeWebAudioContext | null;
+} => ({
   fakeAudio,
   errors,
   audioContext,
@@ -290,7 +295,10 @@ const runStartAndFailureScenarios = async (): Promise<void> => {
 
   await engine.start();
   assert(fakeAudio.playCalls === 1, 'expected ambient start to call play once');
-  assert(fakeAudio.src === tracks[0]?.url, 'expected ambient start to load the first bundled track');
+  assert(
+    fakeAudio.src === tracks[0]?.url,
+    'expected ambient start to load the first bundled track',
+  );
   assert(engine.isPlaying(), 'expected engine to report playing after successful start');
 
   const rejectedAudio = new FakeAudioElement();
@@ -305,7 +313,10 @@ const runStartAndFailureScenarios = async (): Promise<void> => {
     surfacedError = error;
   }
 
-  assert(surfacedError === playError, 'expected start playback rejection to be surfaced to the caller');
+  assert(
+    surfacedError === playError,
+    'expected start playback rejection to be surfaced to the caller',
+  );
   assert(!rejected.engine.isPlaying(), 'expected rejected start to leave the engine stopped');
 
   const empty = createEngine({ playlist: [] });
@@ -317,8 +328,14 @@ const runStartAndFailureScenarios = async (): Promise<void> => {
     unavailable = error;
   }
 
-  assert(unavailable instanceof AmbientAudioUnavailableError, 'expected empty playlist start to reject explicitly');
-  assert(unavailable.reason === 'empty-playlist', 'expected empty playlist rejection to include a stable reason');
+  assert(
+    unavailable instanceof AmbientAudioUnavailableError,
+    'expected empty playlist start to reject explicitly',
+  );
+  assert(
+    unavailable.reason === 'empty-playlist',
+    'expected empty playlist rejection to include a stable reason',
+  );
 };
 
 const runPlaylistScenarios = async (): Promise<void> => {
@@ -326,12 +343,18 @@ const runPlaylistScenarios = async (): Promise<void> => {
 
   await engine.start();
   fakeAudio.triggerEnded();
-  assert(fakeAudio.src === tracks[1]?.url, 'expected natural ended event to advance to the next track');
+  assert(
+    fakeAudio.src === tracks[1]?.url,
+    'expected natural ended event to advance to the next track',
+  );
   const playCallsAfterEnded: number = fakeAudio.playCalls;
   assert(playCallsAfterEnded === 2, 'expected natural track advance to keep playback active');
 
   fakeAudio.triggerError();
-  assert(fakeAudio.src === tracks[0]?.url, 'expected track error to skip to the next playable bundled track');
+  assert(
+    fakeAudio.src === tracks[0]?.url,
+    'expected track error to skip to the next playable bundled track',
+  );
   const playCallsAfterError: number = fakeAudio.playCalls;
   assert(playCallsAfterError === 3, 'expected track error skip to attempt continued playback');
 
@@ -339,8 +362,14 @@ const runPlaylistScenarios = async (): Promise<void> => {
   await failedPlaylist.engine.start();
   failedPlaylist.fakeAudio.triggerError();
   failedPlaylist.fakeAudio.triggerError();
-  assert(failedPlaylist.errors.length === 1, 'expected all failed playlist tracks to surface one playback error');
-  assert(!failedPlaylist.engine.isPlaying(), 'expected all failed playlist tracks to stop playback');
+  assert(
+    failedPlaylist.errors.length === 1,
+    'expected all failed playlist tracks to surface one playback error',
+  );
+  assert(
+    !failedPlaylist.engine.isPlaying(),
+    'expected all failed playlist tracks to stop playback',
+  );
 };
 
 const runExerciseClockScenarios = async (): Promise<void> => {
@@ -350,16 +379,34 @@ const runExerciseClockScenarios = async (): Promise<void> => {
   const initialVolume = fakeAudio.volume;
 
   engine.syncExerciseClock({ totalSecondsRemaining: 72 });
-  assert(fakeAudio.src === tracks[0]?.url, 'expected exercise clock sync not to interrupt the current song');
+  assert(
+    fakeAudio.src === tracks[0]?.url,
+    'expected exercise clock sync not to interrupt the current song',
+  );
 
   engine.syncExerciseClock({ totalSecondsRemaining: 70 });
-  assert(fakeAudio.src === tracks[0]?.url, 'expected first track to keep playing past the exercise midpoint');
-  assert(fakeAudio.playCalls === 1, 'expected exercise clock sync not to start the next song early');
+  assert(
+    fakeAudio.src === tracks[0]?.url,
+    'expected first track to keep playing past the exercise midpoint',
+  );
+  assert(
+    fakeAudio.playCalls === 1,
+    'expected exercise clock sync not to start the next song early',
+  );
 
   engine.syncExerciseClock({ totalSecondsRemaining: 4 });
-  assert(fakeAudio.src === tracks[0]?.url, 'expected final fade to preserve the current song position');
-  assert(fakeAudio.volume > 0, 'expected final fade to remain audible before the exercise reaches zero');
-  assert(fakeAudio.volume < initialVolume, 'expected final fade to reduce volume inside the last five exercise seconds');
+  assert(
+    fakeAudio.src === tracks[0]?.url,
+    'expected final fade to preserve the current song position',
+  );
+  assert(
+    fakeAudio.volume > 0,
+    'expected final fade to remain audible before the exercise reaches zero',
+  );
+  assert(
+    fakeAudio.volume < initialVolume,
+    'expected final fade to reduce volume inside the last five exercise seconds',
+  );
 
   engine.syncExerciseClock({ totalSecondsRemaining: 0 });
   assert(fakeAudio.volume === 0, 'expected final exercise fade to reach zero at completion');
@@ -374,11 +421,20 @@ const runVolumeChangeScenario = async (): Promise<void> => {
   engine.setVolume(25);
   const loweredVolume = fakeAudio.volume;
   assert(loweredVolume > 0, 'expected lowered ambient volume to remain audible');
-  assert(loweredVolume < initialVolume, 'expected setVolume to lower the fake audio element volume after playback starts');
+  assert(
+    loweredVolume < initialVolume,
+    'expected setVolume to lower the fake audio element volume after playback starts',
+  );
 
   engine.setVolume(90);
-  assert(fakeAudio.volume > loweredVolume, 'expected setVolume to raise the fake audio element volume after playback starts');
-  assert(fakeAudio.volume <= 1, 'expected raised ambient volume to stay within browser audio volume bounds');
+  assert(
+    fakeAudio.volume > loweredVolume,
+    'expected setVolume to raise the fake audio element volume after playback starts',
+  );
+  assert(
+    fakeAudio.volume <= 1,
+    'expected raised ambient volume to stay within browser audio volume bounds',
+  );
 };
 
 const runWebAudioGainScenario = async (): Promise<void> => {
@@ -391,12 +447,30 @@ const runWebAudioGainScenario = async (): Promise<void> => {
   await startPromise;
   const initialGain = audioContext.gainValue;
 
-  assert(audioContext.sourceConnectCalls === 1, 'expected Web Audio source to connect once during ambient start');
-  assert(audioContext.gainConnectCalls === 1, 'expected Web Audio gain node to connect once during ambient start');
-  assert(audioContext.resumeCalls === 1, 'expected suspended Web Audio context to resume before playback');
-  assert(fakeAudio.volume === 1, 'expected media element volume to stay full when Web Audio gain is active');
-  assert(initialGain > 0 && initialGain <= 1, 'expected initial Web Audio gain to receive the resolved output volume');
-  assert(audioContext.gainDirectValue === initialGain, 'expected initial Web Audio gain to be assigned before scheduled volume automation');
+  assert(
+    audioContext.sourceConnectCalls === 1,
+    'expected Web Audio source to connect once during ambient start',
+  );
+  assert(
+    audioContext.gainConnectCalls === 1,
+    'expected Web Audio gain node to connect once during ambient start',
+  );
+  assert(
+    audioContext.resumeCalls === 1,
+    'expected suspended Web Audio context to resume before playback',
+  );
+  assert(
+    fakeAudio.volume === 1,
+    'expected media element volume to stay full when Web Audio gain is active',
+  );
+  assert(
+    initialGain > 0 && initialGain <= 1,
+    'expected initial Web Audio gain to receive the resolved output volume',
+  );
+  assert(
+    audioContext.gainDirectValue === initialGain,
+    'expected initial Web Audio gain to be assigned before scheduled volume automation',
+  );
 
   engine.setVolume(25);
   assert(audioContext.gainValue > 0, 'expected lowered Web Audio gain to remain audible');
@@ -404,12 +478,24 @@ const runWebAudioGainScenario = async (): Promise<void> => {
   assert(fakeAudio.volume === 1, 'expected media element volume to remain full after gain updates');
 
   engine.syncExerciseClock({ totalSecondsRemaining: 0 });
-  assert(audioContext.gainValue === 0, 'expected exercise fade to reach zero through Web Audio gain');
-  assert(audioContext.gainDirectValue === 0, 'expected exercise fade completion to set Web Audio gain exactly to zero');
+  assert(
+    audioContext.gainValue === 0,
+    'expected exercise fade to reach zero through Web Audio gain',
+  );
+  assert(
+    audioContext.gainDirectValue === 0,
+    'expected exercise fade completion to set Web Audio gain exactly to zero',
+  );
 
   engine.dispose({ fadeOutSeconds: 0 });
-  assert(audioContext.sourceDisconnectCalls === 1, 'expected Web Audio source to disconnect on dispose');
-  assert(audioContext.gainDisconnectCalls === 1, 'expected Web Audio gain node to disconnect on dispose');
+  assert(
+    audioContext.sourceDisconnectCalls === 1,
+    'expected Web Audio source to disconnect on dispose',
+  );
+  assert(
+    audioContext.gainDisconnectCalls === 1,
+    'expected Web Audio gain node to disconnect on dispose',
+  );
   assert(audioContext.closeCalls === 1, 'expected Web Audio context to close on dispose');
 };
 
@@ -423,8 +509,14 @@ const runWebAudioFallbackScenarios = async (): Promise<void> => {
   });
 
   await constructionFailure.engine.start();
-  assert(constructionFailureAudio.playCalls === 1, 'expected playback to continue when AudioContext construction fails');
-  assert(constructionFailureAudio.volume > 0 && constructionFailureAudio.volume < 1, 'expected direct media element volume fallback after AudioContext construction failure');
+  assert(
+    constructionFailureAudio.playCalls === 1,
+    'expected playback to continue when AudioContext construction fails',
+  );
+  assert(
+    constructionFailureAudio.volume > 0 && constructionFailureAudio.volume < 1,
+    'expected direct media element volume fallback after AudioContext construction failure',
+  );
 
   const sourceFailureAudio = new FakeAudioElement();
   const sourceFailureContext = new FakeWebAudioContext({ failCreateMediaElementSource: true });
@@ -434,9 +526,18 @@ const runWebAudioFallbackScenarios = async (): Promise<void> => {
   });
 
   await sourceFailure.engine.start();
-  assert(sourceFailureAudio.playCalls === 1, 'expected playback to continue when media source creation fails');
-  assert(sourceFailureAudio.volume > 0 && sourceFailureAudio.volume < 1, 'expected direct media element volume fallback after media source creation failure');
-  assert(sourceFailureContext.closeCalls === 1, 'expected failed Web Audio context to close after source creation failure');
+  assert(
+    sourceFailureAudio.playCalls === 1,
+    'expected playback to continue when media source creation fails',
+  );
+  assert(
+    sourceFailureAudio.volume > 0 && sourceFailureAudio.volume < 1,
+    'expected direct media element volume fallback after media source creation failure',
+  );
+  assert(
+    sourceFailureContext.closeCalls === 1,
+    'expected failed Web Audio context to close after source creation failure',
+  );
 };
 
 const runWebAudioResumeRejectionScenario = async (): Promise<void> => {
@@ -452,11 +553,17 @@ const runWebAudioResumeRejectionScenario = async (): Promise<void> => {
   }
 
   assert(surfacedError === resumeError, 'expected resume rejection to surface the original error');
-  assert(fakeAudio.playCalls === 1, 'expected playback to be attempted in the same activation turn as resume');
+  assert(
+    fakeAudio.playCalls === 1,
+    'expected playback to be attempted in the same activation turn as resume',
+  );
   assert(fakeAudio.pauseCalls >= 1, 'expected resume rejection cleanup to pause the media element');
   assert(fakeAudio.paused, 'expected media element to be paused after resume rejection cleanup');
   assert(!engine.isPlaying(), 'expected engine to stop after resume rejection');
-  assert(audioContext.closeCalls === 1, 'expected Web Audio context to close after resume rejection');
+  assert(
+    audioContext.closeCalls === 1,
+    'expected Web Audio context to close after resume rejection',
+  );
 };
 
 const runPartialGraphFailureUsesFreshAudioScenario = async (): Promise<void> => {
@@ -472,14 +579,35 @@ const runPartialGraphFailureUsesFreshAudioScenario = async (): Promise<void> => 
 
   await engine.start();
 
-  assert(firstAudio.playCalls === 0, 'expected rerouted media element not to be used for fallback playback');
-  assert(firstAudio.pauseCalls >= 1, 'expected rerouted media element to be retired after graph setup failure');
-  assert(firstAudio.loadCalls >= 1, 'expected rerouted media element to be unloaded after graph setup failure');
-  assert(fallbackAudio.playCalls === 1, 'expected fresh media element to be used for direct fallback playback');
-  assert(fallbackAudio.src === tracks[0]?.url, 'expected fresh fallback audio to receive the current track source');
-  assert(fallbackAudio.volume > 0 && fallbackAudio.volume < 1, 'expected fresh fallback audio to use direct element volume');
+  assert(
+    firstAudio.playCalls === 0,
+    'expected rerouted media element not to be used for fallback playback',
+  );
+  assert(
+    firstAudio.pauseCalls >= 1,
+    'expected rerouted media element to be retired after graph setup failure',
+  );
+  assert(
+    firstAudio.loadCalls >= 1,
+    'expected rerouted media element to be unloaded after graph setup failure',
+  );
+  assert(
+    fallbackAudio.playCalls === 1,
+    'expected fresh media element to be used for direct fallback playback',
+  );
+  assert(
+    fallbackAudio.src === tracks[0]?.url,
+    'expected fresh fallback audio to receive the current track source',
+  );
+  assert(
+    fallbackAudio.volume > 0 && fallbackAudio.volume < 1,
+    'expected fresh fallback audio to use direct element volume',
+  );
   assert(engine.isPlaying(), 'expected engine to keep playing through fresh direct fallback');
-  assert(audioContext.closeCalls === 1, 'expected failed Web Audio context to close after partial graph setup failure');
+  assert(
+    audioContext.closeCalls === 1,
+    'expected failed Web Audio context to close after partial graph setup failure',
+  );
 };
 
 const runRejectedClosePromiseScenario = async (): Promise<void> => {
@@ -490,7 +618,10 @@ const runRejectedClosePromiseScenario = async (): Promise<void> => {
   engine.dispose({ fadeOutSeconds: 0 });
   await Promise.resolve();
 
-  assert(audioContext.closeCalls === 1, 'expected rejected close promise to be observed and suppressed');
+  assert(
+    audioContext.closeCalls === 1,
+    'expected rejected close promise to be observed and suppressed',
+  );
 };
 
 const runPlaybackHandlerReplacementScenario = async (): Promise<void> => {
@@ -507,8 +638,14 @@ const runPlaybackHandlerReplacementScenario = async (): Promise<void> => {
   await Promise.resolve();
   await Promise.resolve();
 
-  assert(firstErrors.length === 0, 'expected replaced playback error handler not to receive later failures');
-  assert(secondErrors.length === 1, 'expected replacement playback error handler to receive later failures');
+  assert(
+    firstErrors.length === 0,
+    'expected replaced playback error handler not to receive later failures',
+  );
+  assert(
+    secondErrors.length === 1,
+    'expected replacement playback error handler to receive later failures',
+  );
 };
 
 const runPlaybackPreservingControlScenario = async (): Promise<void> => {
@@ -519,25 +656,39 @@ const runPlaybackPreservingControlScenario = async (): Promise<void> => {
   engine.setVolume(40);
   engine.setPreset(ambientAudioPresetIds.clearBells);
 
-  assert(fakeAudio.playCalls === 1, 'expected clock, volume, and preset updates not to replay started audio');
+  assert(
+    fakeAudio.playCalls === 1,
+    'expected clock, volume, and preset updates not to replay started audio',
+  );
   assert(engine.isPlaying(), 'expected engine to keep playing after non-start control updates');
 };
 
 const runBundledTrackManifestScenario = (): void => {
-  assert(ambientAudioTracks.length >= 2, 'expected bundled ambient track manifest to expose both MP3s outside Vite runtime');
-  assert(ambientAudioTracks[0]?.url.length, 'expected bundled ambient track 1 to expose a usable URL');
-  assert(ambientAudioTracks[1]?.url.length, 'expected bundled ambient track 2 to expose a usable URL');
-  assert(ambientAudioTracks.some(({ url }) => url.includes('ambient-1')), 'expected bundled manifest to include ambient-1.mp3');
-  assert(ambientAudioTracks.some(({ url }) => url.includes('ambient-2')), 'expected bundled manifest to include ambient-2.mp3');
+  assert(
+    ambientAudioTracks.length >= 2,
+    'expected bundled ambient track manifest to expose both MP3s outside Vite runtime',
+  );
+  assert(
+    ambientAudioTracks[0]?.url.length,
+    'expected bundled ambient track 1 to expose a usable URL',
+  );
+  assert(
+    ambientAudioTracks[1]?.url.length,
+    'expected bundled ambient track 2 to expose a usable URL',
+  );
+  assert(
+    ambientAudioTracks.some(({ url }) => url.includes('ambient-1')),
+    'expected bundled manifest to include ambient-1.mp3',
+  );
+  assert(
+    ambientAudioTracks.some(({ url }) => url.includes('ambient-2')),
+    'expected bundled manifest to include ambient-2.mp3',
+  );
 };
 
 const runDurationHelperScenario = (): void => {
   const total = getPracticeDurationSeconds({
-    phases: [
-      { seconds: 20 },
-      { seconds: 90 },
-      { seconds: 20 },
-    ],
+    phases: [{ seconds: 20 }, { seconds: 90 }, { seconds: 20 }],
   });
 
   assert(total === 130, 'expected practice duration helper to sum all exercise phases');

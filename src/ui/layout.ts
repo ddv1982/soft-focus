@@ -8,9 +8,8 @@ export const appViewport = {
   buttonMaxWidth: 420,
 } as const;
 
-const getMinimumViewportHeight = (width: number, height: number): number => (
-  width > height ? appViewport.landscapeMinHeight : appViewport.minHeight
-);
+const getMinimumViewportHeight = (width: number, height: number): number =>
+  width > height ? appViewport.landscapeMinHeight : appViewport.minHeight;
 
 export const getViewportSize = (parent?: HTMLElement): FrameSize => {
   const width = parent?.clientWidth ?? window.innerWidth;
@@ -57,9 +56,8 @@ export type LayoutFrame = {
   contentHeight: number;
 };
 
-const getLayoutSafeArea = (size: FrameSize): SafeArea => (
-  size.width > size.height && size.height <= 520 ? compactLandscapeSafeArea : safeArea
-);
+const getLayoutSafeArea = (size: FrameSize): SafeArea =>
+  size.width > size.height && size.height <= 520 ? compactLandscapeSafeArea : safeArea;
 
 export const getLayoutFrame = (size: FrameSize): LayoutFrame => {
   const layoutSafeArea = getLayoutSafeArea(size);
@@ -74,6 +72,9 @@ export const getLayoutFrame = (size: FrameSize): LayoutFrame => {
   };
 };
 
-export const clampContentWidth = (width: number, maxWidth: number = appViewport.contentMaxWidth): number => Math.min(width, maxWidth);
+export const clampContentWidth = (
+  width: number,
+  maxWidth: number = appViewport.contentMaxWidth,
+): number => Math.min(width, maxWidth);
 
 export const centerX = (size: FrameSize): number => size.width / 2;

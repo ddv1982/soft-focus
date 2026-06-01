@@ -1,17 +1,23 @@
 import {
-  createAmbientAudioEngine,
-  getPracticeDurationSeconds,
   type AmbientAudioSettings,
   type AmbientAudioStartHandle,
+  createAmbientAudioEngine,
+  getPracticeDurationSeconds,
 } from '../audio/ambientAudio';
 import type { SoftFocusGame } from '../game/Game';
-import { sceneKeys, type SceneKey } from '../game/sceneKeys';
 import { getInstructionsBackScene } from '../game/navigation';
+import { type SceneKey, sceneKeys } from '../game/sceneKeys';
 import { reportOperatorError } from '../observability/operatorErrors';
-import { exerciseCatalog, getExerciseDefinition, getExerciseStartScene } from '../practice/exercises';
+import {
+  exerciseCatalog,
+  getExerciseDefinition,
+  getExerciseStartScene,
+} from '../practice/exercises';
 import { createPracticeConfigFromSettings, type PracticeConfig } from '../practice/practiceConfig';
 import {
+  type AmbientAudioPresetId,
   ambientAudioVolumeBounds,
+  type BreathingPresetId,
   breathingPresetIds,
   customBreathingTimingBounds,
   customPracticeDurationBounds,
@@ -20,15 +26,13 @@ import {
   isMovingBallPresetId,
   isPracticeDurationPresetId,
   isValidPhrase,
+  type MovingBallPresetId,
   normalizePhrase,
+  type PracticeDurationPresetId,
   phraseMaxLength,
   phraseMinLength,
   practiceDurationPresetIds,
   sanitizeAmbientAudioVolume,
-  type AmbientAudioPresetId,
-  type BreathingPresetId,
-  type MovingBallPresetId,
-  type PracticeDurationPresetId,
 } from '../state/types';
 import {
   bodyClass,
@@ -38,8 +42,8 @@ import {
   createHeader,
   createMinuteStepper,
   createRangeSlider,
-  createSelect,
   createSecondStepper,
+  createSelect,
   createToggle,
   eyebrowClass,
   fieldClass,
@@ -50,7 +54,11 @@ import {
   titleClass,
 } from './setupShellUi';
 
-type SetupSceneKey = typeof sceneKeys.entry | typeof sceneKeys.exerciseSelection | typeof sceneKeys.phrase | typeof sceneKeys.instructions;
+type SetupSceneKey =
+  | typeof sceneKeys.entry
+  | typeof sceneKeys.exerciseSelection
+  | typeof sceneKeys.phrase
+  | typeof sceneKeys.instructions;
 type SetupScreenKey = SetupSceneKey | 'history';
 
 const setupSceneKeys = new Set<SceneKey>([
@@ -60,7 +68,8 @@ const setupSceneKeys = new Set<SceneKey>([
   sceneKeys.instructions,
 ]);
 
-const isSetupSceneKey = (sceneKey: SceneKey): sceneKey is SetupSceneKey => setupSceneKeys.has(sceneKey);
+const isSetupSceneKey = (sceneKey: SceneKey): sceneKey is SetupSceneKey =>
+  setupSceneKeys.has(sceneKey);
 
 declare global {
   interface Window {
@@ -68,7 +77,9 @@ declare global {
   }
 }
 
-const getAmbientAudioSettings = (settings: PracticeConfig['ambientAudio']): AmbientAudioSettings => ({
+const getAmbientAudioSettings = (
+  settings: PracticeConfig['ambientAudio'],
+): AmbientAudioSettings => ({
   enabled: settings.enabled,
   presetId: settings.presetId,
   volume: settings.volume,
@@ -103,10 +114,15 @@ export const mountSetupShell = ({
   let practiceStartInFlight = false;
 
   const focusAutofocusTarget = (): void => {
-    window.requestAnimationFrame(() => root.querySelector<HTMLElement>('[data-autofocus]')?.focus());
+    window.requestAnimationFrame(() =>
+      root.querySelector<HTMLElement>('[data-autofocus]')?.focus(),
+    );
   };
 
-  const showSetup = (sceneKey: SetupSceneKey, { focusAutofocus = true }: { focusAutofocus?: boolean } = {}): void => {
+  const showSetup = (
+    sceneKey: SetupSceneKey,
+    { focusAutofocus = true }: { focusAutofocus?: boolean } = {},
+  ): void => {
     setupNavigationToken += 1;
     currentSceneKey = sceneKey;
     stopActiveScenes(game);
@@ -208,7 +224,8 @@ export const mountSetupShell = ({
           reportOperatorError('Soft Focus could not continue ambient music.', error);
         },
       });
-      const startResult = engine.start()
+      const startResult = engine
+        .start()
         .then(() => ({ ok: true }) as const)
         .catch((error: unknown) => ({ ok: false, error }) as const);
 
@@ -256,10 +273,19 @@ export const mountSetupShell = ({
   };
 
   const renderEntry = (): void => {
-    const main = createElement('main', 'mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl place-items-center');
-    const panel = createElement('section', `${panelClass} relative isolate w-full max-w-3xl overflow-hidden p-7 sm:p-10`);
+    const main = createElement(
+      'main',
+      'mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl place-items-center',
+    );
+    const panel = createElement(
+      'section',
+      `${panelClass} relative isolate w-full max-w-3xl overflow-hidden p-7 sm:p-10`,
+    );
     panel.setAttribute('aria-labelledby', 'setup-entry-title');
-    const glow = createElement('div', 'pointer-events-none absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-wellness-mist/10 blur-3xl');
+    const glow = createElement(
+      'div',
+      'pointer-events-none absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-wellness-mist/10 blur-3xl',
+    );
     const copy = createElement('div', 'flex flex-col justify-center gap-5');
     const title = createElement('h1', titleClass, 'A quiet space to practice');
     title.id = 'setup-entry-title';
@@ -268,11 +294,20 @@ export const mountSetupShell = ({
     copy.append(
       createElement('p', eyebrowClass, 'Soft Focus'),
       title,
-      createElement('p', `${bodyClass} max-w-xl`, 'Choose one gentle exercise. Pause or stop anytime.'),
+      createElement(
+        'p',
+        `${bodyClass} max-w-xl`,
+        'Choose one gentle exercise. Pause or stop anytime.',
+      ),
     );
     const actions = createElement('div', 'flex flex-wrap gap-3');
-    const startButton = createButton('Open Soft Focus', primaryButtonClass, () => goTo(sceneKeys.exerciseSelection));
-    actions.append(startButton, createButton('Recent reflections', secondaryButtonClass, goToHistory));
+    const startButton = createButton('Open Soft Focus', primaryButtonClass, () =>
+      goTo(sceneKeys.exerciseSelection),
+    );
+    actions.append(
+      startButton,
+      createButton('Recent reflections', secondaryButtonClass, goToHistory),
+    );
     copy.append(actions);
 
     panel.append(glow, copy);
@@ -284,18 +319,34 @@ export const mountSetupShell = ({
     const summaries = game.sessionStore.getState().recentSessionSummaries;
     const main = createElement('main', 'mx-auto flex w-full max-w-5xl flex-col gap-8 pb-12');
     main.append(createBackButton('Back to welcome', () => goTo(sceneKeys.entry)));
-    main.append(createHeader('Recent results', 'Recent reflections saved here', 'These recent results are saved locally on this device/browser. They are not synced anywhere else.'));
+    main.append(
+      createHeader(
+        'Recent results',
+        'Recent reflections saved here',
+        'These recent results are saved locally on this device/browser. They are not synced anywhere else.',
+      ),
+    );
 
     const panel = createElement('section', `${panelClass} grid gap-5 p-6 sm:p-8`);
     panel.setAttribute('aria-labelledby', 'recent-reflections-title');
-    const heading = createElement('h2', 'text-2xl font-semibold text-wellness-foam', summaries.length > 0 ? 'Saved practice results' : 'No recent results yet');
+    const heading = createElement(
+      'h2',
+      'text-2xl font-semibold text-wellness-foam',
+      summaries.length > 0 ? 'Saved practice results' : 'No recent results yet',
+    );
     heading.id = 'recent-reflections-title';
     heading.tabIndex = -1;
     heading.dataset.autofocus = 'true';
     panel.append(heading);
 
     if (summaries.length === 0) {
-      panel.append(createElement('p', `${bodyClass} max-w-2xl`, 'After you complete or stop a practice, its outcome and reflection will appear here for a short local history.'));
+      panel.append(
+        createElement(
+          'p',
+          `${bodyClass} max-w-2xl`,
+          'After you complete or stop a practice, its outcome and reflection will appear here for a short local history.',
+        ),
+      );
       main.append(panel);
       root.replaceChildren(main);
       return;
@@ -304,12 +355,22 @@ export const mountSetupShell = ({
     const list = createElement('div', 'grid gap-4');
     summaries.forEach((summary) => {
       const exercise = getExerciseDefinition(summary.exerciseId);
-      const card = createElement('article', 'grid gap-4 rounded-3xl border border-[var(--line)] bg-white/[0.045] p-5');
-      const meta = createElement('dl', 'grid gap-3 text-sm leading-6 text-[var(--text-muted)] sm:grid-cols-2');
+      const card = createElement(
+        'article',
+        'grid gap-4 rounded-3xl border border-[var(--line)] bg-white/[0.045] p-5',
+      );
+      const meta = createElement(
+        'dl',
+        'grid gap-3 text-sm leading-6 text-[var(--text-muted)] sm:grid-cols-2',
+      );
       const addMeta = (label: string, value: string): void => {
         const group = createElement('div', 'grid gap-1 rounded-2xl bg-white/[0.035] p-3');
         group.append(
-          createElement('dt', 'text-xs font-black uppercase tracking-[0.18em] text-wellness-mist', label),
+          createElement(
+            'dt',
+            'text-xs font-black uppercase tracking-[0.18em] text-wellness-mist',
+            label,
+          ),
           createElement('dd', 'font-semibold text-wellness-foam', value),
         );
         meta.append(group);
@@ -324,19 +385,33 @@ export const mountSetupShell = ({
       }
 
       card.append(meta);
-      card.append(createElement('p', 'rounded-2xl border border-[var(--line)] bg-white/[0.035] p-4 text-base leading-7 text-wellness-foam', summary.reflection || 'No reflection was saved for this result.'));
+      card.append(
+        createElement(
+          'p',
+          'rounded-2xl border border-[var(--line)] bg-white/[0.035] p-4 text-base leading-7 text-wellness-foam',
+          summary.reflection || 'No reflection was saved for this result.',
+        ),
+      );
       list.append(card);
     });
 
-    const clearButton = createButton('Clear recent results', `${secondaryButtonClass} w-fit border-red-200/30 text-red-100 hover:bg-red-500/10`, () => {
-      if (!window.confirm('Clear recent locally saved results and reflections from this device/browser?')) {
-        return;
-      }
+    const clearButton = createButton(
+      'Clear recent results',
+      `${secondaryButtonClass} w-fit border-red-200/30 text-red-100 hover:bg-red-500/10`,
+      () => {
+        if (
+          !window.confirm(
+            'Clear recent locally saved results and reflections from this device/browser?',
+          )
+        ) {
+          return;
+        }
 
-      game.sessionStore.clearRecentSessionSummaries();
-      renderHistory();
-      focusAutofocusTarget();
-    });
+        game.sessionStore.clearRecentSessionSummaries();
+        renderHistory();
+        focusAutofocusTarget();
+      },
+    );
 
     panel.append(list, clearButton);
     main.append(panel);
@@ -345,7 +420,10 @@ export const mountSetupShell = ({
 
   const renderExerciseSelection = (): void => {
     const groups = [...new Set(exerciseCatalog.map((exercise) => exercise.phase))];
-    const main = createElement('main', 'mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-5 pb-12 sm:gap-7');
+    const main = createElement(
+      'main',
+      'mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-5 pb-12 sm:gap-7',
+    );
     main.append(createBackButton('Back to welcome', () => goTo(sceneKeys.entry)));
     main.append(createHeader('Exercises', 'Choose one gentle focus'));
 
@@ -356,20 +434,48 @@ export const mountSetupShell = ({
       const section = createElement('section', `${panelClass} min-w-0 overflow-hidden p-4 sm:p-6`);
       section.append(
         createElement('p', eyebrowClass, phase.phaseLabel),
-        createElement('p', 'mt-3 max-w-full min-w-0 break-words text-sm font-semibold leading-6 text-[var(--text-muted)] sm:max-w-md sm:text-lg sm:leading-7', phase.phaseSummary),
+        createElement(
+          'p',
+          'mt-3 max-w-full min-w-0 break-words text-sm font-semibold leading-6 text-[var(--text-muted)] sm:max-w-md sm:text-lg sm:leading-7',
+          phase.phaseSummary,
+        ),
       );
       const list = createElement('div', 'mt-4 grid min-w-0 gap-3 sm:mt-5');
       exercises.forEach((exercise) => {
         const selected = game.sessionStore.getState().selectedExercise === exercise.id;
-        const card = createElement('article', `min-w-0 overflow-hidden rounded-[1.5rem] border p-3 transition motion-reduce:transition-none sm:rounded-3xl sm:p-4 ${selected ? 'border-wellness-mist/55 bg-white/[0.075]' : 'border-[var(--line)] bg-white/[0.04]'}`);
-        const cardHeader = createElement('div', 'flex min-w-0 flex-wrap items-center justify-between gap-2');
-        cardHeader.append(createElement('p', 'min-w-0 break-words text-base font-semibold text-wellness-foam', exercise.title));
+        const card = createElement(
+          'article',
+          `min-w-0 overflow-hidden rounded-[1.5rem] border p-3 transition motion-reduce:transition-none sm:rounded-3xl sm:p-4 ${selected ? 'border-wellness-mist/55 bg-white/[0.075]' : 'border-[var(--line)] bg-white/[0.04]'}`,
+        );
+        const cardHeader = createElement(
+          'div',
+          'flex min-w-0 flex-wrap items-center justify-between gap-2',
+        );
+        cardHeader.append(
+          createElement(
+            'p',
+            'min-w-0 break-words text-base font-semibold text-wellness-foam',
+            exercise.title,
+          ),
+        );
         card.append(cardHeader);
-        const button = createButton(`Start ${exercise.title}`, selected ? primaryButtonClass : secondaryButtonClass, () => {
-          game.sessionStore.setSelectedExercise(exercise.id);
-          goTo(getExerciseStartScene(exercise.id) as SetupSceneKey);
-        });
-        button.classList.add('mt-4', 'w-full', 'min-w-0', 'max-w-full', 'whitespace-normal', 'text-center', 'leading-snug');
+        const button = createButton(
+          `Start ${exercise.title}`,
+          selected ? primaryButtonClass : secondaryButtonClass,
+          () => {
+            game.sessionStore.setSelectedExercise(exercise.id);
+            goTo(getExerciseStartScene(exercise.id) as SetupSceneKey);
+          },
+        );
+        button.classList.add(
+          'mt-4',
+          'w-full',
+          'min-w-0',
+          'max-w-full',
+          'whitespace-normal',
+          'text-center',
+          'leading-snug',
+        );
         card.append(button);
         list.append(card);
       });
@@ -388,7 +494,13 @@ export const mountSetupShell = ({
 
     const form = createElement('form', `${panelClass} grid gap-5 p-6 sm:p-8`);
     const label = createElement('label', 'grid gap-3');
-    label.append(createElement('span', 'text-sm font-black uppercase tracking-[0.18em] text-wellness-mist', 'Practice phrase'));
+    label.append(
+      createElement(
+        'span',
+        'text-sm font-black uppercase tracking-[0.18em] text-wellness-mist',
+        'Practice phrase',
+      ),
+    );
     const input = createElement('input', fieldClass);
     input.type = 'text';
     input.value = phraseDraft;
@@ -404,11 +516,17 @@ export const mountSetupShell = ({
 
     const helper = createElement('p', 'text-sm leading-6 text-[var(--text-muted)]');
     helper.id = 'phrase-helper';
-    const continueButton = createButton('Continue to instructions', primaryButtonClass, () => undefined);
+    const continueButton = createButton(
+      'Continue to instructions',
+      primaryButtonClass,
+      () => undefined,
+    );
     const refresh = (): void => {
       const normalized = normalizePhrase(phraseDraft);
       const valid = isValidPhrase(normalized);
-      helper.textContent = valid ? 'Ready.' : `Use ${phraseMinLength}-${phraseMaxLength} characters.`;
+      helper.textContent = valid
+        ? 'Ready.'
+        : `Use ${phraseMinLength}-${phraseMaxLength} characters.`;
       continueButton.disabled = !valid;
       input.setAttribute('aria-invalid', phraseDraft.length > 0 && !valid ? 'true' : 'false');
     };
@@ -440,56 +558,89 @@ export const mountSetupShell = ({
 
   const renderInstructions = (): void => {
     const state = game.sessionStore.getState();
-    const previewConfig = createPracticeConfigFromSettings(state.selectedExercise, state.phrase, state.settings);
+    const previewConfig = createPracticeConfigFromSettings(
+      state.selectedExercise,
+      state.phrase,
+      state.settings,
+    );
     const canStartPractice = !previewConfig.exercise.requiresPhrase || isValidPhrase(state.phrase);
     const main = createElement('main', 'mx-auto flex w-full max-w-6xl flex-col gap-8 pb-12');
-    main.append(createBackButton('Back', () => goTo(getInstructionsBackScene(state.selectedExercise) as SetupSceneKey)));
+    main.append(
+      createBackButton('Back', () =>
+        goTo(getInstructionsBackScene(state.selectedExercise) as SetupSceneKey),
+      ),
+    );
     main.append(createHeader(previewConfig.exercise.phaseLabel, previewConfig.exercise.title));
 
     const layout = createElement('div', 'grid gap-5 lg:grid-cols-[0.9fr_1.1fr]');
     const summary = createElement('section', `${panelClass} p-6 sm:p-8`);
     summary.append(
       createElement('p', eyebrowClass, previewConfig.copy.instructionsSelectionLabel),
-      createElement('h2', 'mt-3 text-3xl font-semibold text-wellness-foam', previewConfig.exercise.requiresPhrase ? `"${state.phrase}"` : previewConfig.display.phraseText),
+      createElement(
+        'h2',
+        'mt-3 text-3xl font-semibold text-wellness-foam',
+        previewConfig.exercise.requiresPhrase
+          ? `"${state.phrase}"`
+          : previewConfig.display.phraseText,
+      ),
     );
     if (previewConfig.movingBall) {
-      summary.append(createElement('p', 'mt-3 text-sm leading-6 text-[var(--text-muted)]', previewConfig.movingBall.summary));
+      summary.append(
+        createElement(
+          'p',
+          'mt-3 text-sm leading-6 text-[var(--text-muted)]',
+          previewConfig.movingBall.summary,
+        ),
+      );
     }
     const expectations = createElement('ol', 'mt-6 grid gap-3');
     previewConfig.expectations.forEach((expectation, index) => {
-      const item = createElement('li', 'grid grid-cols-[2rem_1fr] gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 text-sm leading-6 text-[var(--text-muted)]');
-      item.append(createElement('span', 'font-black text-wellness-mist', String(index + 1)), createElement('span', undefined, expectation));
+      const item = createElement(
+        'li',
+        'grid grid-cols-[2rem_1fr] gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 text-sm leading-6 text-[var(--text-muted)]',
+      );
+      item.append(
+        createElement('span', 'font-black text-wellness-mist', String(index + 1)),
+        createElement('span', undefined, expectation),
+      );
       expectations.append(item);
     });
-    summary.append(createElement('p', 'mt-7 text-base font-bold text-wellness-foam', 'Practice flow'), expectations);
+    summary.append(
+      createElement('p', 'mt-7 text-base font-bold text-wellness-foam', 'Practice flow'),
+      expectations,
+    );
 
     const settings = createElement('section', `${panelClass} grid gap-4 p-6 sm:p-8`);
     settings.append(createElement('p', eyebrowClass, 'Practice settings'));
     const durationControl = createElement('div', 'grid gap-3');
-    durationControl.append(createSelect({
-      label: previewConfig.duration.label,
-      description: previewConfig.duration.description,
-      value: previewConfig.duration.presetId,
-      options: previewConfig.duration.availablePresets,
-      onChange: (value) => {
-        if (isPracticeDurationPresetId(value)) {
-          game.sessionStore.setPracticeDurationPreset(value as PracticeDurationPresetId);
-          renderInstructions();
-        }
-      },
-    }));
+    durationControl.append(
+      createSelect({
+        label: previewConfig.duration.label,
+        description: previewConfig.duration.description,
+        value: previewConfig.duration.presetId,
+        options: previewConfig.duration.availablePresets,
+        onChange: (value) => {
+          if (isPracticeDurationPresetId(value)) {
+            game.sessionStore.setPracticeDurationPreset(value as PracticeDurationPresetId);
+            renderInstructions();
+          }
+        },
+      }),
+    );
 
     if (previewConfig.duration.presetId === practiceDurationPresetIds.custom) {
-      durationControl.append(createMinuteStepper({
-        label: 'Custom duration minutes',
-        minutes: previewConfig.duration.customMinutes,
-        minMinutes: customPracticeDurationBounds.minMinutes,
-        maxMinutes: customPracticeDurationBounds.maxMinutes,
-        onChange: (minutes) => {
-          game.sessionStore.setCustomPracticeDurationMinutes(minutes);
-          renderInstructions();
-        },
-      }));
+      durationControl.append(
+        createMinuteStepper({
+          label: 'Custom duration minutes',
+          minutes: previewConfig.duration.customMinutes,
+          minMinutes: customPracticeDurationBounds.minMinutes,
+          maxMinutes: customPracticeDurationBounds.maxMinutes,
+          onChange: (minutes) => {
+            game.sessionStore.setCustomPracticeDurationMinutes(minutes);
+            renderInstructions();
+          },
+        }),
+      );
     }
 
     settings.append(
@@ -514,17 +665,22 @@ export const mountSetupShell = ({
       durationControl,
     );
 
-    const audioSettings = createElement('div', 'grid gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.035] p-4');
-    audioSettings.append(createToggle({
-      label: previewConfig.ambientAudio.label,
-      description: previewConfig.ambientAudio.description,
-      checked: state.settings.ambientAudioEnabled,
-      onChange: (checked) => {
-        ambientAudioVolumeDraft = null;
-        game.sessionStore.setAmbientAudioEnabled(checked);
-        renderInstructions();
-      },
-    }));
+    const audioSettings = createElement(
+      'div',
+      'grid gap-3 rounded-3xl border border-[var(--line)] bg-white/[0.035] p-4',
+    );
+    audioSettings.append(
+      createToggle({
+        label: previewConfig.ambientAudio.label,
+        description: previewConfig.ambientAudio.description,
+        checked: state.settings.ambientAudioEnabled,
+        onChange: (checked) => {
+          ambientAudioVolumeDraft = null;
+          game.sessionStore.setAmbientAudioEnabled(checked);
+          renderInstructions();
+        },
+      }),
+    );
 
     if (state.settings.ambientAudioEnabled) {
       const ambientAudioVolume = ambientAudioVolumeDraft ?? state.settings.ambientAudioVolume;
@@ -532,7 +688,10 @@ export const mountSetupShell = ({
       audioSettings.append(
         createSelect({
           label: 'Ambient music preset',
-          description: previewConfig.ambientAudio.availablePresets.find(({ id }) => id === previewConfig.ambientAudio.presetId)?.summary ?? previewConfig.ambientAudio.description,
+          description:
+            previewConfig.ambientAudio.availablePresets.find(
+              ({ id }) => id === previewConfig.ambientAudio.presetId,
+            )?.summary ?? previewConfig.ambientAudio.description,
           value: previewConfig.ambientAudio.presetId,
           options: previewConfig.ambientAudio.availablePresets,
           onChange: (value) => {
@@ -544,7 +703,8 @@ export const mountSetupShell = ({
         }),
         createRangeSlider({
           label: 'Ambient music volume',
-          description: 'Adjust before practice starts. The value updates while you drag and commits when released; start near 40% and lower if you want more space.',
+          description:
+            'Adjust before practice starts. The value updates while you drag and commits when released; start near 40% and lower if you want more space.',
           value: ambientAudioVolume,
           min: ambientAudioVolumeBounds.min,
           max: ambientAudioVolumeBounds.max,
@@ -564,32 +724,36 @@ export const mountSetupShell = ({
     settings.append(audioSettings);
 
     if (previewConfig.movingBall) {
-      settings.append(createSelect({
-        label: 'Moving ball preset',
-        description: previewConfig.movingBall.summary,
-        value: previewConfig.movingBall.presetId,
-        options: previewConfig.movingBall.availablePresets,
-        onChange: (value) => {
-          if (isMovingBallPresetId(value)) {
-            game.sessionStore.setMovingBallPreset(value as MovingBallPresetId);
-            renderInstructions();
-          }
-        },
-      }));
+      settings.append(
+        createSelect({
+          label: 'Moving ball preset',
+          description: previewConfig.movingBall.summary,
+          value: previewConfig.movingBall.presetId,
+          options: previewConfig.movingBall.availablePresets,
+          onChange: (value) => {
+            if (isMovingBallPresetId(value)) {
+              game.sessionStore.setMovingBallPreset(value as MovingBallPresetId);
+              renderInstructions();
+            }
+          },
+        }),
+      );
     } else if (previewConfig.breathingReset) {
       const breathingControl = createElement('div', 'grid gap-3');
-      breathingControl.append(createSelect({
-        label: 'Breathing preset',
-        description: previewConfig.breathingReset.summary,
-        value: previewConfig.breathingReset.presetId,
-        options: previewConfig.breathingReset.availablePresets,
-        onChange: (value) => {
-          if (isBreathingPresetId(value)) {
-            game.sessionStore.setBreathingPreset(value as BreathingPresetId);
-            renderInstructions();
-          }
-        },
-      }));
+      breathingControl.append(
+        createSelect({
+          label: 'Breathing preset',
+          description: previewConfig.breathingReset.summary,
+          value: previewConfig.breathingReset.presetId,
+          options: previewConfig.breathingReset.availablePresets,
+          onChange: (value) => {
+            if (isBreathingPresetId(value)) {
+              game.sessionStore.setBreathingPreset(value as BreathingPresetId);
+              renderInstructions();
+            }
+          },
+        }),
+      );
 
       if (previewConfig.breathingReset.presetId === breathingPresetIds.custom) {
         breathingControl.append(
@@ -631,17 +795,25 @@ export const mountSetupShell = ({
 
       settings.append(breathingControl);
     } else if (previewConfig.capabilities.auxiliaryControl.kind === 'toggle') {
-      settings.append(createToggle({
-        label: previewConfig.capabilities.auxiliaryControl.label,
-        description: previewConfig.capabilities.auxiliaryControl.description,
-        checked: state.settings.gazeGuidanceEnabled,
-        onChange: (checked) => {
-          game.sessionStore.setGazeGuidanceEnabled(checked);
-          renderInstructions();
-        },
-      }));
+      settings.append(
+        createToggle({
+          label: previewConfig.capabilities.auxiliaryControl.label,
+          description: previewConfig.capabilities.auxiliaryControl.description,
+          checked: state.settings.gazeGuidanceEnabled,
+          onChange: (checked) => {
+            game.sessionStore.setGazeGuidanceEnabled(checked);
+            renderInstructions();
+          },
+        }),
+      );
     } else if (previewConfig.capabilities.auxiliaryControl.kind === 'info') {
-      settings.append(createElement('p', 'rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 text-sm leading-6 text-[var(--text-muted)]', `${previewConfig.capabilities.auxiliaryControl.label}: ${previewConfig.capabilities.auxiliaryControl.description}`));
+      settings.append(
+        createElement(
+          'p',
+          'rounded-3xl border border-[var(--line)] bg-white/[0.04] p-4 text-sm leading-6 text-[var(--text-muted)]',
+          `${previewConfig.capabilities.auxiliaryControl.label}: ${previewConfig.capabilities.auxiliaryControl.description}`,
+        ),
+      );
     }
 
     const startButton = createButton('Start practice', primaryButtonClass, () => {
@@ -706,17 +878,20 @@ export const mountSetupShell = ({
       game.sessionStore.updateCurrentScene(sceneKey);
       showSetup(sceneKey);
       const navigationToken = setupNavigationToken;
-      void game.ensureSceneRegistered(sceneKey).then(() => {
-        if (navigationToken !== setupNavigationToken || currentSceneKey !== sceneKey) {
-          return;
-        }
+      void game
+        .ensureSceneRegistered(sceneKey)
+        .then(() => {
+          if (navigationToken !== setupNavigationToken || currentSceneKey !== sceneKey) {
+            return;
+          }
 
-        stopActiveScenes(game, sceneKey);
-        game.scene.start(sceneKey);
-        game.sessionStore.updateCurrentScene(sceneKey);
-      }).catch((error) => {
-        reportOperatorError('Soft Focus could not show setup scene.', error);
-      });
+          stopActiveScenes(game, sceneKey);
+          game.scene.start(sceneKey);
+          game.sessionStore.updateCurrentScene(sceneKey);
+        })
+        .catch((error) => {
+          reportOperatorError('Soft Focus could not show setup scene.', error);
+        });
     }
   };
 

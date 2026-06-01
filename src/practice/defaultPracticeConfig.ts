@@ -1,10 +1,10 @@
 import {
-  breathingPresetIds,
-  movingBallPresetIds,
-  practiceDurationPresetIds,
   type BreathingPresetId,
+  breathingPresetIds,
   type MovingBallPresetId,
+  movingBallPresetIds,
   type PracticeDurationPresetId,
+  practiceDurationPresetIds,
 } from '../state/types';
 
 export const defaultPhrasePracticeExpectations = [
@@ -39,7 +39,8 @@ export const defaultOrientingExpectations = [
 
 export const defaultLowIntensityConfig = {
   label: 'Low-intensity mode',
-  description: 'Keeps the pace gentle with a short settle, brief practice window, and easy recovery.',
+  description:
+    'Keeps the pace gentle with a short settle, brief practice window, and easy recovery.',
   settleSeconds: 20,
   practiceSeconds: 90,
   recoverySeconds: 20,
@@ -79,14 +80,17 @@ export const practiceDurationPresetCatalog: readonly PracticeDurationPresetDefin
   },
 ] as const;
 
-export const getPracticeDurationPresetDefinition = (presetId: PracticeDurationPresetId): PracticeDurationPresetDefinition => (
-  practiceDurationPresetCatalog.find((preset) => preset.id === presetId) ?? practiceDurationPresetCatalog[1]
-);
+export const getPracticeDurationPresetDefinition = (
+  presetId: PracticeDurationPresetId,
+): PracticeDurationPresetDefinition =>
+  practiceDurationPresetCatalog.find((preset) => preset.id === presetId) ??
+  practiceDurationPresetCatalog[1];
 
 export const defaultGazeGuidanceConfig = {
   label: 'Gaze guidance',
   description: 'Adds a soft reminder to rest your gaze instead of tightening around the phrase.',
-  prompt: 'Let your gaze rest softly, notice wandering, and return to the phrase without forcing it.',
+  prompt:
+    'Let your gaze rest softly, notice wandering, and return to the phrase without forcing it.',
 } as const;
 
 export interface MovingBallPresetDefinition {
@@ -154,9 +158,10 @@ export const movingBallPresetCatalog: readonly MovingBallPresetDefinition[] = [
   },
 ] as const;
 
-export const getMovingBallPresetDefinition = (presetId: MovingBallPresetId): MovingBallPresetDefinition => (
-  movingBallPresetCatalog.find((preset) => preset.id === presetId) ?? movingBallPresetCatalog[0]
-);
+export const getMovingBallPresetDefinition = (
+  presetId: MovingBallPresetId,
+): MovingBallPresetDefinition =>
+  movingBallPresetCatalog.find((preset) => preset.id === presetId) ?? movingBallPresetCatalog[0];
 
 export const breathingPresetCatalog: readonly BreathingPresetDefinition[] = [
   {
@@ -233,6 +238,7 @@ export const breathingPresetCatalog: readonly BreathingPresetDefinition[] = [
   },
 ] as const;
 
-export const getBreathingPresetDefinition = (presetId: BreathingPresetId): BreathingPresetDefinition => (
-  breathingPresetCatalog.find((preset) => preset.id === presetId) ?? breathingPresetCatalog[0]
-);
+export const getBreathingPresetDefinition = (
+  presetId: BreathingPresetId,
+): BreathingPresetDefinition =>
+  breathingPresetCatalog.find((preset) => preset.id === presetId) ?? breathingPresetCatalog[0];

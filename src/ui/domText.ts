@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
-type DomTextStyle = Pick<Phaser.Types.GameObjects.Text.TextStyle,
+type DomTextStyle = Pick<
+  Phaser.Types.GameObjects.Text.TextStyle,
   'align' | 'color' | 'fontFamily' | 'fontSize' | 'fontStyle' | 'lineSpacing' | 'wordWrap'
 >;
 
@@ -86,8 +87,8 @@ export const createDomText = (
     const parentRect = parent.getBoundingClientRect();
     const scaleX = canvasRect.width / scene.scale.width;
     const scaleY = canvasRect.height / scene.scale.height;
-    const left = (canvasRect.left - parentRect.left) + (x * scaleX);
-    const top = (canvasRect.top - parentRect.top) + (y * scaleY);
+    const left = canvasRect.left - parentRect.left + x * scaleX;
+    const top = canvasRect.top - parentRect.top + y * scaleY;
 
     if (style.wordWrap?.width) {
       element.style.width = `${style.wordWrap.width * scaleX}px`;

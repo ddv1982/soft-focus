@@ -25,7 +25,7 @@ export class ExerciseSelectionScene extends Phaser.Scene {
       width: this.scale.width,
       height: this.scale.height,
     });
-    const contentCenterX = frame.contentX + (frame.contentWidth / 2);
+    const contentCenterX = frame.contentX + frame.contentWidth / 2;
     const cardWidth = clampContentWidth(frame.contentWidth);
 
     createBackButton(this, {
@@ -47,7 +47,9 @@ export class ExerciseSelectionScene extends Phaser.Scene {
       subtitle: 'Pick the focus that fits right now.',
     });
 
-    const { height: buttonHeight, width: buttonWidth } = getPrimaryButtonSize(cardWidth - (uiTheme.spacing.xl * 2));
+    const { height: buttonHeight, width: buttonWidth } = getPrimaryButtonSize(
+      cardWidth - uiTheme.spacing.xl * 2,
+    );
     const gap = uiTheme.spacing.md;
     const cardPaddingTop = uiTheme.spacing.md;
     const cardPaddingBottom = uiTheme.spacing.lg;
@@ -57,38 +59,53 @@ export class ExerciseSelectionScene extends Phaser.Scene {
     let currentY = firstCardY;
 
     exerciseCatalog.forEach((exercise) => {
-      const phaseTag = this.add.text(contentCenterX, currentY + cardPaddingTop, exercise.phaseLabel, withTextResolution({
-        color: uiTheme.colors.accent,
-        fontFamily: uiTheme.typography.fontFamily,
-        fontSize: '13px',
-        fontStyle: '600',
-        align: 'center',
-      }));
+      const phaseTag = this.add.text(
+        contentCenterX,
+        currentY + cardPaddingTop,
+        exercise.phaseLabel,
+        withTextResolution({
+          color: uiTheme.colors.accent,
+          fontFamily: uiTheme.typography.fontFamily,
+          fontSize: '13px',
+          fontStyle: '600',
+          align: 'center',
+        }),
+      );
       phaseTag.setOrigin(0.5, 0);
 
-      const heading = this.add.text(contentCenterX, phaseTag.y + phaseTag.height + cardInnerSpacing, exercise.title, withTextResolution({
-        color: uiTheme.colors.text,
-        fontFamily: uiTheme.typography.fontFamily,
-        fontSize: `${uiTheme.typography.cardHeadingSize}px`,
-        fontStyle: '600',
-        align: 'center',
-        wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-      }));
+      const heading = this.add.text(
+        contentCenterX,
+        phaseTag.y + phaseTag.height + cardInnerSpacing,
+        exercise.title,
+        withTextResolution({
+          color: uiTheme.colors.text,
+          fontFamily: uiTheme.typography.fontFamily,
+          fontSize: `${uiTheme.typography.cardHeadingSize}px`,
+          fontStyle: '600',
+          align: 'center',
+          wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+        }),
+      );
       heading.setOrigin(0.5, 0);
 
-      const summary = this.add.text(contentCenterX, heading.y + heading.height + uiTheme.spacing.sm, exercise.summary, withTextResolution({
-        color: uiTheme.colors.textMuted,
-        fontFamily: uiTheme.typography.fontFamily,
-        fontSize: '15px',
-        align: 'center',
-        wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-        lineSpacing: 4,
-      }));
+      const summary = this.add.text(
+        contentCenterX,
+        heading.y + heading.height + uiTheme.spacing.sm,
+        exercise.summary,
+        withTextResolution({
+          color: uiTheme.colors.textMuted,
+          fontFamily: uiTheme.typography.fontFamily,
+          fontSize: '15px',
+          align: 'center',
+          wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+          lineSpacing: 4,
+        }),
+      );
       summary.setOrigin(0.5, 0);
 
       const textBottom = summary.y + summary.height;
-      const buttonY = textBottom + cardButtonGap + (buttonHeight / 2);
-      const cardHeight = (buttonY + (buttonHeight / 2) + cardPaddingBottom) - currentY;
+      const buttonY = textBottom + cardButtonGap + buttonHeight / 2;
+      const cardHeight = buttonY + buttonHeight / 2 + cardPaddingBottom - currentY;
 
       const card = createCard(this, {
         x: contentCenterX,
@@ -115,6 +132,5 @@ export class ExerciseSelectionScene extends Phaser.Scene {
 
       currentY += cardHeight + gap;
     });
-
   }
 }

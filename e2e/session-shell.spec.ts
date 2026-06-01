@@ -23,10 +23,15 @@ const openSoftFocus = async (page: Page): Promise<void> => {
 const startBreathingResetPractice = async (page: Page): Promise<void> => {
   await page.getByRole('button', { name: 'Start Breathing reset' }).click();
   await page.getByRole('button', { name: 'Start practice' }).click();
-  await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
+  await page.waitForFunction(
+    () => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice',
+  );
 };
 
-const installAudioStub = async (page: Page, mode: 'direct' | 'web-audio' = 'direct'): Promise<void> => {
+const installAudioStub = async (
+  page: Page,
+  mode: 'direct' | 'web-audio' = 'direct',
+): Promise<void> => {
   await page.addInitScript((stubMode) => {
     class FakeAudio {
       preload = '';
@@ -175,15 +180,16 @@ const installAudioStub = async (page: Page, mode: 'direct' | 'web-audio' = 'dire
   }, mode);
 };
 
-const getLatestAmbientOutputVolume = async (page: Page): Promise<number> => page.evaluate(() => {
-  const gainValue = window.__softFocusAudioGainValues?.at(-1);
+const getLatestAmbientOutputVolume = async (page: Page): Promise<number> =>
+  page.evaluate(() => {
+    const gainValue = window.__softFocusAudioGainValues?.at(-1);
 
-  if (typeof gainValue === 'number') {
-    return gainValue;
-  }
+    if (typeof gainValue === 'number') {
+      return gainValue;
+    }
 
-  return window.__softFocusAudioInstances?.at(-1)?.volume ?? 0;
-});
+    return window.__softFocusAudioInstances?.at(-1)?.volume ?? 0;
+  });
 
 test('welcome title is not focused on initial load', async ({ page }) => {
   await page.goto('/');
@@ -225,7 +231,9 @@ test('setup instruction controls stay within cards on iPhone 13 mini width', asy
   await openSoftFocus(page);
   await page.getByRole('button', { name: 'Start Breathing reset' }).click();
 
-  const breathingPreset = page.locator('.setup-shell label', { hasText: 'Breathing preset' }).locator('select');
+  const breathingPreset = page
+    .locator('.setup-shell label', { hasText: 'Breathing preset' })
+    .locator('select');
   await expect(breathingPreset).toBeVisible();
 
   const metrics = await breathingPreset.evaluate((element) => {
@@ -278,7 +286,9 @@ test('preferences panel is scrollable after opening on iPhone 13 mini width', as
   await expect.poll(() => panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 });
 
-test('setup ambient music volume input is applied to the MP3 when practice starts', async ({ page }) => {
+test('setup ambient music volume input is applied to the MP3 when practice starts', async ({
+  page,
+}) => {
   await installAudioStub(page);
   await openSoftFocus(page);
   await page.getByRole('button', { name: 'Start Breathing reset' }).click();
@@ -293,14 +303,20 @@ test('setup ambient music volume input is applied to the MP3 when practice start
     game.sessionStore.setAmbientAudioVolume(80);
   });
 
-  const setupAmbientVolume = page.locator('.setup-shell label:has-text("Ambient music volume") input[type="range"]');
+  const setupAmbientVolume = page.locator(
+    '.setup-shell label:has-text("Ambient music volume") input[type="range"]',
+  );
   await expect(setupAmbientVolume).toBeVisible();
   await setupAmbientVolume.evaluate((element) => {
     const input = element as HTMLInputElement;
     input.value = '20';
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(80);
+  expect(
+    await page.evaluate(
+      () => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume,
+    ),
+  ).toBe(80);
 
   await page.getByRole('button', { name: 'Start practice' }).click();
   await page.waitForFunction(() => {
@@ -309,8 +325,13 @@ test('setup ambient music volume input is applied to the MP3 when practice start
     return Boolean(audio && audio.playCalls > 0);
   });
 
-  expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(20);
-  await expect.poll(() => page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 1))
+  expect(
+    await page.evaluate(
+      () => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume,
+    ),
+  ).toBe(20);
+  await expect
+    .poll(() => page.evaluate(() => window.__softFocusAudioInstances?.at(-1)?.volume ?? 1))
     .toBeLessThan(0.4);
 });
 
@@ -346,12 +367,20 @@ test('ambient volume slider updates playing audio during input before change', a
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 
-  await expect.poll(() => getLatestAmbientOutputVolume(page))
-    .toBeLessThan(initialVolume);
-  expect(await page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume)).toBe(80);
+  await expect.poll(() => getLatestAmbientOutputVolume(page)).toBeLessThan(initialVolume);
+  expect(
+    await page.evaluate(
+      () => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume,
+    ),
+  ).toBe(80);
 
   await ambientVolume.dispatchEvent('change');
-  await expect.poll(() => page.evaluate(() => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume))
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__softFocusGame?.sessionStore.getState().settings.ambientAudioVolume,
+      ),
+    )
     .toBe(20);
 });
 
@@ -378,17 +407,24 @@ test('theme restart preserves ambient audio without replaying the MP3', async ({
   await page.evaluate(() => {
     window.__softFocusGame?.sessionStore.setAmbientAudioVolume(20);
   });
-  await expect.poll(() => page.evaluate(() => window.__softFocusAudioInstances?.[0]?.volume ?? 1))
+  await expect
+    .poll(() => page.evaluate(() => window.__softFocusAudioInstances?.[0]?.volume ?? 1))
     .toBeLessThan(0.4);
 
   await page.evaluate(() => {
     window.dispatchEvent(new Event('soft-focus:themechange'));
   });
-  await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
+  await page.waitForFunction(
+    () => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice',
+  );
 
   expect(await page.evaluate(() => window.__softFocusAudioInstances?.length)).toBe(1);
   expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.playCalls)).toBe(1);
-  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.removedAttributes.includes('src'))).toBe(false);
+  expect(
+    await page.evaluate(() =>
+      window.__softFocusAudioInstances?.[0]?.removedAttributes.includes('src'),
+    ),
+  ).toBe(false);
   expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.loadCalls)).toBe(0);
 });
 
@@ -413,11 +449,17 @@ test('resize restart preserves ambient audio without replaying the MP3', async (
   });
 
   await page.setViewportSize({ width: 900, height: 720 });
-  await page.waitForFunction(() => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice');
+  await page.waitForFunction(
+    () => window.__softFocusGame?.sessionStore.getState().currentSession?.sceneKey === 'practice',
+  );
 
   expect(await page.evaluate(() => window.__softFocusAudioInstances?.length)).toBe(1);
   expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.playCalls)).toBe(1);
-  expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.removedAttributes.includes('src'))).toBe(false);
+  expect(
+    await page.evaluate(() =>
+      window.__softFocusAudioInstances?.[0]?.removedAttributes.includes('src'),
+    ),
+  ).toBe(false);
   expect(await page.evaluate(() => window.__softFocusAudioInstances?.[0]?.loadCalls)).toBe(0);
 });
 
@@ -431,34 +473,39 @@ const putGameIntoCompletion = async (
     outcome: 'completed' | 'stopped';
   },
 ): Promise<void> => {
-  await page.evaluate(async ({ exerciseId, outcome }) => {
-    const game = window.__softFocusGame;
+  await page.evaluate(
+    async ({ exerciseId, outcome }) => {
+      const game = window.__softFocusGame;
 
-    if (!game) {
-      throw new Error('Soft Focus game not available on window');
-    }
+      if (!game) {
+        throw new Error('Soft Focus game not available on window');
+      }
 
-    const store = game.sessionStore;
-    store.setSelectedExercise(exerciseId);
-    const practiceConfig = store.createPracticeConfig();
+      const store = game.sessionStore;
+      store.setSelectedExercise(exerciseId);
+      const practiceConfig = store.createPracticeConfig();
 
-    store.updateCurrentScene('instructions');
-    store.updateCurrentScene('practice');
-    store.startPractice(practiceConfig);
+      store.updateCurrentScene('instructions');
+      store.updateCurrentScene('practice');
+      store.startPractice(practiceConfig);
 
-    if (outcome === 'stopped') {
-      store.stopPractice();
-    }
+      if (outcome === 'stopped') {
+        store.stopPractice();
+      }
 
-    store.completeSession('2026-04-23T10:00:00.000Z');
-    store.clearPractice();
-    await game.ensureSceneRegistered('completion');
-    store.updateCurrentScene('completion');
-    game.scene.start('completion', { outcome });
-  }, { exerciseId, outcome });
+      store.completeSession('2026-04-23T10:00:00.000Z');
+      store.clearPractice();
+      await game.ensureSceneRegistered('completion');
+      store.updateCurrentScene('completion');
+      game.scene.start('completion', { outcome });
+    },
+    { exerciseId, outcome },
+  );
 };
 
-test('preferences panel persists safety and breathing settings across reloads', async ({ page }) => {
+test('preferences panel persists safety and breathing settings across reloads', async ({
+  page,
+}) => {
   await openSoftFocus(page);
 
   await page.evaluate(() => {
@@ -475,9 +522,18 @@ test('preferences panel persists safety and breathing settings across reloads', 
 
   await page.getByRole('button', { name: 'Preferences' }).click();
 
-  const lowIntensity = page.locator('.preferences-shell__toggle').filter({ hasText: 'Low intensity' }).locator('input[type="checkbox"]');
-  const reducedMotion = page.locator('.preferences-shell__toggle').filter({ hasText: 'Reduced motion' }).locator('input[type="checkbox"]');
-  const gazeGuidance = page.locator('.preferences-shell__toggle').filter({ hasText: 'Gaze guidance' }).locator('input[type="checkbox"]');
+  const lowIntensity = page
+    .locator('.preferences-shell__toggle')
+    .filter({ hasText: 'Low intensity' })
+    .locator('input[type="checkbox"]');
+  const reducedMotion = page
+    .locator('.preferences-shell__toggle')
+    .filter({ hasText: 'Reduced motion' })
+    .locator('input[type="checkbox"]');
+  const gazeGuidance = page
+    .locator('.preferences-shell__toggle')
+    .filter({ hasText: 'Gaze guidance' })
+    .locator('input[type="checkbox"]');
   const breathingPreset = page.getByLabel('Breathing preset');
 
   await expect(gazeGuidance).toBeDisabled();
@@ -489,9 +545,9 @@ test('preferences panel persists safety and breathing settings across reloads', 
     const settings = window.__softFocusGame?.sessionStore.getState().settings;
 
     return Boolean(
-      settings?.lowIntensityMode
-      && settings.reducedMotionEnabled
-      && settings.breathingPresetId === 'cyclic-sighing-2-1-6',
+      settings?.lowIntensityMode &&
+        settings.reducedMotionEnabled &&
+        settings.breathingPresetId === 'cyclic-sighing-2-1-6',
     );
   });
 
@@ -523,15 +579,18 @@ test('reflection panel saves a note and restarts a direct-practice exercise', as
     const game = window.__softFocusGame;
 
     return Boolean(
-      game
-      && game.sessionStore.getState().currentSession?.sceneKey === 'instructions'
-      && game.sessionStore.getLatestSessionSummary()?.reflection === 'softer breath and clear shoulders'
-      && game.scene.isActive('instructions') === true,
+      game &&
+        game.sessionStore.getState().currentSession?.sceneKey === 'instructions' &&
+        game.sessionStore.getLatestSessionSummary()?.reflection ===
+          'softer breath and clear shoulders' &&
+        game.scene.isActive('instructions') === true,
     );
   });
 });
 
-test('completion panel can skip reflection and return to the exercise library', async ({ page }) => {
+test('completion panel can skip reflection and return to the exercise library', async ({
+  page,
+}) => {
   await openSoftFocus(page);
   await putGameIntoCompletion(page, { exerciseId: 'moving-ball', outcome: 'stopped' });
 
@@ -545,10 +604,10 @@ test('completion panel can skip reflection and return to the exercise library', 
     const game = window.__softFocusGame;
 
     return Boolean(
-      game
-      && game.sessionStore.getState().currentSession === null
-      && game.sessionStore.getState().selectedExercise === 'moving-ball'
-      && game.scene.isActive('exercise-selection') === true,
+      game &&
+        game.sessionStore.getState().currentSession === null &&
+        game.sessionStore.getState().selectedExercise === 'moving-ball' &&
+        game.scene.isActive('exercise-selection') === true,
     );
   });
 });

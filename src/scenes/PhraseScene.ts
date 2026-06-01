@@ -5,14 +5,18 @@ import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
 import { sceneKeys } from '../game/sceneKeys';
 import { exerciseRequiresPhrase, getExerciseStartScene } from '../practice/exercises';
+import { isValidPhrase, normalizePhrase, phraseMinLength } from '../state/types';
 import { createBackButton } from '../ui/components/BackButton';
 import { createCard } from '../ui/components/Card';
-import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
+import {
+  createPrimaryButton,
+  getPrimaryButtonSize,
+  setPrimaryButtonEnabled,
+} from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
 import { withTextResolution } from '../ui/textResolution';
 import { uiTheme } from '../ui/theme';
-import { isValidPhrase, normalizePhrase, phraseMinLength } from '../state/types';
 
 const getHelperCopy = (phrase: string): string => {
   if (isValidPhrase(phrase)) {
@@ -46,7 +50,7 @@ export class PhraseScene extends Phaser.Scene {
       width: this.scale.width,
       height: this.scale.height,
     });
-    const contentCenterX = frame.contentX + (frame.contentWidth / 2);
+    const contentCenterX = frame.contentX + frame.contentWidth / 2;
     const cardWidth = clampContentWidth(frame.contentWidth);
     const savedPhrase = sessionStore.getState().phrase;
     let draftPhrase = savedPhrase;
@@ -71,9 +75,9 @@ export class PhraseScene extends Phaser.Scene {
     });
 
     const { height: buttonHeight } = getPrimaryButtonSize(cardWidth);
-    const buttonY = frame.height - uiTheme.spacing.xl - (buttonHeight / 2);
+    const buttonY = frame.height - uiTheme.spacing.xl - buttonHeight / 2;
     const cardTop = title.y + title.height + uiTheme.spacing.lg;
-    const cardBottom = buttonY - (buttonHeight / 2) - uiTheme.spacing.lg;
+    const cardBottom = buttonY - buttonHeight / 2 - uiTheme.spacing.lg;
     const cardHeight = Math.max(260, cardBottom - cardTop);
 
     const card = createCard(this, {
@@ -84,45 +88,65 @@ export class PhraseScene extends Phaser.Scene {
       alpha: 0.7,
     });
 
-    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, 'Choose a phrase that feels steady, simple, and easy to pair with a natural breath.', withTextResolution({
-      color: uiTheme.colors.text,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: `${uiTheme.typography.bodySize}px`,
-      align: 'center',
-      wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-      lineSpacing: uiTheme.typography.bodyLineHeight - uiTheme.typography.bodySize,
-    }));
+    const intro = this.add.text(
+      card.x,
+      card.y + uiTheme.spacing.lg,
+      'Choose a phrase that feels steady, simple, and easy to pair with a natural breath.',
+      withTextResolution({
+        color: uiTheme.colors.text,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: `${uiTheme.typography.bodySize}px`,
+        align: 'center',
+        wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+        lineSpacing: uiTheme.typography.bodyLineHeight - uiTheme.typography.bodySize,
+      }),
+    );
     intro.setOrigin(0.5, 0);
 
-    const label = this.add.text(card.x - ((cardWidth - (uiTheme.spacing.xl * 2)) / 2), intro.y + intro.height + uiTheme.spacing.lg, 'Phrase', withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
-      fontStyle: '600',
-    }));
+    const label = this.add.text(
+      card.x - (cardWidth - uiTheme.spacing.xl * 2) / 2,
+      intro.y + intro.height + uiTheme.spacing.lg,
+      'Phrase',
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '14px',
+        fontStyle: '600',
+      }),
+    );
     label.setOrigin(0, 0);
 
     const inputHeight = 56;
-    const inputWidth = cardWidth - (uiTheme.spacing.xl * 2);
-    const inputLeft = contentCenterX - (inputWidth / 2);
+    const inputWidth = cardWidth - uiTheme.spacing.xl * 2;
+    const inputLeft = contentCenterX - inputWidth / 2;
     const inputTop = label.y + label.height + uiTheme.spacing.sm;
 
-    const helper = this.add.text(card.x, inputTop + inputHeight + uiTheme.spacing.sm, getHelperCopy(draftPhrase), withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
-      align: 'center',
-      wordWrap: { width: inputWidth, useAdvancedWrap: true },
-    }));
+    const helper = this.add.text(
+      card.x,
+      inputTop + inputHeight + uiTheme.spacing.sm,
+      getHelperCopy(draftPhrase),
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '14px',
+        align: 'center',
+        wordWrap: { width: inputWidth, useAdvancedWrap: true },
+      }),
+    );
     helper.setOrigin(0.5, 0);
 
-    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.', withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
-      align: 'center',
-      wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    }));
+    const note = this.add.text(
+      card.x,
+      card.y + card.height - uiTheme.spacing.lg,
+      'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.',
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '14px',
+        align: 'center',
+        wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+      }),
+    );
     note.setOrigin(0.5, 1);
 
     const continueWithPhrase = (): void => {
@@ -155,7 +179,9 @@ export class PhraseScene extends Phaser.Scene {
     const parent = this.game.canvas.parentElement;
 
     if (!parent) {
-      throw new Error('Expected the Phaser canvas to have a parent element for the phrase overlay.');
+      throw new Error(
+        'Expected the Phaser canvas to have a parent element for the phrase overlay.',
+      );
     }
 
     const overlay = createPhraseOverlay({
@@ -180,8 +206,8 @@ export class PhraseScene extends Phaser.Scene {
       const scaleY = canvasRect.height / this.scale.height;
 
       overlay.updateLayout({
-        left: (canvasRect.left - parentRect.left) + (inputLeft * scaleX),
-        top: (canvasRect.top - parentRect.top) + (inputTop * scaleY),
+        left: canvasRect.left - parentRect.left + inputLeft * scaleX,
+        top: canvasRect.top - parentRect.top + inputTop * scaleY,
         width: inputWidth * scaleX,
         height: inputHeight * scaleY,
       });

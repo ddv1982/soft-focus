@@ -27,7 +27,10 @@ const runImmediateCompleteAmbientHandoffScenario = (): void => {
   });
 
   assert(handled, 'expected complete snapshot to be handled immediately');
-  assert(calls.join('>') === 'dispose:0>finish', 'expected handed-off ambient audio disposal before immediate completion');
+  assert(
+    calls.join('>') === 'dispose:0>finish',
+    'expected handed-off ambient audio disposal before immediate completion',
+  );
 };
 
 const runImmediateCompleteThrowingDisposeScenario = (): void => {
@@ -56,7 +59,10 @@ const runImmediateCompleteThrowingDisposeScenario = (): void => {
   }
 
   assert(disposeError?.message === 'dispose failed', 'expected disposal failure to be surfaced');
-  assert(calls.join('>') === 'dispose>finish', 'expected completion to run even when handed-off audio disposal fails');
+  assert(
+    calls.join('>') === 'dispose>finish',
+    'expected completion to run even when handed-off audio disposal fails',
+  );
 };
 
 const runIncompletePracticeScenario = (): void => {
@@ -93,7 +99,10 @@ const runImmediateCompleteWithoutHandoffScenario = (): void => {
   });
 
   assert(handled, 'expected complete snapshot without handoff to be handled immediately');
-  assert(calls.join('>') === 'finish', 'expected immediate completion without a handoff to finish normally');
+  assert(
+    calls.join('>') === 'finish',
+    'expected immediate completion without a handoff to finish normally',
+  );
 };
 
 const completeSnapshot: PracticeRunnerSnapshot = {

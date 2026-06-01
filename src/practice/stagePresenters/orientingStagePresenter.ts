@@ -15,12 +15,7 @@ interface CreateOrientingStagePresenterOptions {
   reducedMotion: PracticeReducedMotionPolicy;
 }
 
-const prompts = [
-  'Near left',
-  'Center',
-  'Near right',
-  'Wider space',
-] as const;
+const prompts = ['Near left', 'Center', 'Near right', 'Wider space'] as const;
 
 export const createOrientingStagePresenter = ({
   scene,
@@ -37,7 +32,8 @@ export const createOrientingStagePresenter = ({
 
   const guide = scene.add.rectangle(x, y, width, 2, border, 0.16).setOrigin(0.5);
   const anchor = scene.add.circle(x - span, y, lowIntensity ? 16 : 18, accent, 0.92);
-  const focusHalo = scene.add.circle(x - span, y, (lowIntensity ? 34 : 40) * reducedMotion.amplitudeScale, accent, 0.08)
+  const focusHalo = scene.add
+    .circle(x - span, y, (lowIntensity ? 34 : 40) * reducedMotion.amplitudeScale, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.28 : 0.36);
 
   const promptText = createDomText(scene, x, y + 56, prompts[0], {
@@ -60,13 +56,8 @@ export const createOrientingStagePresenter = ({
     paused: true,
     onRepeat: () => {
       stepIndex = (stepIndex + 1) % prompts.length;
-      const targetX = stepIndex === 0
-        ? x - span
-        : stepIndex === 1
-          ? x
-          : stepIndex === 2
-            ? x + span
-            : x;
+      const targetX =
+        stepIndex === 0 ? x - span : stepIndex === 1 ? x : stepIndex === 2 ? x + span : x;
       const haloScale = stepIndex === 3 ? 1.4 * reducedMotion.amplitudeScale : 1;
 
       scene.tweens.killTweensOf([anchor, focusHalo]);

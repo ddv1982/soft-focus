@@ -1,8 +1,4 @@
-import {
-  ambientAudioPresetIds,
-  type AmbientAudioPresetId,
-  type ExerciseId,
-} from '../state/types';
+import { type AmbientAudioPresetId, ambientAudioPresetIds, type ExerciseId } from '../state/types';
 
 export interface AmbientAudioSettings {
   enabled: boolean;
@@ -12,7 +8,12 @@ export interface AmbientAudioSettings {
 
 export type AmbientEnergyLevel = 'very-low' | 'low' | 'moderate';
 
-export type AmbientModeName = 'ionian' | 'lydian' | 'mixolydian' | 'major-pentatonic' | 'minor-pentatonic';
+export type AmbientModeName =
+  | 'ionian'
+  | 'lydian'
+  | 'mixolydian'
+  | 'major-pentatonic'
+  | 'minor-pentatonic';
 
 export type AmbientLayerKind = 'drone' | 'pad' | 'air' | 'field' | 'bell' | 'bowl' | 'kalimba';
 
@@ -90,19 +91,37 @@ export interface AmbientAudioElement {
   load: () => void;
 }
 
-export type AmbientAudioParam = Pick<AudioParam, 'value' | 'setTargetAtTime' | 'setValueAtTime' | 'cancelScheduledValues'>;
+export type AmbientAudioParam = Pick<
+  AudioParam,
+  'value' | 'setTargetAtTime' | 'setValueAtTime' | 'cancelScheduledValues'
+>;
 
 export type AmbientGainNode = Pick<GainNode, 'gain' | 'connect' | 'disconnect'>;
 
-export type AmbientMediaElementAudioSourceNode = Pick<MediaElementAudioSourceNode, 'connect' | 'disconnect'>;
+export type AmbientMediaElementAudioSourceNode = Pick<
+  MediaElementAudioSourceNode,
+  'connect' | 'disconnect'
+>;
 
-export type AmbientAudioContext = Pick<AudioContext, 'currentTime' | 'destination' | 'state' | 'createGain' | 'createMediaElementSource' | 'resume' | 'close'>;
+export type AmbientAudioContext = Pick<
+  AudioContext,
+  | 'currentTime'
+  | 'destination'
+  | 'state'
+  | 'createGain'
+  | 'createMediaElementSource'
+  | 'resume'
+  | 'close'
+>;
 
 interface WebKitAudioGlobal {
   webkitAudioContext?: typeof AudioContext;
 }
 
-type AudioOutputConnectionResult = 'web-audio-connected' | 'direct-fallback-safe' | 'fresh-audio-required';
+type AudioOutputConnectionResult =
+  | 'web-audio-connected'
+  | 'direct-fallback-safe'
+  | 'fresh-audio-required';
 
 export interface AmbientPlaybackErrorContext {
   action: 'start' | 'resume' | 'natural-track-advance' | 'track-error-skip';
@@ -130,17 +149,25 @@ export class AmbientAudioUnavailableError extends Error {
   readonly reason: 'empty-playlist' | 'audio-unavailable';
 
   constructor(reason: 'empty-playlist' | 'audio-unavailable') {
-    super(reason === 'empty-playlist'
-      ? 'Ambient music is enabled, but no bundled ambient audio tracks are available.'
-      : 'Ambient music is enabled, but this runtime does not provide a browser audio element.');
+    super(
+      reason === 'empty-playlist'
+        ? 'Ambient music is enabled, but no bundled ambient audio tracks are available.'
+        : 'Ambient music is enabled, but this runtime does not provide a browser audio element.',
+    );
     this.name = 'AmbientAudioUnavailableError';
     this.reason = reason;
   }
 }
 
 const supportedAmbientTrackModules: Record<string, string> = {
-  '../assets/audio/ambient/ambient-1.mp3': new URL('../assets/audio/ambient/ambient-1.mp3', import.meta.url).href,
-  '../assets/audio/ambient/ambient-2.mp3': new URL('../assets/audio/ambient/ambient-2.mp3', import.meta.url).href,
+  '../assets/audio/ambient/ambient-1.mp3': new URL(
+    '../assets/audio/ambient/ambient-1.mp3',
+    import.meta.url,
+  ).href,
+  '../assets/audio/ambient/ambient-2.mp3': new URL(
+    '../assets/audio/ambient/ambient-2.mp3',
+    import.meta.url,
+  ).href,
 };
 
 const trackNameCollator = new Intl.Collator(undefined, {
@@ -150,12 +177,17 @@ const trackNameCollator = new Intl.Collator(undefined, {
 
 const formatTrackTitle = (path: string): string => {
   const filename = path.split('/').pop() ?? path;
-  const name = filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+  const name = filename
+    .replace(/\.[^.]+$/, '')
+    .replace(/[-_]+/g, ' ')
+    .trim();
 
   return name.length > 0 ? name.replace(/\b\w/g, (letter) => letter.toUpperCase()) : filename;
 };
 
-export const ambientAudioTracks: readonly AmbientAudioTrack[] = Object.entries(supportedAmbientTrackModules)
+export const ambientAudioTracks: readonly AmbientAudioTrack[] = Object.entries(
+  supportedAmbientTrackModules,
+)
   .sort(([left], [right]) => trackNameCollator.compare(left, right))
   .map(([path, url]) => ({
     title: formatTrackTitle(path),
@@ -176,16 +208,33 @@ const allExercises: readonly ExerciseId[] = [
 ];
 
 const playlistLayers: readonly AmbientLayerRecipe[] = [
-  { kind: 'drone', role: 'Recorded foundation', texture: 'Full-length mastered ambient bed from the local playlist', density: 'continuous' },
-  { kind: 'pad', role: 'Recorded harmonic movement', texture: 'Sustained musical pads and evolving production from the source tracks', density: 'continuous' },
-  { kind: 'bowl', role: 'Recorded spatial detail', texture: 'Soft mastered depth and transitions within each song file', density: 'slow' },
+  {
+    kind: 'drone',
+    role: 'Recorded foundation',
+    texture: 'Full-length mastered ambient bed from the local playlist',
+    density: 'continuous',
+  },
+  {
+    kind: 'pad',
+    role: 'Recorded harmonic movement',
+    texture: 'Sustained musical pads and evolving production from the source tracks',
+    density: 'continuous',
+  },
+  {
+    kind: 'bowl',
+    role: 'Recorded spatial detail',
+    texture: 'Soft mastered depth and transitions within each song file',
+    density: 'slow',
+  },
 ];
 
 const playlistSoundDesign: AmbientSoundDesignMetadata = {
-  scaleFocus: 'Recorded ambient songs supply the musical material; app playback preserves the mastered source files.',
+  scaleFocus:
+    'Recorded ambient songs supply the musical material; app playback preserves the mastered source files.',
   tuningSystem: 'Determined by the uploaded songs instead of in-browser synthesis.',
   dynamicShape: 'User volume scaling plus an exercise-ending five-second fade-out.',
-  modulation: 'No generated modulation; tracks play in filename order and loop as a playlist for long sessions.',
+  modulation:
+    'No generated modulation; tracks play in filename order and loop as a playlist for long sessions.',
   impulseVoice: 'Recorded song details replace synthesized impulses or motifs.',
 };
 
@@ -203,11 +252,16 @@ const makePlaylistPreset = ({
   id,
   title,
   summary,
-  description: 'Plays the uploaded ambient song playlist in order, then loops through every available track if the exercise lasts longer than the playlist.',
+  description:
+    'Plays the uploaded ambient song playlist in order, then loops through every available track if the exercise lasts longer than the playlist.',
   musicTheory: {
     tonalCenter: 'Recorded playlist',
     mode: 'major-pentatonic',
-    harmonicPalette: ['Recorded ambient song 1', 'Recorded ambient song 2', 'Additional uploaded ambient songs'],
+    harmonicPalette: [
+      'Recorded ambient song 1',
+      'Recorded ambient song 2',
+      'Additional uploaded ambient songs',
+    ],
     harmonicRhythm: 'Determined by the mastered tracks; the app sequences songs in filename order.',
     rhythmFeel: 'Sustained recorded ambience with no generated pulse from the app.',
   },
@@ -234,30 +288,40 @@ export const ambientCompositionPresets: Record<AmbientAudioPresetId, AmbientComp
   [ambientAudioPresetIds.emberDrift]: makePlaylistPreset({
     id: ambientAudioPresetIds.emberDrift,
     title: 'Ambient Playlist · Warm',
-    summary: 'Uses the same uploaded songs with a warm practice-fit label for breathing and bilateral rounds.',
+    summary:
+      'Uses the same uploaded songs with a warm practice-fit label for breathing and bilateral rounds.',
     recommendedExercises: ['breathing-reset', 'bilateral-rhythm', 'phrase-anchor'],
   }),
   [ambientAudioPresetIds.clearBells]: makePlaylistPreset({
     id: ambientAudioPresetIds.clearBells,
     title: 'Ambient Playlist · Clear',
-    summary: 'Uses the same uploaded songs with a clear practice-fit label for moving and orienting rounds.',
+    summary:
+      'Uses the same uploaded songs with a clear practice-fit label for moving and orienting rounds.',
     recommendedExercises: ['moving-ball', 'orienting'],
   }),
 };
 
 allExercises.forEach((exerciseId) => {
-  if (!Object.values(ambientCompositionPresets).some(({ practiceFit }) => practiceFit.recommendedExercises.includes(exerciseId))) {
+  if (
+    !Object.values(ambientCompositionPresets).some(({ practiceFit }) =>
+      practiceFit.recommendedExercises.includes(exerciseId),
+    )
+  ) {
     throw new Error(`Ambient playlist metadata must include ${exerciseId}.`);
   }
 });
 
-export const getAmbientCompositionPreset = (presetId: AmbientAudioPresetId): AmbientCompositionPreset => ambientCompositionPresets[presetId];
+export const getAmbientCompositionPreset = (
+  presetId: AmbientAudioPresetId,
+): AmbientCompositionPreset => ambientCompositionPresets[presetId];
 
 const normalizeVolume = (volume: number): number => Math.min(1, Math.max(0, volume / 100));
 
-const resolveOutputVolume = (volume: number): number => Math.pow(normalizeVolume(volume), 1.45) * 0.92;
+const resolveOutputVolume = (volume: number): number =>
+  Math.pow(normalizeVolume(volume), 1.45) * 0.92;
 
-const clampFadeMultiplier = (secondsRemaining: number): number => Math.min(1, Math.max(0, secondsRemaining / playlistRender.fadeOutLeadSeconds));
+const clampFadeMultiplier = (secondsRemaining: number): number =>
+  Math.min(1, Math.max(0, secondsRemaining / playlistRender.fadeOutLeadSeconds));
 
 const getDefaultAudioFactory = (): AmbientAudioElement | null => {
   if (typeof Audio === 'undefined') {
@@ -268,7 +332,9 @@ const getDefaultAudioFactory = (): AmbientAudioElement | null => {
 };
 
 const getDefaultAudioContextFactory = (): AmbientAudioContext | null => {
-  const AudioContextConstructor = globalThis.AudioContext ?? (globalThis as typeof globalThis & WebKitAudioGlobal).webkitAudioContext;
+  const AudioContextConstructor =
+    globalThis.AudioContext ??
+    (globalThis as typeof globalThis & WebKitAudioGlobal).webkitAudioContext;
 
   if (!AudioContextConstructor) {
     return null;
@@ -314,10 +380,11 @@ const closeAudioContextSafely = (audioContext: AmbientAudioContext | null): void
 
 const getNow = (): number => globalThis.performance?.now() ?? Date.now();
 
-export const getPracticeDurationSeconds = ({ phases }: { phases: readonly { seconds: number }[] }): number => phases.reduce(
-  (totalSeconds, phase) => totalSeconds + Math.max(0, phase.seconds),
-  0,
-);
+export const getPracticeDurationSeconds = ({
+  phases,
+}: {
+  phases: readonly { seconds: number }[];
+}): number => phases.reduce((totalSeconds, phase) => totalSeconds + Math.max(0, phase.seconds), 0);
 
 export class AmbientAudioEngine {
   private audio: AmbientAudioElement | null = null;
@@ -431,7 +498,9 @@ export class AmbientAudioEngine {
     this.disposeAudioOutput();
   }
 
-  setPlaybackErrorHandler(handler: (error: unknown, context: AmbientPlaybackErrorContext) => void): void {
+  setPlaybackErrorHandler(
+    handler: (error: unknown, context: AmbientPlaybackErrorContext) => void,
+  ): void {
     this.onPlaybackError = handler;
   }
 
@@ -459,11 +528,7 @@ export class AmbientAudioEngine {
     this.applyVolume();
   }
 
-  syncExerciseClock({
-    totalSecondsRemaining,
-  }: {
-    totalSecondsRemaining: number;
-  }): void {
+  syncExerciseClock({ totalSecondsRemaining }: { totalSecondsRemaining: number }): void {
     if (!Number.isFinite(totalSecondsRemaining)) {
       return;
     }
@@ -627,7 +692,9 @@ export class AmbientAudioEngine {
     this.disposeAudioOutput();
   }
 
-  private getPlaybackErrorContext(action: AmbientPlaybackErrorContext['action']): AmbientPlaybackErrorContext {
+  private getPlaybackErrorContext(
+    action: AmbientPlaybackErrorContext['action'],
+  ): AmbientPlaybackErrorContext {
     return {
       action,
       trackIndex: this.trackIndex,
@@ -640,7 +707,12 @@ export class AmbientAudioEngine {
       return;
     }
 
-    this.setOutputVolume(Math.min(1, Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier)));
+    this.setOutputVolume(
+      Math.min(
+        1,
+        Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier),
+      ),
+    );
   }
 
   private connectAudioOutput(audio: AmbientAudioElement): AudioOutputConnectionResult {
@@ -670,7 +742,10 @@ export class AmbientAudioEngine {
       gainNode = audioContext.createGain();
       source.connect(gainNode as unknown as AudioNode);
       gainNode.connect(audioContext.destination);
-      const outputVolume = Math.min(1, Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier));
+      const outputVolume = Math.min(
+        1,
+        Math.max(0, resolveOutputVolume(this.currentSettings.volume) * this.fadeMultiplier),
+      );
       gainNode.gain.cancelScheduledValues?.(audioContext.currentTime);
       gainNode.gain.value = outputVolume;
       this.audioContext = audioContext;
@@ -697,7 +772,10 @@ export class AmbientAudioEngine {
     return undefined;
   }
 
-  private setOutputVolume(volume: number, { immediate = false }: { immediate?: boolean } = {}): void {
+  private setOutputVolume(
+    volume: number,
+    { immediate = false }: { immediate?: boolean } = {},
+  ): void {
     if (!this.audio) {
       return;
     }
@@ -718,7 +796,9 @@ export class AmbientAudioEngine {
     setGainValue(this.gainNode.gain, volume, this.audioContext.currentTime);
   }
 
-  private disconnectAudioNodeSafely(node: AmbientMediaElementAudioSourceNode | AmbientGainNode | null): void {
+  private disconnectAudioNodeSafely(
+    node: AmbientMediaElementAudioSourceNode | AmbientGainNode | null,
+  ): void {
     try {
       node?.disconnect?.();
     } catch {
@@ -743,7 +823,7 @@ export class AmbientAudioEngine {
     this.stopFadeTimer = globalThis.setInterval(() => {
       const elapsed = getNow() - startTime;
       const progress = Math.min(1, elapsed / Math.max(1, durationMs));
-      this.fadeMultiplier = startMultiplier + ((targetMultiplier - startMultiplier) * progress);
+      this.fadeMultiplier = startMultiplier + (targetMultiplier - startMultiplier) * progress;
       this.applyVolume();
 
       if (progress >= 1) {

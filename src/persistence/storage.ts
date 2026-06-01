@@ -28,7 +28,11 @@ export const readStorageItem = (storage: StorageLike | null, key: string): strin
   }
 };
 
-export const writeStorageItem = (storage: StorageLike | null, key: string, value: string): boolean => {
+export const writeStorageItem = (
+  storage: StorageLike | null,
+  key: string,
+  value: string,
+): boolean => {
   if (!storage) {
     return false;
   }

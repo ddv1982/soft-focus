@@ -16,9 +16,8 @@ export const createCard = (
   scene: Phaser.Scene,
   options: CardOptions,
 ): Phaser.GameObjects.Rectangle => {
-  const width = options.clampWidth === false
-    ? (options.width ?? 320)
-    : clampContentWidth(options.width ?? 320);
+  const width =
+    options.clampWidth === false ? (options.width ?? 320) : clampContentWidth(options.width ?? 320);
   const shadow = scene.add.rectangle(
     options.x,
     options.y + 18,

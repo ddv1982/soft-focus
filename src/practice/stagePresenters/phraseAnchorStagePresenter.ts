@@ -51,11 +51,13 @@ export const createPhraseAnchorStagePresenter = ({
   });
   title.setOrigin(0.5);
 
-  const halo = scene.add.circle(x, y, haloRadius, accent, lowIntensity ? 0.05 : 0.08)
+  const halo = scene.add
+    .circle(x, y, haloRadius, accent, lowIntensity ? 0.05 : 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.2 : 0.34);
   const innerGlow = scene.add.circle(x, y, haloRadius * 0.68, accent, lowIntensity ? 0.06 : 0.1);
 
-  const phrasePanel = scene.add.rectangle(x, y, phraseCardWidth, 72, accent, lowIntensity ? 0.06 : 0.08)
+  const phrasePanel = scene.add
+    .rectangle(x, y, phraseCardWidth, 72, accent, lowIntensity ? 0.06 : 0.08)
     .setOrigin(0.5)
     .setStrokeStyle(1, border, lowIntensity ? 0.14 : 0.2);
 
@@ -87,13 +89,19 @@ export const createPhraseAnchorStagePresenter = ({
   });
   breathLabel.setOrigin(0.5);
 
-  const returnLabel = createDomText(scene, x, y + haloRadius + 48, 'Feel the body, then return to the phrase.', {
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '13px',
-    align: 'center',
-    wordWrap: { width: readableWidth, useAdvancedWrap: true },
-  });
+  const returnLabel = createDomText(
+    scene,
+    x,
+    y + haloRadius + 48,
+    'Feel the body, then return to the phrase.',
+    {
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '13px',
+      align: 'center',
+      wordWrap: { width: readableWidth, useAdvancedWrap: true },
+    },
+  );
   returnLabel.setOrigin(0.5);
 
   let active = false;

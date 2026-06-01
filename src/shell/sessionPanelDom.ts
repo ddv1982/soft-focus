@@ -1,4 +1,5 @@
-export const supportCopy = 'If the tide feels too strong, stop and return to a steadier option. Seek local support if you need more help.';
+export const supportCopy =
+  'If the tide feels too strong, stop and return to a steadier option. Seek local support if you need more help.';
 
 export const formatDuration = (durationSeconds: number | null): string => {
   if (!durationSeconds || durationSeconds < 60) {

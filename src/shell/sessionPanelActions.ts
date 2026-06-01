@@ -1,6 +1,6 @@
-import type { ExerciseId } from '../state/types';
 import { getExerciseSessionEntryMode } from '../game/navigation';
-import { sceneKeys, type SceneKey } from '../game/sceneKeys';
+import { type SceneKey, sceneKeys } from '../game/sceneKeys';
+import type { ExerciseId } from '../state/types';
 
 const domSetupSceneKeys = new Set<SceneKey>([
   sceneKeys.entry,
@@ -36,7 +36,10 @@ export interface SessionPanelGameLike {
   ensureSceneRegistered?: (sceneKey: SceneKey) => Promise<void>;
 }
 
-const ensureManagedSceneRegistered = async (game: SessionPanelGameLike, sceneKey: SceneKey): Promise<void> => {
+const ensureManagedSceneRegistered = async (
+  game: SessionPanelGameLike,
+  sceneKey: SceneKey,
+): Promise<void> => {
   await game.ensureSceneRegistered?.(sceneKey);
 };
 
@@ -54,7 +57,10 @@ export const navigateToManagedScene = async (
   startManagedScene(game, sceneKey, data);
 };
 
-export const beginNextSessionFromScene = async (game: SessionPanelGameLike, sceneKey: SceneKey): Promise<void> => {
+export const beginNextSessionFromScene = async (
+  game: SessionPanelGameLike,
+  sceneKey: SceneKey,
+): Promise<void> => {
   const activeTransition = nextSessionTransitions.get(game);
 
   if (activeTransition) {
@@ -66,7 +72,11 @@ export const beginNextSessionFromScene = async (game: SessionPanelGameLike, scen
 
     game.sessionStore.prepareForNextSession();
 
-    if (domSetupSceneKeys.has(sceneKey) && typeof window !== 'undefined' && window.__softFocusShowSetupScene) {
+    if (
+      domSetupSceneKeys.has(sceneKey) &&
+      typeof window !== 'undefined' &&
+      window.__softFocusShowSetupScene
+    ) {
       window.__softFocusShowSetupScene(sceneKey);
       return;
     }
@@ -85,15 +95,16 @@ export const beginNextSessionFromScene = async (game: SessionPanelGameLike, scen
   }
 };
 
-export const continueToReflection = (game: SessionPanelGameLike): Promise<void> => (
-  navigateToManagedScene(game, sceneKeys.reflection)
-);
+export const continueToReflection = (game: SessionPanelGameLike): Promise<void> =>
+  navigateToManagedScene(game, sceneKeys.reflection);
 
-export const chooseAnotherExercise = (game: SessionPanelGameLike): Promise<void> => (
-  beginNextSessionFromScene(game, sceneKeys.exerciseSelection)
-);
+export const chooseAnotherExercise = (game: SessionPanelGameLike): Promise<void> =>
+  beginNextSessionFromScene(game, sceneKeys.exerciseSelection);
 
-export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection: string): Promise<void> => {
+export const saveReflectionAndRestart = (
+  game: SessionPanelGameLike,
+  reflection: string,
+): Promise<void> => {
   const activeTransition = nextSessionTransitions.get(game);
 
   if (activeTransition) {
@@ -101,12 +112,17 @@ export const saveReflectionAndRestart = (game: SessionPanelGameLike, reflection:
   }
 
   game.sessionStore.saveReflection(reflection);
-  const restartSceneKey = getExerciseSessionEntryMode(game.sessionStore.getState().selectedExercise).restartSceneKey;
+  const restartSceneKey = getExerciseSessionEntryMode(
+    game.sessionStore.getState().selectedExercise,
+  ).restartSceneKey;
 
   return beginNextSessionFromScene(game, restartSceneKey);
 };
 
-export const saveReflectionAndChooseAnotherExercise = (game: SessionPanelGameLike, reflection: string): Promise<void> => {
+export const saveReflectionAndChooseAnotherExercise = (
+  game: SessionPanelGameLike,
+  reflection: string,
+): Promise<void> => {
   const activeTransition = nextSessionTransitions.get(game);
 
   if (activeTransition) {

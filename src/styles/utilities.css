@@ -13,7 +13,10 @@
   }
 
   .wellness-reduced-motion {
-    transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+    transition:
+      transform 180ms ease,
+      opacity 180ms ease,
+      filter 180ms ease;
   }
 }
 
@@ -21,15 +24,20 @@
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion media query must override component animation styles globally. */
     scroll-behavior: auto !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion media query must override component animation styles globally. */
     animation-duration: 1ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion media query must override component animation styles globally. */
     animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion media query must override component animation styles globally. */
     transition-duration: 1ms !important;
   }
 
   .wellness-reduced-motion,
   .wellness-button,
   .app-shell__button {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion media query must override button transform styles globally. */
     transform: none !important;
   }
 }

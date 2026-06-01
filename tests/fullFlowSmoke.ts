@@ -1,21 +1,30 @@
 import {
+  getExerciseSessionEntryMode,
   getInstructionsBackScene,
   getNextSceneKey,
   getPreviousSceneKey,
-  getExerciseSessionEntryMode,
   guidedPracticeFlow,
 } from '../src/game/navigation.ts';
+import { initialSceneKey, sceneKeys } from '../src/game/sceneKeys.ts';
+import { reportOperatorError } from '../src/observability/operatorErrors.ts';
 import { createSessionRepository } from '../src/persistence/sessionRepository.ts';
-import { getExerciseStartScene } from '../src/practice/exercises.ts';
-import { ambientAudioPresetIds, ambientAudioPresetOrder, ambientAudioVolumeBounds, breathingPresetIds, customPracticeDurationBounds, exerciseIds, movingBallPresetIds, practiceDurationPresetIds, sessionEntryModeIds } from '../src/state/types.ts';
 import type { StorageLike } from '../src/persistence/storage.ts';
+import { getExerciseStartScene } from '../src/practice/exercises.ts';
 import { ambientAudioPresetCatalog } from '../src/practice/practiceConfig.ts';
 import { PracticeRunner } from '../src/practice/practiceRunner.ts';
 import { resolveMovingBallStagePresenterLayout } from '../src/practice/stagePresenters/movingBallStagePresenter.ts';
-import { initialSceneKey } from '../src/game/sceneKeys.ts';
-import { sceneKeys } from '../src/game/sceneKeys.ts';
-import { reportOperatorError } from '../src/observability/operatorErrors.ts';
 import { createSessionStore } from '../src/state/sessionStore.ts';
+import {
+  ambientAudioPresetIds,
+  ambientAudioPresetOrder,
+  ambientAudioVolumeBounds,
+  breathingPresetIds,
+  customPracticeDurationBounds,
+  exerciseIds,
+  movingBallPresetIds,
+  practiceDurationPresetIds,
+  sessionEntryModeIds,
+} from '../src/state/types.ts';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -40,16 +49,43 @@ class MemoryStorage implements StorageLike {
 }
 
 const assertSceneFlow = (): void => {
-  assert(guidedPracticeFlow[0] === initialSceneKey, 'expected the guided practice flow to begin at the initial scene');
+  assert(
+    guidedPracticeFlow[0] === initialSceneKey,
+    'expected the guided practice flow to begin at the initial scene',
+  );
   assert(getPreviousSceneKey(sceneKeys.entry) === null, 'expected entry to have no previous scene');
-  assert(getNextSceneKey(sceneKeys.entry) === sceneKeys.exerciseSelection, 'expected entry to navigate to exercise selection');
-  assert(getNextSceneKey(sceneKeys.exerciseSelection) === sceneKeys.phrase, 'expected exercise selection to navigate to phrase');
-  assert(getNextSceneKey(sceneKeys.phrase) === sceneKeys.instructions, 'expected phrase to navigate to instructions');
-  assert(getNextSceneKey(sceneKeys.instructions) === sceneKeys.practice, 'expected instructions to navigate to practice');
-  assert(getNextSceneKey(sceneKeys.practice) === sceneKeys.completion, 'expected practice to navigate to completion');
-  assert(getNextSceneKey(sceneKeys.completion) === sceneKeys.reflection, 'expected completion to navigate to reflection');
-  assert(getNextSceneKey(sceneKeys.reflection) === null, 'expected reflection to terminate the flow');
-  assert(getPreviousSceneKey(sceneKeys.reflection) === sceneKeys.completion, 'expected reflection to navigate back to completion');
+  assert(
+    getNextSceneKey(sceneKeys.entry) === sceneKeys.exerciseSelection,
+    'expected entry to navigate to exercise selection',
+  );
+  assert(
+    getNextSceneKey(sceneKeys.exerciseSelection) === sceneKeys.phrase,
+    'expected exercise selection to navigate to phrase',
+  );
+  assert(
+    getNextSceneKey(sceneKeys.phrase) === sceneKeys.instructions,
+    'expected phrase to navigate to instructions',
+  );
+  assert(
+    getNextSceneKey(sceneKeys.instructions) === sceneKeys.practice,
+    'expected instructions to navigate to practice',
+  );
+  assert(
+    getNextSceneKey(sceneKeys.practice) === sceneKeys.completion,
+    'expected practice to navigate to completion',
+  );
+  assert(
+    getNextSceneKey(sceneKeys.completion) === sceneKeys.reflection,
+    'expected completion to navigate to reflection',
+  );
+  assert(
+    getNextSceneKey(sceneKeys.reflection) === null,
+    'expected reflection to terminate the flow',
+  );
+  assert(
+    getPreviousSceneKey(sceneKeys.reflection) === sceneKeys.completion,
+    'expected reflection to navigate back to completion',
+  );
 };
 
 const runPracticeControlsScenario = (): void => {
@@ -70,42 +106,117 @@ const runPracticeControlsScenario = (): void => {
   store.updateCurrentScene(sceneKeys.practice);
 
   const practiceConfig = store.createPracticeConfig();
-  assert(practiceConfig.phrase === 'steady phrase', 'expected phrase normalization before practice begins');
-  assert(practiceConfig.lowIntensity.enabled === false, 'expected low-intensity toggle to feed practice config');
-  assert(practiceConfig.reducedMotion.enabled === true, 'expected reduced-motion toggle to feed practice config');
-  assert(practiceConfig.reducedMotion.label === 'Reduced motion', 'expected reduced-motion metadata to expose a user-facing label');
-  assert(practiceConfig.gazeGuidance.enabled === true, 'expected gaze guidance toggle to feed practice config');
-  assert(practiceConfig.duration.presetId === practiceDurationPresetIds.standard, 'expected default duration preset to preserve the standard practice length');
-  assert(practiceConfig.duration.practiceSeconds === 90, 'expected standard duration preset to preserve current practice seconds');
-  assert(practiceConfig.duration.customMinutes === customPracticeDurationBounds.defaultMinutes, 'expected default custom duration minutes to be available');
-  assert(practiceConfig.ambientAudio.enabled === true, 'expected ambient audio toggle to feed practice config');
-  assert(practiceConfig.ambientAudio.volume === 36, 'expected ambient audio volume to feed practice config');
-  assert(practiceConfig.ambientAudio.presetId === ambientAudioPresetIds.clearBells, 'expected ambient audio preset to feed practice config');
-  assert(practiceConfig.phases[1]?.seconds === 90, 'expected standard duration preset to feed the active practice phase');
-  assert(practiceConfig.stagePresenter.key === 'gaze-guidance', 'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled');
-  assert(practiceConfig.capabilities.auxiliaryControl.kind === 'toggle', 'expected phrase-anchor config to declare a toggle auxiliary control');
-  assert(practiceConfig.phases[1]?.label === 'Phrase practice', 'expected phrase-anchor config to expose phase metadata through the family contract');
-  assert(practiceConfig.phases[1]?.copy.includes('Repeat the phrase silently'), 'expected phrase-anchor active copy to keep the phrase as the primary anchor');
-  assert(practiceConfig.copy.expectationsTitle === 'What to expect in this maintenance round', 'expected maintenance instructions copy to be phase-aware');
-  assert(practiceConfig.copy.instructionsSubtitle.includes('Let breath stay natural'), 'expected phrase-anchor instructions to keep breath supportive rather than forced');
-  assert(practiceConfig.copy.reflectionPrompt.includes('notice, return, or soften'), 'expected maintenance reflection prompt to reinforce the anchor loop');
+  assert(
+    practiceConfig.phrase === 'steady phrase',
+    'expected phrase normalization before practice begins',
+  );
+  assert(
+    practiceConfig.lowIntensity.enabled === false,
+    'expected low-intensity toggle to feed practice config',
+  );
+  assert(
+    practiceConfig.reducedMotion.enabled === true,
+    'expected reduced-motion toggle to feed practice config',
+  );
+  assert(
+    practiceConfig.reducedMotion.label === 'Reduced motion',
+    'expected reduced-motion metadata to expose a user-facing label',
+  );
+  assert(
+    practiceConfig.gazeGuidance.enabled === true,
+    'expected gaze guidance toggle to feed practice config',
+  );
+  assert(
+    practiceConfig.duration.presetId === practiceDurationPresetIds.standard,
+    'expected default duration preset to preserve the standard practice length',
+  );
+  assert(
+    practiceConfig.duration.practiceSeconds === 90,
+    'expected standard duration preset to preserve current practice seconds',
+  );
+  assert(
+    practiceConfig.duration.customMinutes === customPracticeDurationBounds.defaultMinutes,
+    'expected default custom duration minutes to be available',
+  );
+  assert(
+    practiceConfig.ambientAudio.enabled === true,
+    'expected ambient audio toggle to feed practice config',
+  );
+  assert(
+    practiceConfig.ambientAudio.volume === 36,
+    'expected ambient audio volume to feed practice config',
+  );
+  assert(
+    practiceConfig.ambientAudio.presetId === ambientAudioPresetIds.clearBells,
+    'expected ambient audio preset to feed practice config',
+  );
+  assert(
+    practiceConfig.phases[1]?.seconds === 90,
+    'expected standard duration preset to feed the active practice phase',
+  );
+  assert(
+    practiceConfig.stagePresenter.key === 'gaze-guidance',
+    'expected phrase-anchor config to resolve the gaze-guidance presenter when enabled',
+  );
+  assert(
+    practiceConfig.capabilities.auxiliaryControl.kind === 'toggle',
+    'expected phrase-anchor config to declare a toggle auxiliary control',
+  );
+  assert(
+    practiceConfig.phases[1]?.label === 'Phrase practice',
+    'expected phrase-anchor config to expose phase metadata through the family contract',
+  );
+  assert(
+    practiceConfig.phases[1]?.copy.includes('Repeat the phrase silently'),
+    'expected phrase-anchor active copy to keep the phrase as the primary anchor',
+  );
+  assert(
+    practiceConfig.copy.expectationsTitle === 'What to expect in this maintenance round',
+    'expected maintenance instructions copy to be phase-aware',
+  );
+  assert(
+    practiceConfig.copy.instructionsSubtitle.includes('Let breath stay natural'),
+    'expected phrase-anchor instructions to keep breath supportive rather than forced',
+  );
+  assert(
+    practiceConfig.copy.reflectionPrompt.includes('notice, return, or soften'),
+    'expected maintenance reflection prompt to reinforce the anchor loop',
+  );
 
   const unguidedStore = createSessionStore();
   unguidedStore.setPhrase('  steady   phrase  ');
   unguidedStore.setSelectedExercise(exerciseIds.phraseAnchor);
   unguidedStore.setGazeGuidanceEnabled(false);
   const unguidedPracticeConfig = unguidedStore.createPracticeConfig();
-  assert(unguidedPracticeConfig.stagePresenter.key === 'phrase-anchor', 'expected phrase-anchor config to resolve default phrase-anchor presenter when gaze guidance is off');
-  assert(unguidedPracticeConfig.stagePresenter.phrase === 'steady phrase', 'expected default phrase-anchor presenter to receive the normalized phrase');
-  assert(unguidedPracticeConfig.phases[1]?.activatesStagePresenter === true, 'expected phrase-anchor practice phase to activate default presenter');
-  assert(unguidedPracticeConfig.phases[1]?.copy.includes('Acknowledge wandering'), 'expected unguided phrase-anchor copy to teach acknowledgement before returning');
+  assert(
+    unguidedPracticeConfig.stagePresenter.key === 'phrase-anchor',
+    'expected phrase-anchor config to resolve default phrase-anchor presenter when gaze guidance is off',
+  );
+  assert(
+    unguidedPracticeConfig.stagePresenter.phrase === 'steady phrase',
+    'expected default phrase-anchor presenter to receive the normalized phrase',
+  );
+  assert(
+    unguidedPracticeConfig.phases[1]?.activatesStagePresenter === true,
+    'expected phrase-anchor practice phase to activate default presenter',
+  );
+  assert(
+    unguidedPracticeConfig.phases[1]?.copy.includes('Acknowledge wandering'),
+    'expected unguided phrase-anchor copy to teach acknowledgement before returning',
+  );
 
   store.startPractice(practiceConfig);
-  let runner = new PracticeRunner(practiceConfig);
+  const runner = new PracticeRunner(practiceConfig);
   let snapshot = runner.getSnapshot();
-  const totalPracticeSeconds = practiceConfig.phases.reduce((totalSeconds, phase) => totalSeconds + phase.seconds, 0);
+  const totalPracticeSeconds = practiceConfig.phases.reduce(
+    (totalSeconds, phase) => totalSeconds + phase.seconds,
+    0,
+  );
   assert(snapshot.phase === 'settle', 'expected the practice flow to begin with settle');
-  assert(snapshot.totalSecondsRemaining === totalPracticeSeconds, 'expected the runner to expose whole-exercise remaining seconds at start');
+  assert(
+    snapshot.totalSecondsRemaining === totalPracticeSeconds,
+    'expected the runner to expose whole-exercise remaining seconds at start',
+  );
   assert(snapshot.paused === false, 'expected practice to start unpaused');
 
   snapshot = runner.pause();
@@ -117,19 +228,46 @@ const runPracticeControlsScenario = (): void => {
   assert(snapshot.paused === false, 'expected resume control to resume the runner');
 
   snapshot = runner.tick(20_000);
-  assert(snapshot.phase === 'phrase', 'expected runner to advance into the active phrase phase after settle');
-  assert(snapshot.secondsRemaining === 90, 'expected phase-local remaining seconds to reset at the phrase phase boundary');
-  assert(snapshot.totalSecondsRemaining === 110, 'expected total remaining seconds not to reset upward at the phrase phase boundary');
+  assert(
+    snapshot.phase === 'phrase',
+    'expected runner to advance into the active phrase phase after settle',
+  );
+  assert(
+    snapshot.secondsRemaining === 90,
+    'expected phase-local remaining seconds to reset at the phrase phase boundary',
+  );
+  assert(
+    snapshot.totalSecondsRemaining === 110,
+    'expected total remaining seconds not to reset upward at the phrase phase boundary',
+  );
 
   snapshot = runner.tick(85_000);
-  assert(snapshot.phase === 'phrase', 'expected runner to remain in phrase practice before the final phrase seconds complete');
-  assert(snapshot.secondsRemaining === 5, 'expected phase-local remaining seconds to reach the final phrase window');
-  assert(snapshot.totalSecondsRemaining === 25, 'expected total remaining seconds to include the later recovery phase');
+  assert(
+    snapshot.phase === 'phrase',
+    'expected runner to remain in phrase practice before the final phrase seconds complete',
+  );
+  assert(
+    snapshot.secondsRemaining === 5,
+    'expected phase-local remaining seconds to reach the final phrase window',
+  );
+  assert(
+    snapshot.totalSecondsRemaining === 25,
+    'expected total remaining seconds to include the later recovery phase',
+  );
 
   snapshot = runner.tick(5_000);
-  assert(snapshot.phase === 'recovery', 'expected runner to advance into recovery after phrase practice');
-  assert(snapshot.secondsRemaining === 20, 'expected phase-local remaining seconds to reset at recovery');
-  assert(snapshot.totalSecondsRemaining === 20, 'expected total remaining seconds to continue monotonically into recovery');
+  assert(
+    snapshot.phase === 'recovery',
+    'expected runner to advance into recovery after phrase practice',
+  );
+  assert(
+    snapshot.secondsRemaining === 20,
+    'expected phase-local remaining seconds to reset at recovery',
+  );
+  assert(
+    snapshot.totalSecondsRemaining === 20,
+    'expected total remaining seconds to continue monotonically into recovery',
+  );
 
   while (!snapshot.complete) {
     snapshot = runner.tick(30_000);
@@ -141,9 +279,18 @@ const runPracticeControlsScenario = (): void => {
   store.updateCurrentScene(sceneKeys.completion);
 
   const latestSummary = store.getLatestSessionSummary();
-  assert(latestSummary?.outcome === 'completed', 'expected a completed summary after the runner finishes');
-  assert(latestSummary?.phrase === 'steady phrase', 'expected the completed summary to retain the normalized phrase');
-  assert(latestSummary?.exerciseId === exerciseIds.phraseAnchor, 'expected the completed summary to retain the selected exercise');
+  assert(
+    latestSummary?.outcome === 'completed',
+    'expected a completed summary after the runner finishes',
+  );
+  assert(
+    latestSummary?.phrase === 'steady phrase',
+    'expected the completed summary to retain the normalized phrase',
+  );
+  assert(
+    latestSummary?.exerciseId === exerciseIds.phraseAnchor,
+    'expected the completed summary to retain the selected exercise',
+  );
 };
 
 const runExerciseBranchingScenario = (): void => {
@@ -157,31 +304,91 @@ const runExerciseBranchingScenario = (): void => {
   store.setPracticeDurationPreset(practiceDurationPresetIds.extended);
 
   const movingBallConfig = store.createPracticeConfig();
-  assert(getExerciseStartScene(exerciseIds.movingBall) === sceneKeys.instructions, 'expected moving-ball exercise to bypass phrase entry');
-  assert(movingBallConfig.exercise.id === exerciseIds.movingBall, 'expected moving-ball config to reflect the selected exercise');
-  assert(movingBallConfig.movingBall?.presetId === movingBallPresetIds.steadyCenter, 'expected moving-ball config to expose the selected steady preset');
-  assert(movingBallConfig.movingBall?.cycleMs === 3000, 'expected low-intensity moving-ball config to use the gentler preset speed');
-  assert(movingBallConfig.gazeGuidance.enabled === false, 'expected moving-ball practice to disable gaze guidance even when the global preference is on');
-  assert(movingBallConfig.stagePresenter.key === 'moving-ball', 'expected moving-ball config to resolve the moving-ball presenter');
-  assert(movingBallConfig.capabilities.auxiliaryControl.kind === 'selector', 'expected moving-ball config to declare a selector auxiliary control');
-  assert(movingBallConfig.reducedMotion.enabled === true, 'expected moving-ball config to preserve the reduced-motion toggle');
-  assert(movingBallConfig.duration.presetId === practiceDurationPresetIds.extended, 'expected selected duration preset to feed moving-ball config');
-  assert(movingBallConfig.phases[1]?.seconds === 180, 'expected extended duration preset to lengthen the active practice phase');
-  assert(movingBallConfig.movingBall?.laneHeights.length === 1, 'expected steady center sweep to use a single lane');
-  assert(movingBallConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected moving-ball instructions copy to reflect the reset phase');
+  assert(
+    getExerciseStartScene(exerciseIds.movingBall) === sceneKeys.instructions,
+    'expected moving-ball exercise to bypass phrase entry',
+  );
+  assert(
+    movingBallConfig.exercise.id === exerciseIds.movingBall,
+    'expected moving-ball config to reflect the selected exercise',
+  );
+  assert(
+    movingBallConfig.movingBall?.presetId === movingBallPresetIds.steadyCenter,
+    'expected moving-ball config to expose the selected steady preset',
+  );
+  assert(
+    movingBallConfig.movingBall?.cycleMs === 3000,
+    'expected low-intensity moving-ball config to use the gentler preset speed',
+  );
+  assert(
+    movingBallConfig.gazeGuidance.enabled === false,
+    'expected moving-ball practice to disable gaze guidance even when the global preference is on',
+  );
+  assert(
+    movingBallConfig.stagePresenter.key === 'moving-ball',
+    'expected moving-ball config to resolve the moving-ball presenter',
+  );
+  assert(
+    movingBallConfig.capabilities.auxiliaryControl.kind === 'selector',
+    'expected moving-ball config to declare a selector auxiliary control',
+  );
+  assert(
+    movingBallConfig.reducedMotion.enabled === true,
+    'expected moving-ball config to preserve the reduced-motion toggle',
+  );
+  assert(
+    movingBallConfig.duration.presetId === practiceDurationPresetIds.extended,
+    'expected selected duration preset to feed moving-ball config',
+  );
+  assert(
+    movingBallConfig.phases[1]?.seconds === 180,
+    'expected extended duration preset to lengthen the active practice phase',
+  );
+  assert(
+    movingBallConfig.movingBall?.laneHeights.length === 1,
+    'expected steady center sweep to use a single lane',
+  );
+  assert(
+    movingBallConfig.copy.instructionsSelectionLabel === 'Selected reset practice',
+    'expected moving-ball instructions copy to reflect the reset phase',
+  );
 
   store.setMovingBallPreset(movingBallPresetIds.multiHeight);
   store.setPracticeDurationPreset(practiceDurationPresetIds.brief);
 
   const variedMovingBallConfig = store.createPracticeConfig();
-  assert(variedMovingBallConfig.movingBall?.presetId === movingBallPresetIds.multiHeight, 'expected multi-height preset selection to carry into practice config');
-  assert(variedMovingBallConfig.phases[1]?.seconds === 60, 'expected brief duration preset to shorten the active practice phase');
-  assert(variedMovingBallConfig.movingBall?.laneHeights.length === 3, 'expected moving-ball config to expose multi-height lanes for the multi-height preset');
-  assert(variedMovingBallConfig.movingBall?.laneHeights[0] === 0.78, 'expected multi-height preset to begin in a lower visual lane');
-  assert(variedMovingBallConfig.movingBall?.laneHeights[1] === 0.5, 'expected multi-height preset to include a middle visual lane');
-  assert(variedMovingBallConfig.movingBall?.laneHeights[2] === 0.22, 'expected multi-height preset to include an eye-level visual lane');
-  assert(variedMovingBallConfig.movingBall?.laneBandHeight === 260, 'expected multi-height preset to use a taller vertical band');
-  assert(variedMovingBallConfig.movingBall?.pattern === 'multi-height-sweep', 'expected moving-ball config to expose multi-height motion metadata');
+  assert(
+    variedMovingBallConfig.movingBall?.presetId === movingBallPresetIds.multiHeight,
+    'expected multi-height preset selection to carry into practice config',
+  );
+  assert(
+    variedMovingBallConfig.phases[1]?.seconds === 60,
+    'expected brief duration preset to shorten the active practice phase',
+  );
+  assert(
+    variedMovingBallConfig.movingBall?.laneHeights.length === 3,
+    'expected moving-ball config to expose multi-height lanes for the multi-height preset',
+  );
+  assert(
+    variedMovingBallConfig.movingBall?.laneHeights[0] === 0.78,
+    'expected multi-height preset to begin in a lower visual lane',
+  );
+  assert(
+    variedMovingBallConfig.movingBall?.laneHeights[1] === 0.5,
+    'expected multi-height preset to include a middle visual lane',
+  );
+  assert(
+    variedMovingBallConfig.movingBall?.laneHeights[2] === 0.22,
+    'expected multi-height preset to include an eye-level visual lane',
+  );
+  assert(
+    variedMovingBallConfig.movingBall?.laneBandHeight === 260,
+    'expected multi-height preset to use a taller vertical band',
+  );
+  assert(
+    variedMovingBallConfig.movingBall?.pattern === 'multi-height-sweep',
+    'expected moving-ball config to expose multi-height motion metadata',
+  );
   const reducedMotionMultiHeightLayout = resolveMovingBallStagePresenterLayout({
     width: 640,
     laneBandHeight: variedMovingBallConfig.movingBall?.laneBandHeight ?? 0,
@@ -189,19 +396,45 @@ const runExerciseBranchingScenario = (): void => {
     radius: variedMovingBallConfig.movingBall?.radius ?? 0,
     reducedMotion: variedMovingBallConfig.reducedMotion.policy,
   });
-  assert(reducedMotionMultiHeightLayout.laneBandHeight < 260, 'expected reduced motion to shorten the taller multi-height vertical band');
-  assert(reducedMotionMultiHeightLayout.laneBandHeight === 202.8, 'expected reduced motion to apply the same amplitude scale vertically');
-  assert(variedMovingBallConfig.copy.reflectionPrompt.includes('settle, reset'), 'expected reset reflection prompt to stay phase-aware');
+  assert(
+    reducedMotionMultiHeightLayout.laneBandHeight < 260,
+    'expected reduced motion to shorten the taller multi-height vertical band',
+  );
+  assert(
+    reducedMotionMultiHeightLayout.laneBandHeight === 202.8,
+    'expected reduced motion to apply the same amplitude scale vertically',
+  );
+  assert(
+    variedMovingBallConfig.copy.reflectionPrompt.includes('settle, reset'),
+    'expected reset reflection prompt to stay phase-aware',
+  );
 
   store.setPracticeDurationPreset(practiceDurationPresetIds.custom);
   store.setCustomPracticeDurationMinutes(7);
 
   const customDurationConfig = store.createPracticeConfig();
-  assert(customDurationConfig.duration.presetId === practiceDurationPresetIds.custom, 'expected custom duration preset to feed practice config');
-  assert(customDurationConfig.duration.customMinutes === 7, 'expected custom duration minutes to be preserved in practice config');
-  assert(customDurationConfig.duration.practiceSeconds === 420, 'expected custom minutes to convert to practice seconds');
-  assert(customDurationConfig.phases[1]?.seconds === 420, 'expected custom duration to feed the active practice phase');
-  assert(customDurationConfig.duration.availablePresets.some((preset) => preset.id === practiceDurationPresetIds.custom && preset.title.includes('7 min')), 'expected custom duration option title to reflect selected minutes');
+  assert(
+    customDurationConfig.duration.presetId === practiceDurationPresetIds.custom,
+    'expected custom duration preset to feed practice config',
+  );
+  assert(
+    customDurationConfig.duration.customMinutes === 7,
+    'expected custom duration minutes to be preserved in practice config',
+  );
+  assert(
+    customDurationConfig.duration.practiceSeconds === 420,
+    'expected custom minutes to convert to practice seconds',
+  );
+  assert(
+    customDurationConfig.phases[1]?.seconds === 420,
+    'expected custom duration to feed the active practice phase',
+  );
+  assert(
+    customDurationConfig.duration.availablePresets.some(
+      (preset) => preset.id === practiceDurationPresetIds.custom && preset.title.includes('7 min'),
+    ),
+    'expected custom duration option title to reflect selected minutes',
+  );
 
   [
     exerciseIds.phraseAnchor,
@@ -213,154 +446,432 @@ const runExerciseBranchingScenario = (): void => {
     store.setSelectedExercise(exerciseId);
     const exerciseCustomDurationConfig = store.createPracticeConfig();
 
-    assert(exerciseCustomDurationConfig.duration.practiceSeconds === 420, `expected custom duration to feed ${exerciseId} practice seconds`);
-    assert(exerciseCustomDurationConfig.phases[1]?.seconds === 420, `expected custom duration to feed ${exerciseId} active phase`);
+    assert(
+      exerciseCustomDurationConfig.duration.practiceSeconds === 420,
+      `expected custom duration to feed ${exerciseId} practice seconds`,
+    );
+    assert(
+      exerciseCustomDurationConfig.phases[1]?.seconds === 420,
+      `expected custom duration to feed ${exerciseId} active phase`,
+    );
   });
 
   store.setCustomPracticeDurationMinutes(999);
-  assert(store.getState().settings.customPracticeDurationMinutes === customPracticeDurationBounds.maxMinutes, 'expected custom duration setter to clamp stored minutes to the maximum');
+  assert(
+    store.getState().settings.customPracticeDurationMinutes ===
+      customPracticeDurationBounds.maxMinutes,
+    'expected custom duration setter to clamp stored minutes to the maximum',
+  );
   const clampedCustomDurationConfig = store.createPracticeConfig();
-  assert(clampedCustomDurationConfig.duration.customMinutes === customPracticeDurationBounds.maxMinutes, 'expected excessive custom minutes to clamp to the maximum');
-  assert(clampedCustomDurationConfig.phases[1]?.seconds === customPracticeDurationBounds.maxMinutes * 60, 'expected clamped custom minutes to feed phase seconds');
+  assert(
+    clampedCustomDurationConfig.duration.customMinutes === customPracticeDurationBounds.maxMinutes,
+    'expected excessive custom minutes to clamp to the maximum',
+  );
+  assert(
+    clampedCustomDurationConfig.phases[1]?.seconds === customPracticeDurationBounds.maxMinutes * 60,
+    'expected clamped custom minutes to feed phase seconds',
+  );
 
   store.setCustomPracticeDurationMinutes(0);
-  assert(store.getState().settings.customPracticeDurationMinutes === customPracticeDurationBounds.minMinutes, 'expected custom duration setter to clamp stored minutes to the minimum');
+  assert(
+    store.getState().settings.customPracticeDurationMinutes ===
+      customPracticeDurationBounds.minMinutes,
+    'expected custom duration setter to clamp stored minutes to the minimum',
+  );
 
   store.setSelectedExercise(exerciseIds.movingBall);
   store.setMovingBallPreset(movingBallPresetIds.settlingSteps);
 
   const settlingMovingBallConfig = store.createPracticeConfig();
-  assert(settlingMovingBallConfig.movingBall?.pattern === 'settling-step-sweep', 'expected moving-ball config to expose the settling-step pattern metadata');
-  assert(getExerciseStartScene(exerciseIds.phraseAnchor) === sceneKeys.phrase, 'expected phrase-anchor exercise to require phrase entry');
-  assert(getExerciseStartScene(exerciseIds.breathingReset) === sceneKeys.instructions, 'expected breathing reset to bypass phrase entry');
-  assert(getExerciseStartScene(exerciseIds.bilateralRhythm) === sceneKeys.instructions, 'expected bilateral rhythm to bypass phrase entry');
-  assert(getExerciseStartScene(exerciseIds.orienting) === sceneKeys.instructions, 'expected orienting to bypass phrase entry');
-  assert(getInstructionsBackScene(exerciseIds.phraseAnchor) === sceneKeys.phrase, 'expected phrase-anchor instructions to navigate back to phrase');
-  assert(getInstructionsBackScene(exerciseIds.movingBall) === sceneKeys.exerciseSelection, 'expected moving-ball instructions to navigate back to exercise selection');
-  assert(getInstructionsBackScene(exerciseIds.breathingReset) === sceneKeys.exerciseSelection, 'expected breathing reset instructions to navigate back to exercise selection');
-  assert(getInstructionsBackScene(exerciseIds.bilateralRhythm) === sceneKeys.exerciseSelection, 'expected bilateral rhythm instructions to navigate back to exercise selection');
-  assert(getInstructionsBackScene(exerciseIds.orienting) === sceneKeys.exerciseSelection, 'expected orienting instructions to navigate back to exercise selection');
-  assert(getExerciseSessionEntryMode(exerciseIds.phraseAnchor).id === sessionEntryModeIds.phrasePrompted, 'expected phrase-anchor to use the phrase-prompted entry mode');
-  assert(getExerciseSessionEntryMode(exerciseIds.movingBall).id === sessionEntryModeIds.directPractice, 'expected moving-ball to use the direct-practice entry mode');
+  assert(
+    settlingMovingBallConfig.movingBall?.pattern === 'settling-step-sweep',
+    'expected moving-ball config to expose the settling-step pattern metadata',
+  );
+  assert(
+    getExerciseStartScene(exerciseIds.phraseAnchor) === sceneKeys.phrase,
+    'expected phrase-anchor exercise to require phrase entry',
+  );
+  assert(
+    getExerciseStartScene(exerciseIds.breathingReset) === sceneKeys.instructions,
+    'expected breathing reset to bypass phrase entry',
+  );
+  assert(
+    getExerciseStartScene(exerciseIds.bilateralRhythm) === sceneKeys.instructions,
+    'expected bilateral rhythm to bypass phrase entry',
+  );
+  assert(
+    getExerciseStartScene(exerciseIds.orienting) === sceneKeys.instructions,
+    'expected orienting to bypass phrase entry',
+  );
+  assert(
+    getInstructionsBackScene(exerciseIds.phraseAnchor) === sceneKeys.phrase,
+    'expected phrase-anchor instructions to navigate back to phrase',
+  );
+  assert(
+    getInstructionsBackScene(exerciseIds.movingBall) === sceneKeys.exerciseSelection,
+    'expected moving-ball instructions to navigate back to exercise selection',
+  );
+  assert(
+    getInstructionsBackScene(exerciseIds.breathingReset) === sceneKeys.exerciseSelection,
+    'expected breathing reset instructions to navigate back to exercise selection',
+  );
+  assert(
+    getInstructionsBackScene(exerciseIds.bilateralRhythm) === sceneKeys.exerciseSelection,
+    'expected bilateral rhythm instructions to navigate back to exercise selection',
+  );
+  assert(
+    getInstructionsBackScene(exerciseIds.orienting) === sceneKeys.exerciseSelection,
+    'expected orienting instructions to navigate back to exercise selection',
+  );
+  assert(
+    getExerciseSessionEntryMode(exerciseIds.phraseAnchor).id === sessionEntryModeIds.phrasePrompted,
+    'expected phrase-anchor to use the phrase-prompted entry mode',
+  );
+  assert(
+    getExerciseSessionEntryMode(exerciseIds.movingBall).id === sessionEntryModeIds.directPractice,
+    'expected moving-ball to use the direct-practice entry mode',
+  );
 
   store.setSelectedExercise(exerciseIds.breathingReset);
   store.setLowIntensityMode(false);
   store.setBreathingPreset(breathingPresetIds.longExhale);
   const breathingResetConfig = store.createPracticeConfig();
-  assert(breathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected breathing reset config to resolve the breathing-reset presenter');
-  assert(breathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected breathing reset config to declare an info auxiliary control');
-  assert(breathingResetConfig.breathingReset?.presetId === breathingPresetIds.longExhale, 'expected breathing reset config to preserve the selected breathing preset');
-  assert(breathingResetConfig.display.phraseText === 'Long exhale (4 in / 6 out)', 'expected breathing reset to expose breathing-specific display metadata');
-  assert(breathingResetConfig.stagePresenter.inhaleMs === 4000, 'expected breathing reset config to use a four-second inhale cue');
-  assert(breathingResetConfig.stagePresenter.exhaleMs === 6000, 'expected breathing reset config to use a six-second exhale cue');
-  assert(breathingResetConfig.reducedMotion.policy.cycleMultiplier === 1, 'expected reduced-motion breathing to preserve the displayed breath cadence');
-  assert(breathingResetConfig.capabilities.auxiliaryControl.description.includes('4 in / 6 out'), 'expected breathing reset guidance to describe the inhale and exhale cue');
-  assert(breathingResetConfig.copy.instructionsSelectionLabel === 'Selected reset practice', 'expected breathing reset instructions copy to stay reset-aware');
+  assert(
+    breathingResetConfig.stagePresenter.key === 'breathing-reset',
+    'expected breathing reset config to resolve the breathing-reset presenter',
+  );
+  assert(
+    breathingResetConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected breathing reset config to declare an info auxiliary control',
+  );
+  assert(
+    breathingResetConfig.breathingReset?.presetId === breathingPresetIds.longExhale,
+    'expected breathing reset config to preserve the selected breathing preset',
+  );
+  assert(
+    breathingResetConfig.display.phraseText === 'Long exhale (4 in / 6 out)',
+    'expected breathing reset to expose breathing-specific display metadata',
+  );
+  assert(
+    breathingResetConfig.stagePresenter.inhaleMs === 4000,
+    'expected breathing reset config to use a four-second inhale cue',
+  );
+  assert(
+    breathingResetConfig.stagePresenter.exhaleMs === 6000,
+    'expected breathing reset config to use a six-second exhale cue',
+  );
+  assert(
+    breathingResetConfig.reducedMotion.policy.cycleMultiplier === 1,
+    'expected reduced-motion breathing to preserve the displayed breath cadence',
+  );
+  assert(
+    breathingResetConfig.capabilities.auxiliaryControl.description.includes('4 in / 6 out'),
+    'expected breathing reset guidance to describe the inhale and exhale cue',
+  );
+  assert(
+    breathingResetConfig.copy.instructionsSelectionLabel === 'Selected reset practice',
+    'expected breathing reset instructions copy to stay reset-aware',
+  );
 
   store.setBreathingPreset(breathingPresetIds.gentleExhale);
   const gentlerBreathingResetConfig = store.createPracticeConfig();
-  assert(gentlerBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected gentler breathing reset config to keep the breathing presenter');
-  assert(gentlerBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected gentler breathing reset config to declare an info auxiliary control');
-  assert(gentlerBreathingResetConfig.stagePresenter.inhaleMs === 3000, 'expected gentle-exhale breathing reset to shorten the inhale cue');
-  assert(gentlerBreathingResetConfig.stagePresenter.exhaleMs === 4000, 'expected gentle-exhale breathing reset to shorten the exhale cue');
-  assert(gentlerBreathingResetConfig.display.phraseText === 'Gentle exhale (3 in / 4 out)', 'expected gentle-exhale breathing reset to expose the gentler cadence');
-  assert(gentlerBreathingResetConfig.capabilities.auxiliaryControl.description.includes('3 in / 4 out'), 'expected gentle-exhale breathing guidance to describe the gentler cue');
+  assert(
+    gentlerBreathingResetConfig.stagePresenter.key === 'breathing-reset',
+    'expected gentler breathing reset config to keep the breathing presenter',
+  );
+  assert(
+    gentlerBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected gentler breathing reset config to declare an info auxiliary control',
+  );
+  assert(
+    gentlerBreathingResetConfig.stagePresenter.inhaleMs === 3000,
+    'expected gentle-exhale breathing reset to shorten the inhale cue',
+  );
+  assert(
+    gentlerBreathingResetConfig.stagePresenter.exhaleMs === 4000,
+    'expected gentle-exhale breathing reset to shorten the exhale cue',
+  );
+  assert(
+    gentlerBreathingResetConfig.display.phraseText === 'Gentle exhale (3 in / 4 out)',
+    'expected gentle-exhale breathing reset to expose the gentler cadence',
+  );
+  assert(
+    gentlerBreathingResetConfig.capabilities.auxiliaryControl.description.includes('3 in / 4 out'),
+    'expected gentle-exhale breathing guidance to describe the gentler cue',
+  );
 
   store.setBreathingPreset(breathingPresetIds.coherent);
   const coherentBreathingResetConfig = store.createPracticeConfig();
-  assert(coherentBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected coherent breathing reset config to keep the breathing presenter');
-  assert(coherentBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected coherent breathing reset config to declare an info auxiliary control');
-  assert(coherentBreathingResetConfig.stagePresenter.inhaleMs === 5000, 'expected coherent breathing reset to use a five-second inhale cue');
-  assert(coherentBreathingResetConfig.stagePresenter.exhaleMs === 5000, 'expected coherent breathing reset to use a five-second exhale cue');
-  assert(coherentBreathingResetConfig.display.phraseText === 'Coherent (5 in / 5 out)', 'expected coherent breathing reset to expose the balanced cadence');
-  assert(coherentBreathingResetConfig.capabilities.auxiliaryControl.description.includes('balanced 5 in / 5 out rhythm'), 'expected coherent breathing guidance to describe the balanced cadence');
+  assert(
+    coherentBreathingResetConfig.stagePresenter.key === 'breathing-reset',
+    'expected coherent breathing reset config to keep the breathing presenter',
+  );
+  assert(
+    coherentBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected coherent breathing reset config to declare an info auxiliary control',
+  );
+  assert(
+    coherentBreathingResetConfig.stagePresenter.inhaleMs === 5000,
+    'expected coherent breathing reset to use a five-second inhale cue',
+  );
+  assert(
+    coherentBreathingResetConfig.stagePresenter.exhaleMs === 5000,
+    'expected coherent breathing reset to use a five-second exhale cue',
+  );
+  assert(
+    coherentBreathingResetConfig.display.phraseText === 'Coherent (5 in / 5 out)',
+    'expected coherent breathing reset to expose the balanced cadence',
+  );
+  assert(
+    coherentBreathingResetConfig.capabilities.auxiliaryControl.description.includes(
+      'balanced 5 in / 5 out rhythm',
+    ),
+    'expected coherent breathing guidance to describe the balanced cadence',
+  );
 
   store.setBreathingPreset(breathingPresetIds.box);
   const boxBreathingResetConfig = store.createPracticeConfig();
-  assert(boxBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected box breathing reset config to keep the breathing presenter');
-  assert(boxBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected box breathing reset config to declare an info auxiliary control');
-  assert(boxBreathingResetConfig.stagePresenter.inhaleMs === 4000, 'expected box breathing reset to use a four-second inhale cue');
-  assert(boxBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 4000, 'expected box breathing reset to use a four-second inhale hold');
-  assert(boxBreathingResetConfig.stagePresenter.exhaleMs === 4000, 'expected box breathing reset to use a four-second exhale cue');
-  assert(boxBreathingResetConfig.stagePresenter.holdAfterExhaleMs === 4000, 'expected box breathing reset to use a four-second exhale hold');
-  assert(boxBreathingResetConfig.display.phraseText === 'Box (4 in / 4 hold / 4 out / 4 hold)', 'expected box breathing reset to expose the equal-phase cadence');
-  assert(boxBreathingResetConfig.capabilities.auxiliaryControl.description.includes('box-breathing rhythm'), 'expected box breathing guidance to describe the held cadence');
+  assert(
+    boxBreathingResetConfig.stagePresenter.key === 'breathing-reset',
+    'expected box breathing reset config to keep the breathing presenter',
+  );
+  assert(
+    boxBreathingResetConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected box breathing reset config to declare an info auxiliary control',
+  );
+  assert(
+    boxBreathingResetConfig.stagePresenter.inhaleMs === 4000,
+    'expected box breathing reset to use a four-second inhale cue',
+  );
+  assert(
+    boxBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 4000,
+    'expected box breathing reset to use a four-second inhale hold',
+  );
+  assert(
+    boxBreathingResetConfig.stagePresenter.exhaleMs === 4000,
+    'expected box breathing reset to use a four-second exhale cue',
+  );
+  assert(
+    boxBreathingResetConfig.stagePresenter.holdAfterExhaleMs === 4000,
+    'expected box breathing reset to use a four-second exhale hold',
+  );
+  assert(
+    boxBreathingResetConfig.display.phraseText === 'Box (4 in / 4 hold / 4 out / 4 hold)',
+    'expected box breathing reset to expose the equal-phase cadence',
+  );
+  assert(
+    boxBreathingResetConfig.capabilities.auxiliaryControl.description.includes(
+      'box-breathing rhythm',
+    ),
+    'expected box breathing guidance to describe the held cadence',
+  );
 
   store.setBreathingPreset(breathingPresetIds.cyclicSighing);
   const cyclicSighingResetConfig = store.createPracticeConfig();
-  assert(cyclicSighingResetConfig.stagePresenter.key === 'breathing-reset', 'expected cyclic sighing reset config to keep the breathing presenter');
-  assert(cyclicSighingResetConfig.capabilities.auxiliaryControl.kind === 'info', 'expected cyclic sighing reset config to declare an info auxiliary control');
-  assert(cyclicSighingResetConfig.stagePresenter.inhaleMs === 2000, 'expected cyclic sighing reset to use a two-second first inhale cue');
-  assert(cyclicSighingResetConfig.stagePresenter.inhaleTopUpMs === 1000, 'expected cyclic sighing reset to use a short top-up inhale');
-  assert(cyclicSighingResetConfig.stagePresenter.exhaleMs === 6000, 'expected cyclic sighing reset to use a long exhale cue');
-  assert(cyclicSighingResetConfig.display.phraseText === 'Cyclic sighing (2 in / 1 top-up / 6 out)', 'expected cyclic sighing reset to expose the double-inhale cadence');
-  assert(cyclicSighingResetConfig.capabilities.auxiliaryControl.description.includes('cyclic sighing rhythm'), 'expected cyclic sighing guidance to describe the double-inhale cadence');
+  assert(
+    cyclicSighingResetConfig.stagePresenter.key === 'breathing-reset',
+    'expected cyclic sighing reset config to keep the breathing presenter',
+  );
+  assert(
+    cyclicSighingResetConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected cyclic sighing reset config to declare an info auxiliary control',
+  );
+  assert(
+    cyclicSighingResetConfig.stagePresenter.inhaleMs === 2000,
+    'expected cyclic sighing reset to use a two-second first inhale cue',
+  );
+  assert(
+    cyclicSighingResetConfig.stagePresenter.inhaleTopUpMs === 1000,
+    'expected cyclic sighing reset to use a short top-up inhale',
+  );
+  assert(
+    cyclicSighingResetConfig.stagePresenter.exhaleMs === 6000,
+    'expected cyclic sighing reset to use a long exhale cue',
+  );
+  assert(
+    cyclicSighingResetConfig.display.phraseText === 'Cyclic sighing (2 in / 1 top-up / 6 out)',
+    'expected cyclic sighing reset to expose the double-inhale cadence',
+  );
+  assert(
+    cyclicSighingResetConfig.capabilities.auxiliaryControl.description.includes(
+      'cyclic sighing rhythm',
+    ),
+    'expected cyclic sighing guidance to describe the double-inhale cadence',
+  );
 
   store.setBreathingPreset(breathingPresetIds.custom);
   store.setCustomBreathingInhaleSeconds(5);
   store.setCustomBreathingHoldSeconds(2);
   store.setCustomBreathingExhaleSeconds(8);
   const customBreathingResetConfig = store.createPracticeConfig();
-  assert(customBreathingResetConfig.stagePresenter.key === 'breathing-reset', 'expected custom breathing reset config to keep the breathing presenter');
-  assert(customBreathingResetConfig.breathingReset?.presetId === breathingPresetIds.custom, 'expected custom breathing preset to feed practice config');
-  assert(customBreathingResetConfig.stagePresenter.inhaleMs === 5000, 'expected custom breathing reset to use the custom inhale cue');
-  assert(customBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 2000, 'expected custom breathing reset to use the custom hold cue');
-  assert(customBreathingResetConfig.stagePresenter.exhaleMs === 8000, 'expected custom breathing reset to use the custom exhale cue');
-  assert(customBreathingResetConfig.stagePresenter.holdAfterExhaleMs === null, 'expected custom breathing reset to omit an exhale hold');
-  assert(customBreathingResetConfig.display.phraseText === 'Custom (5 in / 2 hold / 8 out)', 'expected custom breathing reset to expose the selected cadence');
-  assert(customBreathingResetConfig.breathingReset.availablePresets.some((preset) => preset.id === breathingPresetIds.custom && preset.title.includes('5 in / 2 hold / 8 out')), 'expected custom breathing option title to reflect selected cadence');
+  assert(
+    customBreathingResetConfig.stagePresenter.key === 'breathing-reset',
+    'expected custom breathing reset config to keep the breathing presenter',
+  );
+  assert(
+    customBreathingResetConfig.breathingReset?.presetId === breathingPresetIds.custom,
+    'expected custom breathing preset to feed practice config',
+  );
+  assert(
+    customBreathingResetConfig.stagePresenter.inhaleMs === 5000,
+    'expected custom breathing reset to use the custom inhale cue',
+  );
+  assert(
+    customBreathingResetConfig.stagePresenter.holdAfterInhaleMs === 2000,
+    'expected custom breathing reset to use the custom hold cue',
+  );
+  assert(
+    customBreathingResetConfig.stagePresenter.exhaleMs === 8000,
+    'expected custom breathing reset to use the custom exhale cue',
+  );
+  assert(
+    customBreathingResetConfig.stagePresenter.holdAfterExhaleMs === null,
+    'expected custom breathing reset to omit an exhale hold',
+  );
+  assert(
+    customBreathingResetConfig.display.phraseText === 'Custom (5 in / 2 hold / 8 out)',
+    'expected custom breathing reset to expose the selected cadence',
+  );
+  assert(
+    customBreathingResetConfig.breathingReset.availablePresets.some(
+      (preset) =>
+        preset.id === breathingPresetIds.custom && preset.title.includes('5 in / 2 hold / 8 out'),
+    ),
+    'expected custom breathing option title to reflect selected cadence',
+  );
   store.setCustomBreathingInhaleSeconds(99);
   store.setCustomBreathingHoldSeconds(-2);
   store.setCustomBreathingExhaleSeconds(Number.NaN);
-  assert(store.getState().settings.customBreathingInhaleSeconds === 12, 'expected custom inhale seconds to clamp to the upper bound');
-  assert(store.getState().settings.customBreathingHoldSeconds === 1, 'expected custom hold seconds to clamp to the lower bound');
-  assert(store.getState().settings.customBreathingExhaleSeconds === 6, 'expected invalid custom exhale seconds to fall back to the default');
+  assert(
+    store.getState().settings.customBreathingInhaleSeconds === 12,
+    'expected custom inhale seconds to clamp to the upper bound',
+  );
+  assert(
+    store.getState().settings.customBreathingHoldSeconds === 1,
+    'expected custom hold seconds to clamp to the lower bound',
+  );
+  assert(
+    store.getState().settings.customBreathingExhaleSeconds === 6,
+    'expected invalid custom exhale seconds to fall back to the default',
+  );
 
   store.setSelectedExercise(exerciseIds.bilateralRhythm);
   const bilateralRhythmConfig = store.createPracticeConfig();
-  assert(bilateralRhythmConfig.stagePresenter.key === 'bilateral-rhythm', 'expected bilateral rhythm config to resolve the bilateral-rhythm presenter');
-  assert(bilateralRhythmConfig.capabilities.auxiliaryControl.kind === 'info', 'expected bilateral rhythm config to declare an info auxiliary control');
-  assert(bilateralRhythmConfig.capabilities.auxiliaryControl.description.includes('visual left-right rhythm'), 'expected bilateral rhythm guidance to clarify the visual cue');
-  assert(bilateralRhythmConfig.phases[1]?.copy.includes('No sound is used'), 'expected bilateral rhythm active copy to clarify that sound is not used');
-  assert(bilateralRhythmConfig.display.phraseText === 'Follow the alternating rhythm softly', 'expected bilateral rhythm to expose rhythm-specific display metadata');
-  assert(bilateralRhythmConfig.copy.reflectionPrompt.includes('left-right rhythm'), 'expected bilateral rhythm reflection prompt to stay rhythm-aware');
+  assert(
+    bilateralRhythmConfig.stagePresenter.key === 'bilateral-rhythm',
+    'expected bilateral rhythm config to resolve the bilateral-rhythm presenter',
+  );
+  assert(
+    bilateralRhythmConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected bilateral rhythm config to declare an info auxiliary control',
+  );
+  assert(
+    bilateralRhythmConfig.capabilities.auxiliaryControl.description.includes(
+      'visual left-right rhythm',
+    ),
+    'expected bilateral rhythm guidance to clarify the visual cue',
+  );
+  assert(
+    bilateralRhythmConfig.phases[1]?.copy.includes('No sound is used'),
+    'expected bilateral rhythm active copy to clarify that sound is not used',
+  );
+  assert(
+    bilateralRhythmConfig.display.phraseText === 'Follow the alternating rhythm softly',
+    'expected bilateral rhythm to expose rhythm-specific display metadata',
+  );
+  assert(
+    bilateralRhythmConfig.copy.reflectionPrompt.includes('left-right rhythm'),
+    'expected bilateral rhythm reflection prompt to stay rhythm-aware',
+  );
 
   store.setSelectedExercise(exerciseIds.orienting);
   const orientingConfig = store.createPracticeConfig();
-  assert(orientingConfig.stagePresenter.key === 'orienting', 'expected orienting config to resolve the orienting presenter');
-  assert(orientingConfig.capabilities.auxiliaryControl.kind === 'info', 'expected orienting config to declare an info auxiliary control');
-  assert(orientingConfig.display.phraseText === 'Notice the wider space softly', 'expected orienting to expose orienting-specific display metadata');
-  assert(orientingConfig.copy.reflectionPrompt.includes('wider space'), 'expected orienting reflection prompt to stay orienting-aware');
+  assert(
+    orientingConfig.stagePresenter.key === 'orienting',
+    'expected orienting config to resolve the orienting presenter',
+  );
+  assert(
+    orientingConfig.capabilities.auxiliaryControl.kind === 'info',
+    'expected orienting config to declare an info auxiliary control',
+  );
+  assert(
+    orientingConfig.display.phraseText === 'Notice the wider space softly',
+    'expected orienting to expose orienting-specific display metadata',
+  );
+  assert(
+    orientingConfig.copy.reflectionPrompt.includes('wider space'),
+    'expected orienting reflection prompt to stay orienting-aware',
+  );
 };
 
 const runAmbientPracticeFitScenario = (): void => {
   const expectedAmbientPresetIds = [...ambientAudioPresetOrder];
   const catalogPresetIds = ambientAudioPresetCatalog.map(({ id }) => id);
 
-  assert(catalogPresetIds.length === expectedAmbientPresetIds.length, 'expected ambient practice catalog to expose only canonical preset ids');
+  assert(
+    catalogPresetIds.length === expectedAmbientPresetIds.length,
+    'expected ambient practice catalog to expose only canonical preset ids',
+  );
   expectedAmbientPresetIds.forEach((presetId, index) => {
-    assert(catalogPresetIds[index] === presetId, `expected ambient preset ${presetId} to keep canonical catalog ordering`);
+    assert(
+      catalogPresetIds[index] === presetId,
+      `expected ambient preset ${presetId} to keep canonical catalog ordering`,
+    );
   });
 
   Object.values(exerciseIds).forEach((exerciseId) => {
     assert(
-      ambientAudioPresetCatalog.some(({ practiceFit }) => practiceFit.recommendedExercises.includes(exerciseId)),
+      ambientAudioPresetCatalog.some(({ practiceFit }) =>
+        practiceFit.recommendedExercises.includes(exerciseId),
+      ),
       `expected at least one canonical ambient preset to include practice-fit metadata for ${exerciseId}`,
     );
   });
 
   ambientAudioPresetCatalog.forEach((preset) => {
-    assert(preset.title.length > 0 && preset.summary.length > 0, `expected ${preset.id} to expose user-facing catalog copy`);
-    assert(preset.musicTheory.harmonicPalette.length >= 3, `expected ${preset.id} to expose a coherent harmonic palette`);
-    assert(preset.musicTheory.tonalCenter.length > 0, `expected ${preset.id} to declare a tonal center`);
-    assert(/meter|metric|pulse|sustained|free-time/i.test(preset.musicTheory.rhythmFeel), `expected ${preset.id} to describe a bounded musical rhythm feel`);
-    assert(preset.layers.length >= 3, `expected ${preset.id} to expose layered musical metadata rather than a single-tone recipe`);
-    assert(preset.layers.every(({ kind }) => kind !== 'air' && kind !== 'field'), `expected ${preset.id} metadata to avoid raw air/field layers`);
-    assert(preset.layers.every(({ texture }) => !/static/i.test(texture)), `expected ${preset.id} texture metadata not to describe static`);
-    assert(preset.practiceFit.avoids.some((avoidance) => /pulse|transient|motif|melody|bass|motion|subdivision/i.test(avoidance)), `expected ${preset.id} to document musical boundary conditions`);
-    assert(preset.practiceFit.recommendedExercises.length > 0, `expected ${preset.id} to recommend at least one practice mode`);
+    assert(
+      preset.title.length > 0 && preset.summary.length > 0,
+      `expected ${preset.id} to expose user-facing catalog copy`,
+    );
+    assert(
+      preset.musicTheory.harmonicPalette.length >= 3,
+      `expected ${preset.id} to expose a coherent harmonic palette`,
+    );
+    assert(
+      preset.musicTheory.tonalCenter.length > 0,
+      `expected ${preset.id} to declare a tonal center`,
+    );
+    assert(
+      /meter|metric|pulse|sustained|free-time/i.test(preset.musicTheory.rhythmFeel),
+      `expected ${preset.id} to describe a bounded musical rhythm feel`,
+    );
+    assert(
+      preset.layers.length >= 3,
+      `expected ${preset.id} to expose layered musical metadata rather than a single-tone recipe`,
+    );
+    assert(
+      preset.layers.every(({ kind }) => kind !== 'air' && kind !== 'field'),
+      `expected ${preset.id} metadata to avoid raw air/field layers`,
+    );
+    assert(
+      preset.layers.every(({ texture }) => !/static/i.test(texture)),
+      `expected ${preset.id} texture metadata not to describe static`,
+    );
+    assert(
+      preset.practiceFit.avoids.some((avoidance) =>
+        /pulse|transient|motif|melody|bass|motion|subdivision/i.test(avoidance),
+      ),
+      `expected ${preset.id} to document musical boundary conditions`,
+    );
+    assert(
+      preset.practiceFit.recommendedExercises.length > 0,
+      `expected ${preset.id} to recommend at least one practice mode`,
+    );
     preset.practiceFit.recommendedExercises.forEach((exerciseId) => {
-      assert(Object.values(exerciseIds).includes(exerciseId), `expected ${preset.id} to recommend only known practice modes`);
+      assert(
+        Object.values(exerciseIds).includes(exerciseId),
+        `expected ${preset.id} to recommend only known practice modes`,
+      );
     });
   });
 
@@ -368,22 +879,39 @@ const runAmbientPracticeFitScenario = (): void => {
   const defaultAmbientConfig = store.createPracticeConfig().ambientAudio;
 
   assert(defaultAmbientConfig.enabled === false, 'expected ambient audio to remain off by default');
-  assert(defaultAmbientConfig.volume === ambientAudioVolumeBounds.defaultValue, 'expected ambient audio to use the safe bounded default volume');
-  assert(defaultAmbientConfig.presetId === ambientAudioPresetIds.openHorizon, 'expected ambient audio to use the default canonical preset');
-  assert(defaultAmbientConfig.description.includes('Off by default'), 'expected disabled ambient metadata to clearly state that playback is off by default');
-  assert(!/noise|static/i.test(defaultAmbientConfig.label), 'expected ambient control label to avoid noise/static wording');
-  assert(!/noise|static/i.test(defaultAmbientConfig.description), 'expected disabled ambient control copy to avoid noise/static wording');
+  assert(
+    defaultAmbientConfig.volume === ambientAudioVolumeBounds.defaultValue,
+    'expected ambient audio to use the safe bounded default volume',
+  );
+  assert(
+    defaultAmbientConfig.presetId === ambientAudioPresetIds.openHorizon,
+    'expected ambient audio to use the default canonical preset',
+  );
+  assert(
+    defaultAmbientConfig.description.includes('Off by default'),
+    'expected disabled ambient metadata to clearly state that playback is off by default',
+  );
+  assert(
+    !/noise|static/i.test(defaultAmbientConfig.label),
+    'expected ambient control label to avoid noise/static wording',
+  );
+  assert(
+    !/noise|static/i.test(defaultAmbientConfig.description),
+    'expected disabled ambient control copy to avoid noise/static wording',
+  );
 
   store.setAmbientAudioEnabled(true);
   store.setAmbientAudioVolume(41);
 
-  ([
-    [exerciseIds.phraseAnchor, ambientAudioPresetIds.openHorizon],
-    [exerciseIds.movingBall, ambientAudioPresetIds.clearBells],
-    [exerciseIds.breathingReset, ambientAudioPresetIds.emberDrift],
-    [exerciseIds.bilateralRhythm, ambientAudioPresetIds.emberDrift],
-    [exerciseIds.orienting, ambientAudioPresetIds.openHorizon],
-  ] as const).forEach(([exerciseId, presetId]) => {
+  (
+    [
+      [exerciseIds.phraseAnchor, ambientAudioPresetIds.openHorizon],
+      [exerciseIds.movingBall, ambientAudioPresetIds.clearBells],
+      [exerciseIds.breathingReset, ambientAudioPresetIds.emberDrift],
+      [exerciseIds.bilateralRhythm, ambientAudioPresetIds.emberDrift],
+      [exerciseIds.orienting, ambientAudioPresetIds.openHorizon],
+    ] as const
+  ).forEach(([exerciseId, presetId]) => {
     store.setSelectedExercise(exerciseId);
     store.setAmbientAudioPreset(presetId);
     if (exerciseId === exerciseIds.phraseAnchor) {
@@ -391,29 +919,80 @@ const runAmbientPracticeFitScenario = (): void => {
     }
 
     const practiceConfig = store.createPracticeConfig();
-    const selectedPreset = practiceConfig.ambientAudio.availablePresets.find(({ id }) => id === presetId);
+    const selectedPreset = practiceConfig.ambientAudio.availablePresets.find(
+      ({ id }) => id === presetId,
+    );
 
-    assert(practiceConfig.ambientAudio.enabled === true, `expected ambient enabled state to feed ${exerciseId} practice config`);
-    assert(practiceConfig.ambientAudio.volume === 41, `expected ambient volume to feed ${exerciseId} practice config`);
-    assert(practiceConfig.ambientAudio.presetId === presetId, `expected selected ambient preset to feed ${exerciseId} practice config`);
-    assert(selectedPreset, `expected selected ambient preset metadata to be available for ${exerciseId}`);
-    assert(selectedPreset.practiceFit.recommendedExercises.includes(exerciseId), `expected selected ambient preset to retain practice-fit metadata for ${exerciseId}`);
-    assert(selectedPreset.layers.some(({ kind, density }) => kind === 'drone' && density === 'continuous'), `expected selected ambient preset to include a continuous tonal anchor for ${exerciseId}`);
-    assert(selectedPreset.layers.some(({ kind, density }) => kind === 'pad' && (density === 'continuous' || density === 'slow')), `expected selected ambient preset to include a sustained musical pad for ${exerciseId}`);
-    assert(selectedPreset.layers.every(({ kind }) => kind !== 'air' && kind !== 'field'), `expected selected ambient preset metadata for ${exerciseId} not to rely on raw air/field layers`);
-    assert(practiceConfig.ambientAudio.description.includes('Volume 41%'), `expected ambient description to reflect selected volume for ${exerciseId}`);
-    assert(!/noise|static/i.test(practiceConfig.ambientAudio.label), `expected ambient control label for ${exerciseId} to avoid noise/static wording`);
-    assert(!/noise|static/i.test(practiceConfig.ambientAudio.description), `expected ambient enabled copy for ${exerciseId} to avoid noise/static wording`);
+    assert(
+      practiceConfig.ambientAudio.enabled === true,
+      `expected ambient enabled state to feed ${exerciseId} practice config`,
+    );
+    assert(
+      practiceConfig.ambientAudio.volume === 41,
+      `expected ambient volume to feed ${exerciseId} practice config`,
+    );
+    assert(
+      practiceConfig.ambientAudio.presetId === presetId,
+      `expected selected ambient preset to feed ${exerciseId} practice config`,
+    );
+    assert(
+      selectedPreset,
+      `expected selected ambient preset metadata to be available for ${exerciseId}`,
+    );
+    assert(
+      selectedPreset.practiceFit.recommendedExercises.includes(exerciseId),
+      `expected selected ambient preset to retain practice-fit metadata for ${exerciseId}`,
+    );
+    assert(
+      selectedPreset.layers.some(
+        ({ kind, density }) => kind === 'drone' && density === 'continuous',
+      ),
+      `expected selected ambient preset to include a continuous tonal anchor for ${exerciseId}`,
+    );
+    assert(
+      selectedPreset.layers.some(
+        ({ kind, density }) => kind === 'pad' && (density === 'continuous' || density === 'slow'),
+      ),
+      `expected selected ambient preset to include a sustained musical pad for ${exerciseId}`,
+    );
+    assert(
+      selectedPreset.layers.every(({ kind }) => kind !== 'air' && kind !== 'field'),
+      `expected selected ambient preset metadata for ${exerciseId} not to rely on raw air/field layers`,
+    );
+    assert(
+      practiceConfig.ambientAudio.description.includes('Volume 41%'),
+      `expected ambient description to reflect selected volume for ${exerciseId}`,
+    );
+    assert(
+      !/noise|static/i.test(practiceConfig.ambientAudio.label),
+      `expected ambient control label for ${exerciseId} to avoid noise/static wording`,
+    );
+    assert(
+      !/noise|static/i.test(practiceConfig.ambientAudio.description),
+      `expected ambient enabled copy for ${exerciseId} to avoid noise/static wording`,
+    );
   });
 
   store.setAmbientAudioPreset(ambientAudioPresetIds.clearBells);
   store.setAmbientAudioEnabled(false);
   const disabledAmbientConfig = store.createPracticeConfig();
 
-  assert(disabledAmbientConfig.ambientAudio.enabled === false, 'expected disabled ambient state to feed practice config');
-  assert(disabledAmbientConfig.ambientAudio.presetId === ambientAudioPresetIds.clearBells, 'expected disabled ambient state to preserve the selected non-default canonical preset');
-  assert(disabledAmbientConfig.ambientAudio.volume === 41, 'expected disabled ambient state to preserve the selected volume');
-  assert(disabledAmbientConfig.ambientAudio.description.includes('Off by default'), 'expected disabled ambient description to avoid implying playback');
+  assert(
+    disabledAmbientConfig.ambientAudio.enabled === false,
+    'expected disabled ambient state to feed practice config',
+  );
+  assert(
+    disabledAmbientConfig.ambientAudio.presetId === ambientAudioPresetIds.clearBells,
+    'expected disabled ambient state to preserve the selected non-default canonical preset',
+  );
+  assert(
+    disabledAmbientConfig.ambientAudio.volume === 41,
+    'expected disabled ambient state to preserve the selected volume',
+  );
+  assert(
+    disabledAmbientConfig.ambientAudio.description.includes('Off by default'),
+    'expected disabled ambient description to avoid implying playback',
+  );
 };
 
 const runReflectionAndReloadScenario = (): void => {
@@ -439,24 +1018,63 @@ const runReflectionAndReloadScenario = (): void => {
   store.updateCurrentScene(sceneKeys.exerciseSelection);
 
   const restartedState = store.getState();
-  assert(restartedState.currentSession === null, 'expected exercise selection return to clear the finished session');
-  assert(restartedState.selectedExercise === exerciseIds.movingBall, 'expected exercise selection return to preserve the previously selected exercise');
-  assert(store.createPracticeConfig().movingBall?.presetId === movingBallPresetIds.multiHeight, 'expected restart to preserve the selected moving-ball preset');
+  assert(
+    restartedState.currentSession === null,
+    'expected exercise selection return to clear the finished session',
+  );
+  assert(
+    restartedState.selectedExercise === exerciseIds.movingBall,
+    'expected exercise selection return to preserve the previously selected exercise',
+  );
+  assert(
+    store.createPracticeConfig().movingBall?.presetId === movingBallPresetIds.multiHeight,
+    'expected restart to preserve the selected moving-ball preset',
+  );
 
   const rehydratedStore = createSessionStore(undefined, createSessionRepository(storage));
   const rehydratedState = rehydratedStore.getState();
   const [latestSummary] = rehydratedState.recentSessionSummaries;
 
-  assert(rehydratedState.phrase === '', 'expected moving-ball exercise not to persist a phrase requirement across reloads');
-  assert(rehydratedState.selectedExercise === exerciseIds.movingBall, 'expected selected exercise to persist across reloads');
-  assert(rehydratedState.settings.lowIntensityMode === true, 'expected settings persistence across reloads');
-  assert(rehydratedState.settings.practiceDurationPresetId === practiceDurationPresetIds.extended, 'expected duration preset persistence across reloads');
-  assert(rehydratedState.settings.movingBallPresetId === movingBallPresetIds.multiHeight, 'expected moving-ball preset persistence across reloads');
-  assert(rehydratedState.currentSession === null, 'expected in-progress session state not to persist across reloads');
-  assert(rehydratedState.practice === null, 'expected practice runtime state not to persist across reloads');
-  assert(latestSummary?.outcome === 'stopped', 'expected stopped outcome to persist into the recent session summary');
-  assert(latestSummary?.exerciseId === exerciseIds.movingBall, 'expected selected exercise to persist into recent session summaries');
-  assert(latestSummary?.sessionEntryModeId === sessionEntryModeIds.directPractice, 'expected moving-ball summaries to persist the direct-practice entry mode id');
+  assert(
+    rehydratedState.phrase === '',
+    'expected moving-ball exercise not to persist a phrase requirement across reloads',
+  );
+  assert(
+    rehydratedState.selectedExercise === exerciseIds.movingBall,
+    'expected selected exercise to persist across reloads',
+  );
+  assert(
+    rehydratedState.settings.lowIntensityMode === true,
+    'expected settings persistence across reloads',
+  );
+  assert(
+    rehydratedState.settings.practiceDurationPresetId === practiceDurationPresetIds.extended,
+    'expected duration preset persistence across reloads',
+  );
+  assert(
+    rehydratedState.settings.movingBallPresetId === movingBallPresetIds.multiHeight,
+    'expected moving-ball preset persistence across reloads',
+  );
+  assert(
+    rehydratedState.currentSession === null,
+    'expected in-progress session state not to persist across reloads',
+  );
+  assert(
+    rehydratedState.practice === null,
+    'expected practice runtime state not to persist across reloads',
+  );
+  assert(
+    latestSummary?.outcome === 'stopped',
+    'expected stopped outcome to persist into the recent session summary',
+  );
+  assert(
+    latestSummary?.exerciseId === exerciseIds.movingBall,
+    'expected selected exercise to persist into recent session summaries',
+  );
+  assert(
+    latestSummary?.sessionEntryModeId === sessionEntryModeIds.directPractice,
+    'expected moving-ball summaries to persist the direct-practice entry mode id',
+  );
   assert(latestSummary?.phrase === '', 'expected moving-ball summaries not to carry phrase text');
   assert(
     latestSummary?.reflection === 'shoulders softened and the phrase stayed easy',
@@ -480,8 +1098,14 @@ const runBreathingSelectionReturnScenario = (): void => {
   store.updateCurrentScene(sceneKeys.exerciseSelection);
 
   const state = store.getState();
-  assert(state.currentSession === null, 'expected breathing reset to return cleanly to exercise selection after finishing');
-  assert(state.selectedExercise === exerciseIds.breathingReset, 'expected returning to exercise selection to preserve the last breathing selection');
+  assert(
+    state.currentSession === null,
+    'expected breathing reset to return cleanly to exercise selection after finishing',
+  );
+  assert(
+    state.selectedExercise === exerciseIds.breathingReset,
+    'expected returning to exercise selection to preserve the last breathing selection',
+  );
 };
 
 const runOperatorErrorReportingScenario = (): void => {
@@ -500,8 +1124,14 @@ const runOperatorErrorReportingScenario = (): void => {
   }
 
   assert(calls.length === 1, 'expected operator error reporting to emit one error-level report');
-  assert(calls[0]?.[0] === 'Soft Focus could not load the practice stage presenter.', 'expected operator error reporting to preserve the message');
-  assert(calls[0]?.[1] === error, 'expected operator error reporting to preserve the original error context');
+  assert(
+    calls[0]?.[0] === 'Soft Focus could not load the practice stage presenter.',
+    'expected operator error reporting to preserve the message',
+  );
+  assert(
+    calls[0]?.[1] === error,
+    'expected operator error reporting to preserve the original error context',
+  );
 };
 
 assertSceneFlow();

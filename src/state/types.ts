@@ -43,7 +43,8 @@ export const practiceDurationPresetIds = {
   custom: 'custom',
 } as const;
 
-export type PracticeDurationPresetId = (typeof practiceDurationPresetIds)[keyof typeof practiceDurationPresetIds];
+export type PracticeDurationPresetId =
+  (typeof practiceDurationPresetIds)[keyof typeof practiceDurationPresetIds];
 
 export const ambientAudioPresetIds = {
   openHorizon: 'open-horizon',
@@ -51,7 +52,8 @@ export const ambientAudioPresetIds = {
   clearBells: 'clear-bells',
 } as const;
 
-export type AmbientAudioPresetId = (typeof ambientAudioPresetIds)[keyof typeof ambientAudioPresetIds];
+export type AmbientAudioPresetId =
+  (typeof ambientAudioPresetIds)[keyof typeof ambientAudioPresetIds];
 
 export const ambientAudioPresetOrder = [
   ambientAudioPresetIds.openHorizon,
@@ -59,29 +61,23 @@ export const ambientAudioPresetOrder = [
   ambientAudioPresetIds.clearBells,
 ] as const satisfies readonly AmbientAudioPresetId[];
 
-export const isExerciseId = (value: string): value is ExerciseId => (
-  Object.values(exerciseIds) as readonly string[]
-).includes(value);
+export const isExerciseId = (value: string): value is ExerciseId =>
+  (Object.values(exerciseIds) as readonly string[]).includes(value);
 
-export const isSessionEntryModeId = (value: string): value is SessionEntryModeId => (
-  Object.values(sessionEntryModeIds) as readonly string[]
-).includes(value);
+export const isSessionEntryModeId = (value: string): value is SessionEntryModeId =>
+  (Object.values(sessionEntryModeIds) as readonly string[]).includes(value);
 
-export const isMovingBallPresetId = (value: string): value is MovingBallPresetId => (
-  Object.values(movingBallPresetIds) as readonly string[]
-).includes(value);
+export const isMovingBallPresetId = (value: string): value is MovingBallPresetId =>
+  (Object.values(movingBallPresetIds) as readonly string[]).includes(value);
 
-export const isBreathingPresetId = (value: string): value is BreathingPresetId => (
-  Object.values(breathingPresetIds) as readonly string[]
-).includes(value);
+export const isBreathingPresetId = (value: string): value is BreathingPresetId =>
+  (Object.values(breathingPresetIds) as readonly string[]).includes(value);
 
-export const isPracticeDurationPresetId = (value: string): value is PracticeDurationPresetId => (
-  Object.values(practiceDurationPresetIds) as readonly string[]
-).includes(value);
+export const isPracticeDurationPresetId = (value: string): value is PracticeDurationPresetId =>
+  (Object.values(practiceDurationPresetIds) as readonly string[]).includes(value);
 
-export const isAmbientAudioPresetId = (value: string): value is AmbientAudioPresetId => (
-  ambientAudioPresetOrder as readonly string[]
-).includes(value);
+export const isAmbientAudioPresetId = (value: string): value is AmbientAudioPresetId =>
+  (ambientAudioPresetOrder as readonly string[]).includes(value);
 
 export interface PracticeSettings {
   lowIntensityMode: boolean;
@@ -177,10 +173,8 @@ export const ambientAudioVolumeBounds = {
 
 export const normalizePhrase = (phrase: string): string => phrase.trim().replace(/\s+/g, ' ');
 
-export const normalizeReflection = (reflection: string): string => reflection
-  .replace(/\r\n?/g, '\n')
-  .trim()
-  .slice(0, reflectionMaxLength);
+export const normalizeReflection = (reflection: string): string =>
+  reflection.replace(/\r\n?/g, '\n').trim().slice(0, reflectionMaxLength);
 
 export const isValidPhrase = (phrase: string): boolean => {
   const normalizedPhrase = normalizePhrase(phrase);
@@ -199,7 +193,10 @@ export const sanitizeCustomPracticeDurationMinutes = (minutes: unknown): number 
   );
 };
 
-export const sanitizeCustomBreathingSeconds = (seconds: unknown, fallbackSeconds: number): number => {
+export const sanitizeCustomBreathingSeconds = (
+  seconds: unknown,
+  fallbackSeconds: number,
+): number => {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds)) {
     return fallbackSeconds;
   }

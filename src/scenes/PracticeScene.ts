@@ -1,13 +1,13 @@
 import * as Phaser from 'phaser';
 
 import {
-  AmbientAudioUnavailableError,
-  createAmbientAudioEngine,
-  getPracticeDurationSeconds,
   type AmbientAudioEngine,
   type AmbientAudioSettings,
   type AmbientAudioStartHandle,
   type AmbientAudioStartResult,
+  AmbientAudioUnavailableError,
+  createAmbientAudioEngine,
+  getPracticeDurationSeconds,
 } from '../audio/ambientAudio';
 import { getSessionStore } from '../game/Game';
 import { navigateToScene } from '../game/navigation';
@@ -22,7 +22,11 @@ import {
 } from '../practice/stagePresenter';
 import { ambientAudioVolumePreviewEventName } from '../shell/sessionPanels';
 import { sanitizeAmbientAudioVolume } from '../state/types';
-import { createPracticeControls, getPracticeControlsLayout, type PracticeControls } from '../ui/components/PracticeControls';
+import {
+  createPracticeControls,
+  getPracticeControlsLayout,
+  type PracticeControls,
+} from '../ui/components/PracticeControls';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { getLayoutFrame } from '../ui/layout';
 import { withTextResolution } from '../ui/textResolution';
@@ -214,13 +218,15 @@ export class PracticeScene extends Phaser.Scene {
     sessionStore.updateCurrentScene(sceneKeys.practice);
     sessionStore.startPractice(practiceConfig);
 
-    if (completeImmediatePracticeIfNeeded({
-      snapshot: this.snapshot,
-      ambientAudioStart: data?.ambientAudioStart,
-      finishPractice: () => {
-        this.finishPractice('completed');
-      },
-    })) {
+    if (
+      completeImmediatePracticeIfNeeded({
+        snapshot: this.snapshot,
+        ambientAudioStart: data?.ambientAudioStart,
+        finishPractice: () => {
+          this.finishPractice('completed');
+        },
+      })
+    ) {
       return;
     }
 
@@ -228,16 +234,19 @@ export class PracticeScene extends Phaser.Scene {
       width: this.scale.width,
       height: this.scale.height,
     });
-    const contentCenterX = frame.contentX + (frame.contentWidth / 2);
+    const contentCenterX = frame.contentX + frame.contentWidth / 2;
     const cardWidth = frame.contentWidth;
     const compactPractice = frame.contentHeight < 640 || cardWidth < 360;
     const titleWidth = Math.min(cardWidth, 980);
-    const readableWidth = Math.min(cardWidth - ((compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl) * 2), 760);
+    const readableWidth = Math.min(
+      cardWidth - (compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl) * 2,
+      760,
+    );
     const stageOuterInset = cardWidth >= 900 ? uiTheme.spacing.xl : uiTheme.spacing.md;
-    const stageWidth = Math.max(220, cardWidth - (stageOuterInset * 2));
+    const stageWidth = Math.max(220, cardWidth - stageOuterInset * 2);
     const controlsWidth = Math.min(cardWidth, 760);
     const controlsLayout = getPracticeControlsLayout(controlsWidth);
-    const controlsY = frame.height - uiTheme.spacing.xl - (controlsLayout.height / 2);
+    const controlsY = frame.height - uiTheme.spacing.xl - controlsLayout.height / 2;
     const movingBallInset = cardWidth >= 900 ? uiTheme.spacing.lg : uiTheme.spacing.md;
     this.shuttingDown = false;
 
@@ -249,75 +258,108 @@ export class PracticeScene extends Phaser.Scene {
       subtitle: practiceConfig.display.subtitle,
     });
 
-    const practiceTop = title.y + title.height + (compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg);
-    const practiceBottom = controlsY - (controlsLayout.height / 2) - (compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg);
+    const practiceTop =
+      title.y + title.height + (compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg);
+    const practiceBottom =
+      controlsY -
+      controlsLayout.height / 2 -
+      (compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.lg);
     const statusReservedHeight = compactPractice ? 0 : 44;
     const guideGap = compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.md;
     const guideMinHeight = compactPractice ? 120 : 184;
 
-    this.phaseText = this.add.text(contentCenterX, practiceTop + uiTheme.spacing.xs, '', withTextResolution({
-      color: uiTheme.colors.seaGlass,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '12px',
-      fontStyle: '700',
-      align: 'center',
-    }));
+    this.phaseText = this.add.text(
+      contentCenterX,
+      practiceTop + uiTheme.spacing.xs,
+      '',
+      withTextResolution({
+        color: uiTheme.colors.seaGlass,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '12px',
+        fontStyle: '700',
+        align: 'center',
+      }),
+    );
     this.phaseText.setOrigin(0.5, 0);
     this.phaseText.setAlpha(0.72);
 
-    this.timerText = this.add.text(contentCenterX, this.phaseText.y + this.phaseText.height + uiTheme.spacing.sm, '', withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
-      fontStyle: '600',
-      align: 'center',
-    }));
+    this.timerText = this.add.text(
+      contentCenterX,
+      this.phaseText.y + this.phaseText.height + uiTheme.spacing.sm,
+      '',
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '14px',
+        fontStyle: '600',
+        align: 'center',
+      }),
+    );
     this.timerText.setOrigin(0.5, 0);
     this.timerText.setAlpha(0.7);
     this.focusHeaderObjects = [title, this.phaseText, this.timerText];
 
     const guideTop = this.timerText.y + this.timerText.height + guideGap;
-    const guideBottom = practiceBottom - statusReservedHeight - (compactPractice ? uiTheme.spacing.xs : uiTheme.spacing.md);
+    const guideBottom =
+      practiceBottom -
+      statusReservedHeight -
+      (compactPractice ? uiTheme.spacing.xs : uiTheme.spacing.md);
     const guideHeight = Math.max(guideMinHeight, guideBottom - guideTop);
-    const guideCenterY = guideTop + (guideHeight / 2);
+    const guideCenterY = guideTop + guideHeight / 2;
     const phraseHeadingY = Math.max(
       this.timerText.y + this.timerText.height + uiTheme.spacing.xl,
       guideCenterY - (compactPractice ? 72 : 104),
     );
-    const phraseHeading = practiceConfig.exercise.requiresPhrase && practiceConfig.phrase
-      ? this.add.text(contentCenterX, phraseHeadingY, `“${practiceConfig.phrase}”`, withTextResolution({
-        color: uiTheme.colors.foam,
-        fontFamily: uiTheme.typography.fontFamily,
-        fontSize: compactPractice ? '18px' : '24px',
-        fontStyle: '700',
-        align: 'center',
-        wordWrap: { width: readableWidth, useAdvancedWrap: true },
-      }))
-      : null;
+    const phraseHeading =
+      practiceConfig.exercise.requiresPhrase && practiceConfig.phrase
+        ? this.add.text(
+            contentCenterX,
+            phraseHeadingY,
+            `“${practiceConfig.phrase}”`,
+            withTextResolution({
+              color: uiTheme.colors.foam,
+              fontFamily: uiTheme.typography.fontFamily,
+              fontSize: compactPractice ? '18px' : '24px',
+              fontStyle: '700',
+              align: 'center',
+              wordWrap: { width: readableWidth, useAdvancedWrap: true },
+            }),
+          )
+        : null;
     phraseHeading?.setOrigin(0.5, 0.5);
     phraseHeading?.setAlpha(0.96);
 
-    this.statusText = this.add.text(contentCenterX, practiceBottom, '', withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '12px',
-      align: 'center',
-      wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
-      lineSpacing: 4,
-    }));
+    this.statusText = this.add.text(
+      contentCenterX,
+      practiceBottom,
+      '',
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '12px',
+        align: 'center',
+        wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
+        lineSpacing: 4,
+      }),
+    );
     this.statusText.setOrigin(0.5, 1);
     this.focusControlsTextVisibleAlpha = compactPractice ? 0 : 0.55;
     this.statusText.setAlpha(this.focusControlsTextVisibleAlpha);
 
-    this.ambientAudioNoticeText = this.add.text(contentCenterX, practiceBottom - (compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl), '', withTextResolution({
-      color: uiTheme.colors.coral,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '12px',
-      fontStyle: '700',
-      align: 'center',
-      wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
-      lineSpacing: 4,
-    }));
+    this.ambientAudioNoticeText = this.add.text(
+      contentCenterX,
+      practiceBottom - (compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl),
+      '',
+      withTextResolution({
+        color: uiTheme.colors.coral,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '12px',
+        fontStyle: '700',
+        align: 'center',
+        wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
+        lineSpacing: 4,
+      }),
+    );
     this.ambientAudioNoticeText.setOrigin(0.5, 1);
     this.ambientAudioNoticeText.setAlpha(0.92);
     this.ambientAudioNoticeText.setVisible(false);
@@ -331,26 +373,44 @@ export class PracticeScene extends Phaser.Scene {
       movingBallInset,
     });
 
-    const overlayBackground = this.add.rectangle(0, 0, Math.min(stageWidth, 680), 132, hexToNumber(uiTheme.colors.surface), 0.74)
+    const overlayBackground = this.add
+      .rectangle(0, 0, Math.min(stageWidth, 680), 132, hexToNumber(uiTheme.colors.surface), 0.74)
       .setOrigin(0.5)
       .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.3);
-    const overlayTitle = this.add.text(0, -18, 'Paused', withTextResolution({
-      color: uiTheme.colors.text,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '22px',
-      fontStyle: '600',
-      align: 'center',
-    }));
+    const overlayTitle = this.add.text(
+      0,
+      -18,
+      'Paused',
+      withTextResolution({
+        color: uiTheme.colors.text,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '22px',
+        fontStyle: '600',
+        align: 'center',
+      }),
+    );
     overlayTitle.setOrigin(0.5, 0.5);
-    const overlayCopy = this.add.text(0, 20, practiceConfig.display.pausedOverlayCopy, withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '13px',
-      align: 'center',
-      wordWrap: { width: Math.min(stageWidth, 680) - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    }));
+    const overlayCopy = this.add.text(
+      0,
+      20,
+      practiceConfig.display.pausedOverlayCopy,
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '13px',
+        align: 'center',
+        wordWrap: {
+          width: Math.min(stageWidth, 680) - uiTheme.spacing.xl * 2,
+          useAdvancedWrap: true,
+        },
+      }),
+    );
     overlayCopy.setOrigin(0.5, 0.5);
-    this.pauseOverlay = this.add.container(contentCenterX, guideCenterY, [overlayBackground, overlayTitle, overlayCopy]);
+    this.pauseOverlay = this.add.container(contentCenterX, guideCenterY, [
+      overlayBackground,
+      overlayTitle,
+      overlayCopy,
+    ]);
     this.pauseOverlay.setVisible(false);
 
     this.controls = createPracticeControls({
@@ -375,7 +435,9 @@ export class PracticeScene extends Phaser.Scene {
       void this.startAmbientAudio(this.ambientAudioSettings);
     }
     this.unsubscribePracticeSettings = sessionStore.subscribe(() => {
-      this.reconcileAmbientAudioSettings(this.getAmbientAudioSettings(sessionStore.createPracticeConfig().ambientAudio));
+      this.reconcileAmbientAudioSettings(
+        this.getAmbientAudioSettings(sessionStore.createPracticeConfig().ambientAudio),
+      );
     });
     this.input.on('pointerdown', this.handlePracticePointerDown);
     this.input.on('pointermove', this.handlePracticePointerMove);
@@ -402,7 +464,10 @@ export class PracticeScene extends Phaser.Scene {
       this.unsubscribePracticeSettings?.();
       this.unsubscribePracticeSettings = null;
       window.removeEventListener('soft-focus:themechange', this.handleThemeChange);
-      window.removeEventListener(ambientAudioVolumePreviewEventName, this.handleAmbientVolumePreview);
+      window.removeEventListener(
+        ambientAudioVolumePreviewEventName,
+        this.handleAmbientVolumePreview,
+      );
       this.releaseAmbientAudioRestartHandoff();
       this.stagePresenter.destroy();
       this.stagePresenter = createIdlePracticeStagePresenter();
@@ -423,9 +488,9 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     if (
-      nextSnapshot.phase !== this.snapshot.phase
-      || nextSnapshot.secondsRemaining !== this.snapshot.secondsRemaining
-      || nextSnapshot.paused !== this.snapshot.paused
+      nextSnapshot.phase !== this.snapshot.phase ||
+      nextSnapshot.secondsRemaining !== this.snapshot.secondsRemaining ||
+      nextSnapshot.paused !== this.snapshot.paused
     ) {
       this.refreshView(nextSnapshot);
     }
@@ -441,20 +506,32 @@ export class PracticeScene extends Phaser.Scene {
   }
 
   private refreshView(snapshot: PracticeRunnerSnapshot): void {
-    if (!this.practiceConfig || !this.phaseText || !this.timerText || !this.statusText || !this.controls) {
+    if (
+      !this.practiceConfig ||
+      !this.phaseText ||
+      !this.timerText ||
+      !this.statusText ||
+      !this.controls
+    ) {
       return;
     }
 
     const wasPaused = this.snapshot?.paused ?? false;
     this.snapshot = snapshot;
     const activePhase = getPhaseDefinition(this.practiceConfig, snapshot);
-    this.phaseText.setText(snapshot.phase === 'complete' ? 'Complete' : (activePhase?.label ?? 'Practice'));
-    this.timerText.setText(snapshot.phase === 'complete' ? '0s left' : `${snapshot.secondsRemaining}s left`);
+    this.phaseText.setText(
+      snapshot.phase === 'complete' ? 'Complete' : (activePhase?.label ?? 'Practice'),
+    );
+    this.timerText.setText(
+      snapshot.phase === 'complete' ? '0s left' : `${snapshot.secondsRemaining}s left`,
+    );
     this.statusText.setText(this.practiceConfig.display.statusLines.join('\n'));
 
     this.controls.setPaused(snapshot.paused);
     this.pauseOverlay?.setVisible(snapshot.paused);
-    this.stagePresenter.setActive(Boolean(activePhase?.activatesStagePresenter) && !snapshot.complete);
+    this.stagePresenter.setActive(
+      Boolean(activePhase?.activatesStagePresenter) && !snapshot.complete,
+    );
     this.stagePresenter.setPaused(snapshot.paused);
     this.syncAmbientAudio(snapshot, wasPaused);
 
@@ -479,21 +556,26 @@ export class PracticeScene extends Phaser.Scene {
     };
   }
 
-  private ambientAudioSettingsMatch(left: AmbientAudioSettings, right: AmbientAudioSettings): boolean {
-    return left.enabled === right.enabled
-      && left.presetId === right.presetId
-      && left.volume === right.volume;
+  private ambientAudioSettingsMatch(
+    left: AmbientAudioSettings,
+    right: AmbientAudioSettings,
+  ): boolean {
+    return (
+      left.enabled === right.enabled &&
+      left.presetId === right.presetId &&
+      left.volume === right.volume
+    );
   }
 
   private createRestartData(snapshot: PracticeRunnerSnapshot): PracticeSceneData {
     const practiceConfig = this.practiceConfig
       ? {
-        ...this.practiceConfig,
-        ambientAudio: {
-          ...this.practiceConfig.ambientAudio,
-          ...(this.ambientAudioSettings ?? {}),
-        },
-      }
+          ...this.practiceConfig,
+          ambientAudio: {
+            ...this.practiceConfig.ambientAudio,
+            ...(this.ambientAudioSettings ?? {}),
+          },
+        }
       : undefined;
 
     return {
@@ -503,12 +585,14 @@ export class PracticeScene extends Phaser.Scene {
     };
   }
 
-  private createAmbientAudioRestartHandoff(snapshot: PracticeRunnerSnapshot): AmbientAudioStartHandle | undefined {
+  private createAmbientAudioRestartHandoff(
+    snapshot: PracticeRunnerSnapshot,
+  ): AmbientAudioStartHandle | undefined {
     if (
-      snapshot.complete
-      || !this.practiceConfig
-      || !this.ambientAudio
-      || !this.ambientAudioSettings?.enabled
+      snapshot.complete ||
+      !this.practiceConfig ||
+      !this.ambientAudio ||
+      !this.ambientAudioSettings?.enabled
     ) {
       this.pendingAmbientAudioRestartHandoff = null;
       return undefined;
@@ -531,8 +615,8 @@ export class PracticeScene extends Phaser.Scene {
 
   private releaseAmbientAudioRestartHandoff(): void {
     if (
-      this.pendingAmbientAudioRestartHandoff
-      && this.ambientAudio === this.pendingAmbientAudioRestartHandoff.engine
+      this.pendingAmbientAudioRestartHandoff &&
+      this.ambientAudio === this.pendingAmbientAudioRestartHandoff.engine
     ) {
       this.ambientAudio = null;
       this.ambientAudioStartResult = null;
@@ -590,16 +674,20 @@ export class PracticeScene extends Phaser.Scene {
     }
 
     if (
-      !this.ambientAudioSettings.enabled
-      || !this.ambientAudioSettingsMatch(handle.settings, this.ambientAudioSettings)
-      || handle.totalDurationSeconds !== this.totalPracticeDurationSeconds
+      !this.ambientAudioSettings.enabled ||
+      !this.ambientAudioSettingsMatch(handle.settings, this.ambientAudioSettings) ||
+      handle.totalDurationSeconds !== this.totalPracticeDurationSeconds
     ) {
       handle.engine.dispose({ fadeOutSeconds: 0 });
       return false;
     }
 
     handle.engine.setPlaybackErrorHandler((error) => {
-      this.handleAmbientAudioFailure('Soft Focus could not continue ambient music.', error, handle.engine);
+      this.handleAmbientAudioFailure(
+        'Soft Focus could not continue ambient music.',
+        error,
+        handle.engine,
+      );
     });
     this.ambientAudio = handle.engine;
     this.ambientAudioStartResult = handle.startResult;
@@ -621,26 +709,39 @@ export class PracticeScene extends Phaser.Scene {
         return;
       }
 
-      this.handleAmbientAudioFailure('Soft Focus could not start ambient music.', result.error, handle.engine);
+      this.handleAmbientAudioFailure(
+        'Soft Focus could not start ambient music.',
+        result.error,
+        handle.engine,
+      );
     });
 
     return true;
   }
 
-  private async startAmbientAudio(settings: AmbientAudioSettings | null = this.ambientAudioSettings): Promise<void> {
+  private async startAmbientAudio(
+    settings: AmbientAudioSettings | null = this.ambientAudioSettings,
+  ): Promise<void> {
     if (!settings?.enabled || this.snapshot?.paused || this.snapshot?.complete) {
       return;
     }
 
-    const engine = createAmbientAudioEngine({
-      enabled: settings.enabled,
-      presetId: settings.presetId,
-      volume: settings.volume,
-    }, {
-      onPlaybackError: (error) => {
-        this.handleAmbientAudioFailure('Soft Focus could not continue ambient music.', error, engine);
+    const engine = createAmbientAudioEngine(
+      {
+        enabled: settings.enabled,
+        presetId: settings.presetId,
+        volume: settings.volume,
       },
-    });
+      {
+        onPlaybackError: (error) => {
+          this.handleAmbientAudioFailure(
+            'Soft Focus could not continue ambient music.',
+            error,
+            engine,
+          );
+        },
+      },
+    );
     this.ambientAudio = engine;
     const startResult = engine.start().then<AmbientAudioStartResult, AmbientAudioStartResult>(
       () => ({ ok: true }),
@@ -659,7 +760,11 @@ export class PracticeScene extends Phaser.Scene {
       return;
     }
 
-    this.handleAmbientAudioFailure('Soft Focus could not start ambient music.', result.error, engine);
+    this.handleAmbientAudioFailure(
+      'Soft Focus could not start ambient music.',
+      result.error,
+      engine,
+    );
   }
 
   private syncAmbientAudio(snapshot: PracticeRunnerSnapshot, wasPaused: boolean): void {
@@ -718,7 +823,11 @@ export class PracticeScene extends Phaser.Scene {
     }
   }
 
-  private handleAmbientAudioFailure(message: string, error: unknown, engine: AmbientAudioEngine): void {
+  private handleAmbientAudioFailure(
+    message: string,
+    error: unknown,
+    engine: AmbientAudioEngine,
+  ): void {
     reportOperatorError(message, error);
     this.setAmbientAudioNotice(this.getAmbientAudioFailureNotice(error));
 
@@ -910,7 +1019,9 @@ export class PracticeScene extends Phaser.Scene {
 
     if (this.snapshot) {
       const activePhase = getPhaseDefinition(this.practiceConfig, this.snapshot);
-      this.stagePresenter.setActive(Boolean(activePhase?.activatesStagePresenter) && !this.snapshot.complete);
+      this.stagePresenter.setActive(
+        Boolean(activePhase?.activatesStagePresenter) && !this.snapshot.complete,
+      );
       this.stagePresenter.setPaused(this.snapshot.paused);
     }
   }

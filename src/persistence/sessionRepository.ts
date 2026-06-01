@@ -1,25 +1,25 @@
 import { isSceneKey } from '../game/sceneKeys';
+import { exerciseRequiresPhrase, getExerciseSessionEntryModeId } from '../practice/exercises';
 import {
-  createInitialSessionState,
   createDefaultPracticeSettings,
-  isBreathingPresetId,
+  createInitialSessionState,
+  customBreathingTimingBounds,
   isAmbientAudioPresetId,
+  isBreathingPresetId,
   isExerciseId,
   isMovingBallPresetId,
   isPracticeDurationPresetId,
   isSessionEntryModeId,
   maxRecentSessionSummaries,
-  normalizeReflection,
   normalizePhrase,
-  sanitizeAmbientAudioVolume,
-  sanitizeCustomBreathingSeconds,
-  sanitizeCustomPracticeDurationMinutes,
-  customBreathingTimingBounds,
+  normalizeReflection,
   type PracticeSettings,
   type SessionState,
   type SessionSummary,
+  sanitizeAmbientAudioVolume,
+  sanitizeCustomBreathingSeconds,
+  sanitizeCustomPracticeDurationMinutes,
 } from '../state/types';
-import { exerciseRequiresPhrase, getExerciseSessionEntryModeId } from '../practice/exercises';
 
 import { getBrowserStorage, readStorageItem, type StorageLike, writeStorageItem } from './storage';
 
@@ -32,7 +32,8 @@ interface PersistedSessionState {
   recentSessionSummaries: SessionSummary[];
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 const sanitizeSettings = (value: unknown): PracticeSettings => {
   const defaults = createDefaultPracticeSettings();
@@ -42,24 +43,44 @@ const sanitizeSettings = (value: unknown): PracticeSettings => {
   }
 
   return {
-    lowIntensityMode: typeof value.lowIntensityMode === 'boolean' ? value.lowIntensityMode : defaults.lowIntensityMode,
-    reducedMotionEnabled: typeof value.reducedMotionEnabled === 'boolean' ? value.reducedMotionEnabled : defaults.reducedMotionEnabled,
-    gazeGuidanceEnabled: typeof value.gazeGuidanceEnabled === 'boolean' ? value.gazeGuidanceEnabled : defaults.gazeGuidanceEnabled,
-    ambientAudioEnabled: typeof value.ambientAudioEnabled === 'boolean' ? value.ambientAudioEnabled : defaults.ambientAudioEnabled,
+    lowIntensityMode:
+      typeof value.lowIntensityMode === 'boolean'
+        ? value.lowIntensityMode
+        : defaults.lowIntensityMode,
+    reducedMotionEnabled:
+      typeof value.reducedMotionEnabled === 'boolean'
+        ? value.reducedMotionEnabled
+        : defaults.reducedMotionEnabled,
+    gazeGuidanceEnabled:
+      typeof value.gazeGuidanceEnabled === 'boolean'
+        ? value.gazeGuidanceEnabled
+        : defaults.gazeGuidanceEnabled,
+    ambientAudioEnabled:
+      typeof value.ambientAudioEnabled === 'boolean'
+        ? value.ambientAudioEnabled
+        : defaults.ambientAudioEnabled,
     ambientAudioVolume: sanitizeAmbientAudioVolume(value.ambientAudioVolume),
-    ambientAudioPresetId: typeof value.ambientAudioPresetId === 'string' && isAmbientAudioPresetId(value.ambientAudioPresetId)
-      ? value.ambientAudioPresetId
-      : defaults.ambientAudioPresetId,
-    practiceDurationPresetId: typeof value.practiceDurationPresetId === 'string' && isPracticeDurationPresetId(value.practiceDurationPresetId)
-      ? value.practiceDurationPresetId
-      : defaults.practiceDurationPresetId,
-    customPracticeDurationMinutes: sanitizeCustomPracticeDurationMinutes(value.customPracticeDurationMinutes),
-    movingBallPresetId: typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
-      ? value.movingBallPresetId
-      : defaults.movingBallPresetId,
-    breathingPresetId: typeof value.breathingPresetId === 'string' && isBreathingPresetId(value.breathingPresetId)
-      ? value.breathingPresetId
-      : defaults.breathingPresetId,
+    ambientAudioPresetId:
+      typeof value.ambientAudioPresetId === 'string' &&
+      isAmbientAudioPresetId(value.ambientAudioPresetId)
+        ? value.ambientAudioPresetId
+        : defaults.ambientAudioPresetId,
+    practiceDurationPresetId:
+      typeof value.practiceDurationPresetId === 'string' &&
+      isPracticeDurationPresetId(value.practiceDurationPresetId)
+        ? value.practiceDurationPresetId
+        : defaults.practiceDurationPresetId,
+    customPracticeDurationMinutes: sanitizeCustomPracticeDurationMinutes(
+      value.customPracticeDurationMinutes,
+    ),
+    movingBallPresetId:
+      typeof value.movingBallPresetId === 'string' && isMovingBallPresetId(value.movingBallPresetId)
+        ? value.movingBallPresetId
+        : defaults.movingBallPresetId,
+    breathingPresetId:
+      typeof value.breathingPresetId === 'string' && isBreathingPresetId(value.breathingPresetId)
+        ? value.breathingPresetId
+        : defaults.breathingPresetId,
     customBreathingInhaleSeconds: sanitizeCustomBreathingSeconds(
       value.customBreathingInhaleSeconds,
       customBreathingTimingBounds.defaultInhaleSeconds,
@@ -81,47 +102,50 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
   }
 
   if (
-    Object.keys(value).some((key) => ![
-      'id',
-      'exerciseId',
-      'sessionEntryModeId',
-      'phrase',
-      'outcome',
-      'sceneKey',
-      'startedAt',
-      'completedAt',
-      'durationSeconds',
-      'reflection',
-    ].includes(key))
+    Object.keys(value).some(
+      (key) =>
+        ![
+          'id',
+          'exerciseId',
+          'sessionEntryModeId',
+          'phrase',
+          'outcome',
+          'sceneKey',
+          'startedAt',
+          'completedAt',
+          'durationSeconds',
+          'reflection',
+        ].includes(key),
+    )
   ) {
     return null;
   }
 
   const durationSeconds = value.durationSeconds;
-  const hasValidDuration = durationSeconds === null
-    || (
-      typeof durationSeconds === 'number'
-      && Number.isFinite(durationSeconds)
-      && durationSeconds >= 0
-      && Number.isInteger(durationSeconds)
-    );
+  const hasValidDuration =
+    durationSeconds === null ||
+    (typeof durationSeconds === 'number' &&
+      Number.isFinite(durationSeconds) &&
+      durationSeconds >= 0 &&
+      Number.isInteger(durationSeconds));
 
   if (
-    typeof value.id !== 'string'
-    || typeof value.phrase !== 'string'
-    || (value.outcome !== 'completed' && value.outcome !== 'stopped')
-    || typeof value.sceneKey !== 'string'
-    || !isSceneKey(value.sceneKey)
-    || typeof value.startedAt !== 'string'
-    || typeof value.completedAt !== 'string'
-    || !hasValidDuration
+    typeof value.id !== 'string' ||
+    typeof value.phrase !== 'string' ||
+    (value.outcome !== 'completed' && value.outcome !== 'stopped') ||
+    typeof value.sceneKey !== 'string' ||
+    !isSceneKey(value.sceneKey) ||
+    typeof value.startedAt !== 'string' ||
+    typeof value.completedAt !== 'string' ||
+    !hasValidDuration
   ) {
     return null;
   }
 
   const persistedSessionEntryModeId = value.sessionEntryModeId;
   const persistedExerciseId = value.exerciseId;
-  const hasValidExerciseId = typeof persistedExerciseId === 'string' && isExerciseId(persistedExerciseId);
+  const hasValidExerciseId =
+    typeof persistedExerciseId === 'string' && isExerciseId(persistedExerciseId);
 
   if (!hasValidExerciseId || typeof persistedSessionEntryModeId !== 'string') {
     return null;
@@ -131,15 +155,13 @@ const sanitizeSessionSummary = (value: unknown): SessionSummary | null => {
   const expectedSessionEntryModeId = getExerciseSessionEntryModeId(exerciseId);
 
   if (
-    !isSessionEntryModeId(persistedSessionEntryModeId)
-    || persistedSessionEntryModeId !== expectedSessionEntryModeId
+    !isSessionEntryModeId(persistedSessionEntryModeId) ||
+    persistedSessionEntryModeId !== expectedSessionEntryModeId
   ) {
     return null;
   }
 
-  const phrase = exerciseRequiresPhrase(exerciseId)
-    ? normalizePhrase(value.phrase)
-    : '';
+  const phrase = exerciseRequiresPhrase(exerciseId) ? normalizePhrase(value.phrase) : '';
 
   return {
     id: value.id,
@@ -178,7 +200,10 @@ const createPersistedSessionState = (state: SessionState): PersistedSessionState
 export class SessionRepository {
   constructor(private readonly storage: StorageLike | null = getBrowserStorage()) {}
 
-  loadState(): Pick<SessionState, 'selectedExercise' | 'phrase' | 'settings' | 'recentSessionSummaries'> {
+  loadState(): Pick<
+    SessionState,
+    'selectedExercise' | 'phrase' | 'settings' | 'recentSessionSummaries'
+  > {
     const fallbackState = createInitialSessionState();
     const rawValue = readStorageItem(this.storage, storageKey);
 
@@ -204,10 +229,15 @@ export class SessionRepository {
       }
 
       return {
-        selectedExercise: typeof parsedValue.selectedExercise === 'string' && isExerciseId(parsedValue.selectedExercise)
-          ? parsedValue.selectedExercise
-          : fallbackState.selectedExercise,
-        phrase: typeof parsedValue.phrase === 'string' ? normalizePhrase(parsedValue.phrase) : fallbackState.phrase,
+        selectedExercise:
+          typeof parsedValue.selectedExercise === 'string' &&
+          isExerciseId(parsedValue.selectedExercise)
+            ? parsedValue.selectedExercise
+            : fallbackState.selectedExercise,
+        phrase:
+          typeof parsedValue.phrase === 'string'
+            ? normalizePhrase(parsedValue.phrase)
+            : fallbackState.phrase,
         settings: sanitizeSettings(parsedValue.settings),
         recentSessionSummaries: sanitizeRecentSessionSummaries(parsedValue.recentSessionSummaries),
       };
@@ -222,8 +252,13 @@ export class SessionRepository {
   }
 
   saveState(state: SessionState): boolean {
-    return writeStorageItem(this.storage, storageKey, JSON.stringify(createPersistedSessionState(state)));
+    return writeStorageItem(
+      this.storage,
+      storageKey,
+      JSON.stringify(createPersistedSessionState(state)),
+    );
   }
 }
 
-export const createSessionRepository = (storage?: StorageLike | null): SessionRepository => new SessionRepository(storage);
+export const createSessionRepository = (storage?: StorageLike | null): SessionRepository =>
+  new SessionRepository(storage);

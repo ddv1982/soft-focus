@@ -1,7 +1,6 @@
 import * as Phaser from 'phaser';
-
-import { hexToNumber, uiTheme } from '../theme';
 import { withTextResolution } from '../textResolution';
+import { hexToNumber, uiTheme } from '../theme';
 
 export interface PracticeControls {
   container: Phaser.GameObjects.Container;
@@ -47,7 +46,7 @@ export const getPracticeControlsLayout = (width: number): PracticeControlsLayout
     buttonHeight,
     gap,
     stacked,
-    height: stacked ? (buttonHeight * 2) + gap : buttonHeight,
+    height: stacked ? buttonHeight * 2 + gap : buttonHeight,
   };
 };
 
@@ -60,7 +59,14 @@ const createControlButton = (
   variant: 'primary' | 'secondary' = 'secondary',
 ): ControlButton => {
   const height = 48;
-  const shadow = scene.add.rectangle(0, 5, width - 8, height, uiTheme.colors.shadow, variant === 'primary' ? 0.18 : 0.08);
+  const shadow = scene.add.rectangle(
+    0,
+    5,
+    width - 8,
+    height,
+    uiTheme.colors.shadow,
+    variant === 'primary' ? 0.18 : 0.08,
+  );
   shadow.setOrigin(0.5);
 
   const background = scene.add.rectangle(
@@ -72,18 +78,34 @@ const createControlButton = (
     variant === 'primary' ? 0.9 : 0.48,
   );
   background.setOrigin(0.5);
-  background.setStrokeStyle(variant === 'primary' ? 2 : 1, hexToNumber(variant === 'primary' ? uiTheme.colors.foam : uiTheme.colors.border), variant === 'primary' ? 0.3 : 0.34);
+  background.setStrokeStyle(
+    variant === 'primary' ? 2 : 1,
+    hexToNumber(variant === 'primary' ? uiTheme.colors.foam : uiTheme.colors.border),
+    variant === 'primary' ? 0.3 : 0.34,
+  );
 
-  const highlight = scene.add.rectangle(0, -((height / 2) - 1), width - 18, 1, hexToNumber(uiTheme.colors.foam), variant === 'primary' ? 0.26 : 0.08);
+  const highlight = scene.add.rectangle(
+    0,
+    -(height / 2 - 1),
+    width - 18,
+    1,
+    hexToNumber(uiTheme.colors.foam),
+    variant === 'primary' ? 0.26 : 0.08,
+  );
   highlight.setOrigin(0.5);
 
-  const text = scene.add.text(0, 0, label, withTextResolution({
-    color: variant === 'primary' ? uiTheme.colors.accentText : uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '16px',
-    fontStyle: '600',
-    align: 'center',
-  }));
+  const text = scene.add.text(
+    0,
+    0,
+    label,
+    withTextResolution({
+      color: variant === 'primary' ? uiTheme.colors.accentText : uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '16px',
+      fontStyle: '600',
+      align: 'center',
+    }),
+  );
   text.setOrigin(0.5);
 
   const container = scene.add.container(x, 0, [shadow, background, highlight, text]);
@@ -92,15 +114,26 @@ const createControlButton = (
 
   background.on('pointerdown', () => {
     container.setScale(uiTheme.motion.pressScale);
-    background.setFillStyle(hexToNumber(variant === 'primary' ? uiTheme.colors.accentPressed : uiTheme.colors.surfaceMist), variant === 'primary' ? 0.94 : 0.6);
+    background.setFillStyle(
+      hexToNumber(
+        variant === 'primary' ? uiTheme.colors.accentPressed : uiTheme.colors.surfaceMist,
+      ),
+      variant === 'primary' ? 0.94 : 0.6,
+    );
   });
   const resetState = (): void => {
     container.setScale(1);
-    background.setFillStyle(hexToNumber(variant === 'primary' ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised), variant === 'primary' ? 0.9 : 0.48);
+    background.setFillStyle(
+      hexToNumber(variant === 'primary' ? uiTheme.colors.accent : uiTheme.colors.surfaceRaised),
+      variant === 'primary' ? 0.9 : 0.48,
+    );
   };
 
   background.on('pointerover', () => {
-    background.setFillStyle(hexToNumber(variant === 'primary' ? uiTheme.colors.horizon : uiTheme.colors.surfaceMist), variant === 'primary' ? 0.94 : 0.6);
+    background.setFillStyle(
+      hexToNumber(variant === 'primary' ? uiTheme.colors.horizon : uiTheme.colors.surfaceMist),
+      variant === 'primary' ? 0.94 : 0.6,
+    );
   });
 
   background.on('pointerout', resetState);
@@ -148,7 +181,7 @@ export const createPracticeControls = ({
 
   const pauseButton = createControlButton(
     scene,
-    layout.stacked ? 0 : -((layout.buttonWidth / 2) + (layout.gap / 2)),
+    layout.stacked ? 0 : -(layout.buttonWidth / 2 + layout.gap / 2),
     layout.buttonWidth,
     'Pause',
     onPause,
@@ -156,7 +189,7 @@ export const createPracticeControls = ({
   );
   const stopButton = createControlButton(
     scene,
-    layout.stacked ? 0 : ((layout.buttonWidth / 2) + (layout.gap / 2)),
+    layout.stacked ? 0 : layout.buttonWidth / 2 + layout.gap / 2,
     layout.buttonWidth,
     'Stop practice',
     onStop,

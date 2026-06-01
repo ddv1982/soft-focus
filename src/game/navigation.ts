@@ -1,11 +1,9 @@
 import type Phaser from 'phaser';
-
-import { SessionStore } from '../state/sessionStore';
 import { getExerciseInstructionsBackScene } from '../practice/exercises';
+import { SessionStore } from '../state/sessionStore';
 import type { ExerciseId } from '../state/types';
-
+import { orderedSceneKeys, type SceneKey, sceneKeys } from './sceneKeys';
 import { sessionStoreRegistryKey } from './serviceKeys';
-import { sceneKeys, orderedSceneKeys, type SceneKey } from './sceneKeys';
 
 const nextSceneKeyByScene: Readonly<Record<SceneKey, SceneKey | null>> = {
   [sceneKeys.entry]: sceneKeys.exerciseSelection,
@@ -25,10 +23,11 @@ export interface NavigationRequest {
   data?: object;
 }
 
-export { getSessionEntryMode, isSessionEntryModeRestartScene } from '../state/sessionEntryMode';
 export { getExerciseSessionEntryMode, getExerciseStartScene } from '../practice/exercises';
+export { getSessionEntryMode, isSessionEntryModeRestartScene } from '../state/sessionEntryMode';
 
-export const getNextSceneKey = (sceneKey: SceneKey): SceneKey | null => nextSceneKeyByScene[sceneKey];
+export const getNextSceneKey = (sceneKey: SceneKey): SceneKey | null =>
+  nextSceneKeyByScene[sceneKey];
 
 export const getPreviousSceneKey = (sceneKey: SceneKey): SceneKey | null => {
   const sceneIndex = orderedSceneKeys.indexOf(sceneKey);
@@ -40,12 +39,12 @@ export const getPreviousSceneKey = (sceneKey: SceneKey): SceneKey | null => {
   return orderedSceneKeys[sceneIndex - 1];
 };
 
-export const getInstructionsBackScene = (selectedExercise: ExerciseId): SceneKey => (
-  getExerciseInstructionsBackScene(selectedExercise)
-);
+export const getInstructionsBackScene = (selectedExercise: ExerciseId): SceneKey =>
+  getExerciseInstructionsBackScene(selectedExercise);
 
 const assertRegisteredSceneKey = (scene: Phaser.Scene, sceneKey: SceneKey): void => {
-  const registeredSceneKeys = (scene.game as { registeredSceneKeys?: readonly SceneKey[] }).registeredSceneKeys ?? [];
+  const registeredSceneKeys =
+    (scene.game as { registeredSceneKeys?: readonly SceneKey[] }).registeredSceneKeys ?? [];
 
   if (registeredSceneKeys.length > 0 && !registeredSceneKeys.includes(sceneKey)) {
     throw new Error(`Cannot navigate to unregistered scene key: ${sceneKey}`);
@@ -73,7 +72,11 @@ export const navigateToScene = (scene: Phaser.Scene, request: NavigationRequest)
   })();
 };
 
-export const navigateForward = (scene: Phaser.Scene, currentSceneKey: SceneKey, data?: object): SceneKey | null => {
+export const navigateForward = (
+  scene: Phaser.Scene,
+  currentSceneKey: SceneKey,
+  data?: object,
+): SceneKey | null => {
   const nextSceneKey = getNextSceneKey(currentSceneKey);
 
   if (!nextSceneKey) {
@@ -89,7 +92,11 @@ export const navigateForward = (scene: Phaser.Scene, currentSceneKey: SceneKey, 
   return nextSceneKey;
 };
 
-export const navigateBack = (scene: Phaser.Scene, currentSceneKey: SceneKey, data?: object): SceneKey | null => {
+export const navigateBack = (
+  scene: Phaser.Scene,
+  currentSceneKey: SceneKey,
+  data?: object,
+): SceneKey | null => {
   const previousSceneKey = getPreviousSceneKey(currentSceneKey);
 
   if (!previousSceneKey) {

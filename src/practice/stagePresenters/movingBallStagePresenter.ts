@@ -40,16 +40,10 @@ export const resolveMovingBallStagePresenterLayout = ({
   radius: Math.max(10, radius * reducedMotion.amplitudeScale),
 });
 
-export const createMovingBallStagePresenter = (options: CreateMovingBallStagePresenterOptions): PracticeStagePresenterController => {
-  const {
-    scene,
-    x,
-    y,
-    width,
-    lowIntensity,
-    reducedMotion,
-    movingBall,
-  } = options;
+export const createMovingBallStagePresenter = (
+  options: CreateMovingBallStagePresenterOptions,
+): PracticeStagePresenterController => {
+  const { scene, x, y, width, lowIntensity, reducedMotion, movingBall } = options;
   const layout = resolveMovingBallStagePresenterLayout({
     width,
     laneBandHeight: movingBall.laneBandHeight,

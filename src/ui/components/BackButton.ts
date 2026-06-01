@@ -15,25 +15,43 @@ export const createBackButton = (
   options: BackButtonOptions,
 ): Phaser.GameObjects.Container => {
   const label = options.label ?? 'Back';
-  const icon = scene.add.text(uiTheme.spacing.sm, 0, '←', withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '18px',
-    fontStyle: '600',
-  }));
+  const icon = scene.add.text(
+    uiTheme.spacing.sm,
+    0,
+    '←',
+    withTextResolution({
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '18px',
+      fontStyle: '600',
+    }),
+  );
   icon.setOrigin(0, 0.5);
 
-  const text = scene.add.text(uiTheme.spacing.sm + icon.width + uiTheme.spacing.xs, 0, label, withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '15px',
-    fontStyle: '600',
-  }));
+  const text = scene.add.text(
+    uiTheme.spacing.sm + icon.width + uiTheme.spacing.xs,
+    0,
+    label,
+    withTextResolution({
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '15px',
+      fontStyle: '600',
+    }),
+  );
   text.setOrigin(0, 0.5);
 
-  const hitWidth = icon.width + uiTheme.spacing.xs + text.width + (uiTheme.spacing.sm * 2);
+  const hitWidth = icon.width + uiTheme.spacing.xs + text.width + uiTheme.spacing.sm * 2;
   const hitHeight = 44;
-  const hitArea = scene.add.rectangle(hitWidth / 2, 0, hitWidth, hitHeight, hexToNumber(uiTheme.colors.surfaceRaised), 0.64)
+  const hitArea = scene.add
+    .rectangle(
+      hitWidth / 2,
+      0,
+      hitWidth,
+      hitHeight,
+      hexToNumber(uiTheme.colors.surfaceRaised),
+      0.64,
+    )
     .setOrigin(0.5)
     .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.38)
     .setInteractive({ useHandCursor: true });

@@ -50,8 +50,12 @@ export const createBreathingResetStagePresenter = ({
   );
   const labelGap = compactStage ? 16 : portraitStage ? 34 : 26;
   const guideWidth = Math.min(width, ringRadius * (portraitStage ? 5.2 : 6.4));
-  const phaseFontSize = Math.round(Math.max(compactStage ? 16 : 18, Math.min(24, ringRadius * 0.22)));
-  const guideFontSize = Math.round(Math.max(compactStage ? 12 : 13, Math.min(compactStage ? 13 : 16, ringRadius * 0.15)));
+  const phaseFontSize = Math.round(
+    Math.max(compactStage ? 16 : 18, Math.min(24, ringRadius * 0.22)),
+  );
+  const guideFontSize = Math.round(
+    Math.max(compactStage ? 12 : 13, Math.min(compactStage ? 13 : 16, ringRadius * 0.15)),
+  );
   const showBreathGuideLabels = !compactStage;
   const fillRadius = ringRadius * (lowIntensity ? 0.6 : 0.54) * reducedMotion.amplitudeScale;
   const restScale = Math.max(0.9, reducedMotion.amplitudeScale);
@@ -59,12 +63,19 @@ export const createBreathingResetStagePresenter = ({
   const topUpScale = inhaleScale * 1.06;
   const exhaleScale = Math.max(0.88, restScale * 0.96);
   const inhaleDuration = Math.round(inhaleMs * reducedMotion.cycleMultiplier);
-  const inhaleTopUpDuration = inhaleTopUpMs ? Math.round(inhaleTopUpMs * reducedMotion.cycleMultiplier) : null;
-  const holdAfterInhaleDuration = holdAfterInhaleMs ? Math.round(holdAfterInhaleMs * reducedMotion.cycleMultiplier) : null;
+  const inhaleTopUpDuration = inhaleTopUpMs
+    ? Math.round(inhaleTopUpMs * reducedMotion.cycleMultiplier)
+    : null;
+  const holdAfterInhaleDuration = holdAfterInhaleMs
+    ? Math.round(holdAfterInhaleMs * reducedMotion.cycleMultiplier)
+    : null;
   const exhaleDuration = Math.round(exhaleMs * reducedMotion.cycleMultiplier);
-  const holdAfterExhaleDuration = holdAfterExhaleMs ? Math.round(holdAfterExhaleMs * reducedMotion.cycleMultiplier) : null;
+  const holdAfterExhaleDuration = holdAfterExhaleMs
+    ? Math.round(holdAfterExhaleMs * reducedMotion.cycleMultiplier)
+    : null;
 
-  const ring = scene.add.circle(x, y, ringRadius, accent, 0.08)
+  const ring = scene.add
+    .circle(x, y, ringRadius, accent, 0.08)
     .setStrokeStyle(2, accent, lowIntensity ? 0.3 : 0.42);
   const fill = scene.add.circle(x, y, fillRadius, accent, lowIntensity ? 0.2 : 0.28);
   const guide = scene.add.rectangle(x, y, guideWidth, 2, border, 0.18).setOrigin(0.5);
@@ -77,17 +88,18 @@ export const createBreathingResetStagePresenter = ({
       ? 'Inhale • top-up'
       : pattern === 'custom'
         ? 'Inhale • hold'
-      : pattern === 'box'
-        ? 'Inhale • hold'
-        : pattern === 'balanced'
-          ? 'Balanced inhale'
-          : 'Easy inhale',
+        : pattern === 'box'
+          ? 'Inhale • hold'
+          : pattern === 'balanced'
+            ? 'Balanced inhale'
+            : 'Easy inhale',
     {
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: `${guideFontSize}px`,
-    align: 'center',
-  });
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: `${guideFontSize}px`,
+      align: 'center',
+    },
+  );
   inhaleLabel.setOrigin(0.5);
   inhaleLabel.setVisible(showBreathGuideLabels);
 
@@ -99,15 +111,16 @@ export const createBreathingResetStagePresenter = ({
       ? 'Exhale • hold'
       : pattern === 'custom'
         ? 'Custom exhale'
-      : pattern === 'balanced'
-        ? 'Balanced exhale'
-        : 'Long easy exhale',
+        : pattern === 'balanced'
+          ? 'Balanced exhale'
+          : 'Long easy exhale',
     {
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: `${guideFontSize}px`,
-    align: 'center',
-  });
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: `${guideFontSize}px`,
+      align: 'center',
+    },
+  );
   exhaleLabel.setOrigin(0.5);
   exhaleLabel.setVisible(showBreathGuideLabels);
 

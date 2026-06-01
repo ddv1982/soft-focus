@@ -1,19 +1,28 @@
 import type { PracticeStagePresenterConfig } from './practiceConfig';
-import type { PracticeStagePresenterController, PracticeStagePresenterLoadOptions } from './stagePresenter';
+import type {
+  PracticeStagePresenterController,
+  PracticeStagePresenterLoadOptions,
+} from './stagePresenter';
 
 type StagePresenterLoader = (
   options: PracticeStagePresenterLoadOptions,
   config: PracticeStagePresenterConfig,
 ) => Promise<PracticeStagePresenterController>;
 
-const idleStagePresenterLoader: StagePresenterLoader = async ({ createIdleController }) => createIdleController();
+const idleStagePresenterLoader: StagePresenterLoader = async ({ createIdleController }) =>
+  createIdleController();
 
-const phraseAnchorStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, readableWidth }, config) => {
+const phraseAnchorStagePresenterLoader: StagePresenterLoader = async (
+  { scene, x, y, readableWidth },
+  config,
+) => {
   if (config.key !== 'phrase-anchor') {
     throw new Error(`Expected phrase-anchor config, received ${config.key}`);
   }
 
-  const { createPhraseAnchorStagePresenter } = await import('./stagePresenters/phraseAnchorStagePresenter');
+  const { createPhraseAnchorStagePresenter } = await import(
+    './stagePresenters/phraseAnchorStagePresenter'
+  );
 
   return createPhraseAnchorStagePresenter({
     scene,
@@ -26,7 +35,10 @@ const phraseAnchorStagePresenterLoader: StagePresenterLoader = async ({ scene, x
   });
 };
 
-const gazeStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth, readableWidth, movingBallInset }, config) => {
+const gazeStagePresenterLoader: StagePresenterLoader = async (
+  { scene, x, y, stageWidth, readableWidth, movingBallInset },
+  config,
+) => {
   if (config.key !== 'gaze-guidance') {
     throw new Error(`Expected gaze-guidance config, received ${config.key}`);
   }
@@ -40,16 +52,21 @@ const gazeStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, sta
     reducedMotion: config.reducedMotion,
     x,
     y,
-    width: Math.min(readableWidth, stageWidth - (movingBallInset * 2)),
+    width: Math.min(readableWidth, stageWidth - movingBallInset * 2),
   });
 };
 
-const movingBallStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth, movingBallInset }, config) => {
+const movingBallStagePresenterLoader: StagePresenterLoader = async (
+  { scene, x, y, stageWidth, movingBallInset },
+  config,
+) => {
   if (config.key !== 'moving-ball') {
     throw new Error(`Expected moving-ball config, received ${config.key}`);
   }
 
-  const { createMovingBallStagePresenter } = await import('./stagePresenters/movingBallStagePresenter');
+  const { createMovingBallStagePresenter } = await import(
+    './stagePresenters/movingBallStagePresenter'
+  );
 
   return createMovingBallStagePresenter({
     scene,
@@ -58,16 +75,21 @@ const movingBallStagePresenterLoader: StagePresenterLoader = async ({ scene, x, 
     reducedMotion: config.reducedMotion,
     x,
     y,
-    width: Math.max(180, stageWidth - (movingBallInset * 2)),
+    width: Math.max(180, stageWidth - movingBallInset * 2),
   });
 };
 
-const breathingResetStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth, stageHeight }, config) => {
+const breathingResetStagePresenterLoader: StagePresenterLoader = async (
+  { scene, x, y, stageWidth, stageHeight },
+  config,
+) => {
   if (config.key !== 'breathing-reset') {
     throw new Error(`Expected breathing-reset config, received ${config.key}`);
   }
 
-  const { createBreathingResetStagePresenter } = await import('./stagePresenters/breathingResetStagePresenter');
+  const { createBreathingResetStagePresenter } = await import(
+    './stagePresenters/breathingResetStagePresenter'
+  );
 
   return createBreathingResetStagePresenter({
     scene,
@@ -86,12 +108,17 @@ const breathingResetStagePresenterLoader: StagePresenterLoader = async ({ scene,
   });
 };
 
-const bilateralRhythmStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth }, config) => {
+const bilateralRhythmStagePresenterLoader: StagePresenterLoader = async (
+  { scene, x, y, stageWidth },
+  config,
+) => {
   if (config.key !== 'bilateral-rhythm') {
     throw new Error(`Expected bilateral-rhythm config, received ${config.key}`);
   }
 
-  const { createBilateralRhythmStagePresenter } = await import('./stagePresenters/bilateralRhythmStagePresenter');
+  const { createBilateralRhythmStagePresenter } = await import(
+    './stagePresenters/bilateralRhythmStagePresenter'
+  );
 
   return createBilateralRhythmStagePresenter({
     scene,
@@ -104,12 +131,17 @@ const bilateralRhythmStagePresenterLoader: StagePresenterLoader = async ({ scene
   });
 };
 
-const orientingStagePresenterLoader: StagePresenterLoader = async ({ scene, x, y, stageWidth }, config) => {
+const orientingStagePresenterLoader: StagePresenterLoader = async (
+  { scene, x, y, stageWidth },
+  config,
+) => {
   if (config.key !== 'orienting') {
     throw new Error(`Expected orienting config, received ${config.key}`);
   }
 
-  const { createOrientingStagePresenter } = await import('./stagePresenters/orientingStagePresenter');
+  const { createOrientingStagePresenter } = await import(
+    './stagePresenters/orientingStagePresenter'
+  );
 
   return createOrientingStagePresenter({
     scene,

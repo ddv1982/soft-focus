@@ -30,19 +30,27 @@ export const createBilateralRhythmStagePresenter = ({
   const radius = (lowIntensity ? 20 : 23) * Math.max(0.88, reducedMotion.amplitudeScale);
   const glowRadius = radius * 1.85;
 
-  const guide = scene.add.rectangle(x, y, Math.min(width, offset * 2.6), 3, border, 0.18).setOrigin(0.5);
+  const guide = scene.add
+    .rectangle(x, y, Math.min(width, offset * 2.6), 3, border, 0.18)
+    .setOrigin(0.5);
   const leftGlow = scene.add.circle(x - offset, y, glowRadius, accent, 0.08);
   const rightGlow = scene.add.circle(x + offset, y, glowRadius, accent, 0.08);
   const leftMarker = scene.add.circle(x - offset, y, radius, accent, lowIntensity ? 0.28 : 0.36);
   const rightMarker = scene.add.circle(x + offset, y, radius, accent, lowIntensity ? 0.28 : 0.36);
   const pulse = scene.add.circle(x - offset, y, radius * 0.86, accent, lowIntensity ? 0.9 : 1);
 
-  const rhythmLabel = createDomText(scene, x, y - glowRadius - 30, 'Follow the visual left-right rhythm', {
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '14px',
-    align: 'center',
-  });
+  const rhythmLabel = createDomText(
+    scene,
+    x,
+    y - glowRadius - 30,
+    'Follow the visual left-right rhythm',
+    {
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '14px',
+      align: 'center',
+    },
+  );
   rhythmLabel.setOrigin(0.5);
 
   const leftLabel = createDomText(scene, x - offset, y + radius + 22, 'Left', {

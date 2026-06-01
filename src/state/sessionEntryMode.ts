@@ -1,6 +1,6 @@
-import { sceneKeys, type SceneKey } from '../game/sceneKeys';
+import { type SceneKey, sceneKeys } from '../game/sceneKeys';
 
-import { sessionEntryModeIds, type SessionEntryModeId } from './types';
+import { type SessionEntryModeId, sessionEntryModeIds } from './types';
 
 export interface SessionEntryModeDefinition {
   id: SessionEntryModeId;
@@ -10,7 +10,9 @@ export interface SessionEntryModeDefinition {
   requiresPhrase: boolean;
 }
 
-const sessionEntryModeDefinitions: Readonly<Record<SessionEntryModeId, SessionEntryModeDefinition>> = {
+const sessionEntryModeDefinitions: Readonly<
+  Record<SessionEntryModeId, SessionEntryModeDefinition>
+> = {
   [sessionEntryModeIds.phrasePrompted]: {
     id: sessionEntryModeIds.phrasePrompted,
     startSceneKey: sceneKeys.phrase,
@@ -27,10 +29,11 @@ const sessionEntryModeDefinitions: Readonly<Record<SessionEntryModeId, SessionEn
   },
 };
 
-export const getSessionEntryMode = (sessionEntryModeId: SessionEntryModeId): SessionEntryModeDefinition => (
-  sessionEntryModeDefinitions[sessionEntryModeId]
-);
+export const getSessionEntryMode = (
+  sessionEntryModeId: SessionEntryModeId,
+): SessionEntryModeDefinition => sessionEntryModeDefinitions[sessionEntryModeId];
 
-export const isSessionEntryModeRestartScene = (sceneKey: SceneKey, sessionEntryModeId: SessionEntryModeId): boolean => (
-  getSessionEntryMode(sessionEntryModeId).restartSceneKey === sceneKey
-);
+export const isSessionEntryModeRestartScene = (
+  sceneKey: SceneKey,
+  sessionEntryModeId: SessionEntryModeId,
+): boolean => getSessionEntryMode(sessionEntryModeId).restartSceneKey === sceneKey;

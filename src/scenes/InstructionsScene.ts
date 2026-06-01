@@ -4,10 +4,18 @@ import { getSessionStore } from '../game/Game';
 import { getInstructionsBackScene, navigateToScene } from '../game/navigation';
 import { sceneKeys } from '../game/sceneKeys';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
+import {
+  customPracticeDurationBounds,
+  isValidPhrase,
+  practiceDurationPresetIds,
+} from '../state/types';
 import { createBackButton } from '../ui/components/BackButton';
 import { createCard } from '../ui/components/Card';
-import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
-import { customPracticeDurationBounds, isValidPhrase, practiceDurationPresetIds } from '../state/types';
+import {
+  createPrimaryButton,
+  getPrimaryButtonSize,
+  setPrimaryButtonEnabled,
+} from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
 import { withTextResolution } from '../ui/textResolution';
@@ -34,25 +42,36 @@ const createInfoBlock = (
   const border = hexToNumber(uiTheme.colors.border);
   const surface = hexToNumber(uiTheme.colors.surfaceRaised);
 
-  const title = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '16px',
-    fontStyle: '600',
-  }));
+  const title = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    0,
+    label,
+    withTextResolution({
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '16px',
+      fontStyle: '600',
+    }),
+  );
   title.setOrigin(0, 0);
 
-  const body = scene.add.text((-width / 2) + uiTheme.spacing.md, title.height + uiTheme.spacing.sm, description, withTextResolution({
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '14px',
-    wordWrap: { width: width - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    lineSpacing: 4,
-  }));
+  const body = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    title.height + uiTheme.spacing.sm,
+    description,
+    withTextResolution({
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '14px',
+      wordWrap: { width: width - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+      lineSpacing: 4,
+    }),
+  );
   body.setOrigin(0, 0);
 
   const height = body.y + body.height + uiTheme.spacing.md;
-  const background = scene.add.rectangle(0, height / 2, width, height, surface, 0.5)
+  const background = scene.add
+    .rectangle(0, height / 2, width, height, surface, 0.5)
     .setOrigin(0.5)
     .setStrokeStyle(1, border, 0.42);
 
@@ -79,24 +98,42 @@ const createToggle = (
   const toggleHeight = 28;
   let value = initialValue;
 
-  const labelText = scene.add.text((-width / 2) + uiTheme.spacing.md, -10, label, withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '16px',
-    fontStyle: '600',
-  }));
+  const labelText = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    -10,
+    label,
+    withTextResolution({
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '16px',
+      fontStyle: '600',
+    }),
+  );
   labelText.setOrigin(0, 0.5);
 
-  const descriptionText = scene.add.text((-width / 2) + uiTheme.spacing.md, 18, description, withTextResolution({
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '14px',
-    wordWrap: { width: width - toggleWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    lineSpacing: 4,
-  }));
+  const descriptionText = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    18,
+    description,
+    withTextResolution({
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '14px',
+      wordWrap: { width: width - toggleWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+      lineSpacing: 4,
+    }),
+  );
   descriptionText.setOrigin(0, 0);
 
-  const track = scene.add.rectangle((width / 2) - uiTheme.spacing.md - (toggleWidth / 2), 4, toggleWidth, toggleHeight, surface, 0.56)
+  const track = scene.add
+    .rectangle(
+      width / 2 - uiTheme.spacing.md - toggleWidth / 2,
+      4,
+      toggleWidth,
+      toggleHeight,
+      surface,
+      0.56,
+    )
     .setOrigin(0.5)
     .setStrokeStyle(1, border, 0.56);
 
@@ -104,11 +141,14 @@ const createToggle = (
 
   const refresh = (): void => {
     track.setFillStyle(value ? accent : surface, value ? 0.86 : 0.56);
-    knob.setX((width / 2) - uiTheme.spacing.md - (value ? 14 : 34));
+    knob.setX(width / 2 - uiTheme.spacing.md - (value ? 14 : 34));
   };
 
   const container = scene.add.container(x, y, [labelText, descriptionText, track, knob]);
-  container.setSize(width, Math.max(72, descriptionText.y + descriptionText.height + uiTheme.spacing.sm));
+  container.setSize(
+    width,
+    Math.max(72, descriptionText.y + descriptionText.height + uiTheme.spacing.sm),
+  );
 
   const toggle = (): void => {
     value = !value;
@@ -126,9 +166,8 @@ const createToggle = (
   return container;
 };
 
-const getExpectationsText = (expectations: readonly string[]): string => expectations
-  .map((expectation, index) => `${index + 1}. ${expectation}`)
-  .join('\n\n');
+const getExpectationsText = (expectations: readonly string[]): string =>
+  expectations.map((expectation, index) => `${index + 1}. ${expectation}`).join('\n\n');
 
 const createOptionSelector = (
   scene: Phaser.Scene,
@@ -147,39 +186,62 @@ const createOptionSelector = (
   const optionGap = uiTheme.spacing.sm;
   let value = initialValue;
 
-  const labelText = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '16px',
-    fontStyle: '600',
-  }));
+  const labelText = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    0,
+    label,
+    withTextResolution({
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '16px',
+      fontStyle: '600',
+    }),
+  );
   labelText.setOrigin(0, 0);
 
   const optionViews = options.map((option, index) => {
-    const optionCenterY = labelText.height + uiTheme.spacing.sm + (index * (optionHeight + optionGap)) + (optionHeight / 2);
-    const background = scene.add.rectangle(0, optionCenterY, width, optionHeight, surface, 0.5)
+    const optionCenterY =
+      labelText.height + uiTheme.spacing.sm + index * (optionHeight + optionGap) + optionHeight / 2;
+    const background = scene.add
+      .rectangle(0, optionCenterY, width, optionHeight, surface, 0.5)
       .setOrigin(0.5)
       .setStrokeStyle(1, border, 0.42);
 
-    const title = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY - 14, option.title, withTextResolution({
-      color: uiTheme.colors.text,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '15px',
-      fontStyle: '600',
-      wordWrap: { width: width - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    }));
+    const title = scene.add.text(
+      -width / 2 + uiTheme.spacing.md,
+      optionCenterY - 14,
+      option.title,
+      withTextResolution({
+        color: uiTheme.colors.text,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '15px',
+        fontStyle: '600',
+        wordWrap: { width: width - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+      }),
+    );
     title.setOrigin(0, 0.5);
 
-    const summary = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY + 10, option.summary, withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '13px',
-      wordWrap: { width: width - (uiTheme.spacing.xl * 2) - 24, useAdvancedWrap: true },
-      lineSpacing: 3,
-    }));
+    const summary = scene.add.text(
+      -width / 2 + uiTheme.spacing.md,
+      optionCenterY + 10,
+      option.summary,
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '13px',
+        wordWrap: { width: width - uiTheme.spacing.xl * 2 - 24, useAdvancedWrap: true },
+        lineSpacing: 3,
+      }),
+    );
     summary.setOrigin(0, 0.5);
 
-    const indicator = scene.add.circle((width / 2) - uiTheme.spacing.md - 9, optionCenterY, 9, border, 0.85);
+    const indicator = scene.add.circle(
+      width / 2 - uiTheme.spacing.md - 9,
+      optionCenterY,
+      9,
+      border,
+      0.85,
+    );
 
     background.setInteractive({ useHandCursor: true });
     background.on('pointerup', () => {
@@ -204,9 +266,20 @@ const createOptionSelector = (
 
   const container = scene.add.container(x, y, [
     labelText,
-    ...optionViews.flatMap(({ background, title, summary, indicator }) => [background, title, summary, indicator]),
+    ...optionViews.flatMap(({ background, title, summary, indicator }) => [
+      background,
+      title,
+      summary,
+      indicator,
+    ]),
   ]) as SelectorControl;
-  container.setSize(width, labelText.height + uiTheme.spacing.sm + (options.length * optionHeight) + ((options.length - 1) * optionGap));
+  container.setSize(
+    width,
+    labelText.height +
+      uiTheme.spacing.sm +
+      options.length * optionHeight +
+      (options.length - 1) * optionGap,
+  );
   container.setSelectedValue = (nextValue: string): void => {
     value = nextValue;
     refresh();
@@ -231,42 +304,67 @@ const createCustomDurationControl = (
   const buttonSize = 42;
   let minutes = initialMinutes;
 
-  const label = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, 'Custom duration', withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '16px',
-    fontStyle: '600',
-  }));
-  label.setOrigin(0, 0);
-
-  const helper = scene.add.text((-width / 2) + uiTheme.spacing.md, label.height + uiTheme.spacing.xs, `Tap − / + to set ${customPracticeDurationBounds.minMinutes}-${customPracticeDurationBounds.maxMinutes} minutes. Changing this selects Custom.`, withTextResolution({
-    color: uiTheme.colors.textMuted,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '13px',
-    wordWrap: { width: width - (uiTheme.spacing.xl * 2) - 136, useAdvancedWrap: true },
-  }));
-  helper.setOrigin(0, 0);
-
-  const valueText = scene.add.text(0, label.height + 21, '', withTextResolution({
-    color: uiTheme.colors.text,
-    fontFamily: uiTheme.typography.fontFamily,
-    fontSize: '18px',
-    fontStyle: '700',
-    align: 'center',
-  }));
-  valueText.setOrigin(0.5);
-
-  const createStepButton = (buttonX: number, labelText: string, delta: number): Phaser.GameObjects.Container => {
-    const background = scene.add.rectangle(0, 0, buttonSize, buttonSize, surface, 0.54)
-      .setOrigin(0.5)
-      .setStrokeStyle(1, border, 0.48);
-    const text = scene.add.text(0, -1, labelText, withTextResolution({
+  const label = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    0,
+    'Custom duration',
+    withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '22px',
+      fontSize: '16px',
+      fontStyle: '600',
+    }),
+  );
+  label.setOrigin(0, 0);
+
+  const helper = scene.add.text(
+    -width / 2 + uiTheme.spacing.md,
+    label.height + uiTheme.spacing.xs,
+    `Tap − / + to set ${customPracticeDurationBounds.minMinutes}-${customPracticeDurationBounds.maxMinutes} minutes. Changing this selects Custom.`,
+    withTextResolution({
+      color: uiTheme.colors.textMuted,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '13px',
+      wordWrap: { width: width - uiTheme.spacing.xl * 2 - 136, useAdvancedWrap: true },
+    }),
+  );
+  helper.setOrigin(0, 0);
+
+  const valueText = scene.add.text(
+    0,
+    label.height + 21,
+    '',
+    withTextResolution({
+      color: uiTheme.colors.text,
+      fontFamily: uiTheme.typography.fontFamily,
+      fontSize: '18px',
       fontStyle: '700',
       align: 'center',
-    }));
+    }),
+  );
+  valueText.setOrigin(0.5);
+
+  const createStepButton = (
+    buttonX: number,
+    labelText: string,
+    delta: number,
+  ): Phaser.GameObjects.Container => {
+    const background = scene.add
+      .rectangle(0, 0, buttonSize, buttonSize, surface, 0.54)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, border, 0.48);
+    const text = scene.add.text(
+      0,
+      -1,
+      labelText,
+      withTextResolution({
+        color: uiTheme.colors.text,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '22px',
+        fontStyle: '700',
+        align: 'center',
+      }),
+    );
     text.setOrigin(0.5);
 
     const button = scene.add.container(buttonX, label.height + 21, [background, text]);
@@ -280,7 +378,10 @@ const createCustomDurationControl = (
       onChange(minutes);
     };
 
-    button.setInteractive(new Phaser.Geom.Rectangle(-buttonSize / 2, -buttonSize / 2, buttonSize, buttonSize), Phaser.Geom.Rectangle.Contains);
+    button.setInteractive(
+      new Phaser.Geom.Rectangle(-buttonSize / 2, -buttonSize / 2, buttonSize, buttonSize),
+      Phaser.Geom.Rectangle.Contains,
+    );
     button.on('pointerup', applyStep);
     button.on('pointerover', () => background.setFillStyle(accent, 0.28));
     button.on('pointerout', () => background.setFillStyle(surface, 0.54));
@@ -288,17 +389,29 @@ const createCustomDurationControl = (
     return button;
   };
 
-  const decrementButton = createStepButton((width / 2) - uiTheme.spacing.md - (buttonSize * 2) - 84, '−', -1);
-  const incrementButton = createStepButton((width / 2) - uiTheme.spacing.md - buttonSize, '+', 1);
+  const decrementButton = createStepButton(
+    width / 2 - uiTheme.spacing.md - buttonSize * 2 - 84,
+    '−',
+    -1,
+  );
+  const incrementButton = createStepButton(width / 2 - uiTheme.spacing.md - buttonSize, '+', 1);
   valueText.setX((decrementButton.x + incrementButton.x) / 2);
   valueText.setText(`${minutes} min`);
 
   const height = Math.max(76, helper.y + helper.height + uiTheme.spacing.md);
-  const background = scene.add.rectangle(0, height / 2, width, height, surface, 0.5)
+  const background = scene.add
+    .rectangle(0, height / 2, width, height, surface, 0.5)
     .setOrigin(0.5)
     .setStrokeStyle(1, border, 0.42);
 
-  const container = scene.add.container(x, y, [background, label, helper, decrementButton, valueText, incrementButton]);
+  const container = scene.add.container(x, y, [
+    background,
+    label,
+    helper,
+    decrementButton,
+    valueText,
+    incrementButton,
+  ]);
   container.setSize(width, height);
 
   return container;
@@ -321,7 +434,7 @@ export class InstructionsScene extends Phaser.Scene {
     const edgeSpacing = compactLayout ? uiTheme.spacing.lg : uiTheme.spacing.xl;
     const sectionSpacing = compactLayout ? uiTheme.spacing.md : uiTheme.spacing.lg;
     const contentSpacing = compactLayout ? uiTheme.spacing.lg : uiTheme.spacing.xl;
-    const contentCenterX = frame.contentX + (frame.contentWidth / 2);
+    const contentCenterX = frame.contentX + frame.contentWidth / 2;
     const cardWidth = clampContentWidth(frame.contentWidth);
     const savedState = sessionStore.getState();
     const { phrase, selectedExercise } = savedState;
@@ -330,7 +443,11 @@ export class InstructionsScene extends Phaser.Scene {
     let gazeGuidanceEnabled = savedState.settings.gazeGuidanceEnabled;
     let practiceDurationPresetId = savedState.settings.practiceDurationPresetId;
     let customPracticeDurationMinutes = savedState.settings.customPracticeDurationMinutes;
-    const previewConfig = createPracticeConfigFromSettings(selectedExercise, phrase, savedState.settings);
+    const previewConfig = createPracticeConfigFromSettings(
+      selectedExercise,
+      phrase,
+      savedState.settings,
+    );
 
     createBackButton(this, {
       x: frame.contentX,
@@ -352,9 +469,9 @@ export class InstructionsScene extends Phaser.Scene {
     });
 
     const { height: buttonHeight } = getPrimaryButtonSize(cardWidth);
-    const buttonY = frame.height - edgeSpacing - (buttonHeight / 2);
+    const buttonY = frame.height - edgeSpacing - buttonHeight / 2;
     const cardTop = title.y + title.height + sectionSpacing;
-    const cardBottom = buttonY - (buttonHeight / 2) - sectionSpacing;
+    const cardBottom = buttonY - buttonHeight / 2 - sectionSpacing;
     const cardHeight = Math.max(0, cardBottom - cardTop);
 
     const card = createCard(this, {
@@ -367,13 +484,18 @@ export class InstructionsScene extends Phaser.Scene {
 
     const cardContent = this.add.container(card.x, card.y + sectionSpacing);
 
-    const phraseLabel = this.add.text(0, 0, previewConfig.copy.instructionsSelectionLabel, withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
-      fontStyle: '600',
-      align: 'center',
-    }));
+    const phraseLabel = this.add.text(
+      0,
+      0,
+      previewConfig.copy.instructionsSelectionLabel,
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '14px',
+        fontStyle: '600',
+        align: 'center',
+      }),
+    );
     phraseLabel.setOrigin(0.5, 0);
     cardContent.add(phraseLabel);
 
@@ -381,54 +503,72 @@ export class InstructionsScene extends Phaser.Scene {
       0,
       phraseLabel.y + phraseLabel.height + uiTheme.spacing.sm,
       previewConfig.exercise.requiresPhrase
-        ? (phrase ? `"${phrase}"` : 'No phrase was saved.')
+        ? phrase
+          ? `"${phrase}"`
+          : 'No phrase was saved.'
         : (previewConfig.movingBall?.title ?? previewConfig.display.phraseText),
       withTextResolution({
-      color: uiTheme.colors.text,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '24px',
-      fontStyle: '600',
-      align: 'center',
-      wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    }));
+        color: uiTheme.colors.text,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '24px',
+        fontStyle: '600',
+        align: 'center',
+        wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+      }),
+    );
     selectionText.setOrigin(0.5, 0);
     cardContent.add(selectionText);
 
     let expectationsStartY = selectionText.y + selectionText.height + sectionSpacing;
 
     if (previewConfig.movingBall) {
-      const presetSummary = this.add.text(0, selectionText.y + selectionText.height + uiTheme.spacing.xs, previewConfig.movingBall.summary, withTextResolution({
-        color: uiTheme.colors.textMuted,
-        fontFamily: uiTheme.typography.fontFamily,
-        fontSize: '14px',
-        align: 'center',
-        wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-        lineSpacing: 4,
-      }));
+      const presetSummary = this.add.text(
+        0,
+        selectionText.y + selectionText.height + uiTheme.spacing.xs,
+        previewConfig.movingBall.summary,
+        withTextResolution({
+          color: uiTheme.colors.textMuted,
+          fontFamily: uiTheme.typography.fontFamily,
+          fontSize: '14px',
+          align: 'center',
+          wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+          lineSpacing: 4,
+        }),
+      );
       presetSummary.setOrigin(0.5, 0);
       cardContent.add(presetSummary);
       expectationsStartY = presetSummary.y + presetSummary.height + sectionSpacing;
     }
 
     const expectations = previewConfig.expectations;
-    const expectationsTitle = this.add.text(0, expectationsStartY, previewConfig.copy.expectationsTitle, withTextResolution({
-      color: uiTheme.colors.text,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '16px',
-      fontStyle: '600',
-      align: 'center',
-    }));
+    const expectationsTitle = this.add.text(
+      0,
+      expectationsStartY,
+      previewConfig.copy.expectationsTitle,
+      withTextResolution({
+        color: uiTheme.colors.text,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '16px',
+        fontStyle: '600',
+        align: 'center',
+      }),
+    );
     expectationsTitle.setOrigin(0.5, 0);
     cardContent.add(expectationsTitle);
 
-    const expectationsText = this.add.text(0, expectationsTitle.y + expectationsTitle.height + uiTheme.spacing.sm, getExpectationsText(expectations), withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '14px',
-      align: 'left',
-      wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-      lineSpacing: 4,
-    }));
+    const expectationsText = this.add.text(
+      0,
+      expectationsTitle.y + expectationsTitle.height + uiTheme.spacing.sm,
+      getExpectationsText(expectations),
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '14px',
+        align: 'left',
+        wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+        lineSpacing: 4,
+      }),
+    );
     expectationsText.setOrigin(0.5, 0);
     cardContent.add(expectationsText);
 
@@ -436,7 +576,7 @@ export class InstructionsScene extends Phaser.Scene {
       this,
       0,
       expectationsText.y + expectationsText.height + contentSpacing,
-      cardWidth - (uiTheme.spacing.xl * 2),
+      cardWidth - uiTheme.spacing.xl * 2,
       previewConfig.lowIntensity.label,
       previewConfig.lowIntensity.description,
       lowIntensityMode,
@@ -451,7 +591,7 @@ export class InstructionsScene extends Phaser.Scene {
       this,
       0,
       lowIntensityToggle.y + lowIntensityToggle.height + uiTheme.spacing.md,
-      cardWidth - (uiTheme.spacing.xl * 2),
+      cardWidth - uiTheme.spacing.xl * 2,
       previewConfig.reducedMotion.label,
       previewConfig.reducedMotion.description,
       reducedMotionEnabled,
@@ -466,7 +606,7 @@ export class InstructionsScene extends Phaser.Scene {
       this,
       0,
       reducedMotionToggle.y + reducedMotionToggle.height + uiTheme.spacing.md,
-      cardWidth - (uiTheme.spacing.xl * 2),
+      cardWidth - uiTheme.spacing.xl * 2,
       previewConfig.duration.label,
       previewConfig.duration.availablePresets,
       practiceDurationPresetId,
@@ -481,7 +621,7 @@ export class InstructionsScene extends Phaser.Scene {
       this,
       0,
       durationSelector.y + durationSelector.height + uiTheme.spacing.md,
-      cardWidth - (uiTheme.spacing.xl * 2),
+      cardWidth - uiTheme.spacing.xl * 2,
       previewConfig.duration.customMinutes,
       (nextMinutes) => {
         customPracticeDurationMinutes = nextMinutes;
@@ -494,84 +634,101 @@ export class InstructionsScene extends Phaser.Scene {
     cardContent.add(customDurationControl);
 
     const auxiliaryControl = previewConfig.capabilities.auxiliaryControl;
-    const presetSelector = auxiliaryControl.kind === 'selector' && previewConfig.movingBall
-      ? createOptionSelector(
-        this,
-        0,
-        customDurationControl.y + customDurationControl.height + uiTheme.spacing.md,
-        cardWidth - (uiTheme.spacing.xl * 2),
-        auxiliaryControl.label,
-        previewConfig.movingBall.availablePresets,
-        previewConfig.movingBall.presetId,
-        (nextValue) => {
-          sessionStore.setMovingBallPreset(nextValue as typeof previewConfig.movingBall.presetId);
-        },
-      )
-      : previewConfig.breathingReset
+    const presetSelector =
+      auxiliaryControl.kind === 'selector' && previewConfig.movingBall
         ? createOptionSelector(
-          this,
-          0,
-          customDurationControl.y + customDurationControl.height + uiTheme.spacing.md,
-          cardWidth - (uiTheme.spacing.xl * 2),
-          'Breathing preset',
-          previewConfig.breathingReset.availablePresets,
-          previewConfig.breathingReset.presetId,
-          (nextValue) => {
-            sessionStore.setBreathingPreset(nextValue as typeof previewConfig.breathingReset.presetId);
-          },
-        )
-        : null;
+            this,
+            0,
+            customDurationControl.y + customDurationControl.height + uiTheme.spacing.md,
+            cardWidth - uiTheme.spacing.xl * 2,
+            auxiliaryControl.label,
+            previewConfig.movingBall.availablePresets,
+            previewConfig.movingBall.presetId,
+            (nextValue) => {
+              sessionStore.setMovingBallPreset(
+                nextValue as typeof previewConfig.movingBall.presetId,
+              );
+            },
+          )
+        : previewConfig.breathingReset
+          ? createOptionSelector(
+              this,
+              0,
+              customDurationControl.y + customDurationControl.height + uiTheme.spacing.md,
+              cardWidth - uiTheme.spacing.xl * 2,
+              'Breathing preset',
+              previewConfig.breathingReset.availablePresets,
+              previewConfig.breathingReset.presetId,
+              (nextValue) => {
+                sessionStore.setBreathingPreset(
+                  nextValue as typeof previewConfig.breathingReset.presetId,
+                );
+              },
+            )
+          : null;
 
     if (presetSelector) {
       cardContent.add(presetSelector);
     }
 
-    const lastBlock = auxiliaryControl.kind === 'info'
-      ? createInfoBlock(
-        this,
-        0,
-        (presetSelector ?? customDurationControl).y + (presetSelector ?? customDurationControl).height + uiTheme.spacing.md,
-        cardWidth - (uiTheme.spacing.xl * 2),
-        auxiliaryControl.label,
-        auxiliaryControl.description,
-      )
-      : auxiliaryControl.kind === 'toggle'
-        ? createToggle(
-        this,
-        0,
-        (presetSelector ?? customDurationControl).y + (presetSelector ?? customDurationControl).height + uiTheme.spacing.md,
-        cardWidth - (uiTheme.spacing.xl * 2),
-        auxiliaryControl.label,
-        auxiliaryControl.description,
-        gazeGuidanceEnabled,
-        (nextValue) => {
-          gazeGuidanceEnabled = nextValue;
-          sessionStore.setGazeGuidanceEnabled(nextValue);
-        },
-      )
-        : createInfoBlock(
-          this,
-          0,
-          (presetSelector ?? customDurationControl).y + (presetSelector ?? customDurationControl).height + uiTheme.spacing.md,
-          cardWidth - (uiTheme.spacing.xl * 2),
-          'Practice details',
-          'This practice does not expose additional controls right now.',
-        );
+    const lastBlock =
+      auxiliaryControl.kind === 'info'
+        ? createInfoBlock(
+            this,
+            0,
+            (presetSelector ?? customDurationControl).y +
+              (presetSelector ?? customDurationControl).height +
+              uiTheme.spacing.md,
+            cardWidth - uiTheme.spacing.xl * 2,
+            auxiliaryControl.label,
+            auxiliaryControl.description,
+          )
+        : auxiliaryControl.kind === 'toggle'
+          ? createToggle(
+              this,
+              0,
+              (presetSelector ?? customDurationControl).y +
+                (presetSelector ?? customDurationControl).height +
+                uiTheme.spacing.md,
+              cardWidth - uiTheme.spacing.xl * 2,
+              auxiliaryControl.label,
+              auxiliaryControl.description,
+              gazeGuidanceEnabled,
+              (nextValue) => {
+                gazeGuidanceEnabled = nextValue;
+                sessionStore.setGazeGuidanceEnabled(nextValue);
+              },
+            )
+          : createInfoBlock(
+              this,
+              0,
+              (presetSelector ?? customDurationControl).y +
+                (presetSelector ?? customDurationControl).height +
+                uiTheme.spacing.md,
+              cardWidth - uiTheme.spacing.xl * 2,
+              'Practice details',
+              'This practice does not expose additional controls right now.',
+            );
     cardContent.add(lastBlock);
 
-    const reducedMotionNote = this.add.text(0, lastBlock.y + lastBlock.height + uiTheme.spacing.md, `${previewConfig.capabilities.reducedMotion.title}: ${previewConfig.capabilities.reducedMotion.description}`, withTextResolution({
-      color: uiTheme.colors.textMuted,
-      fontFamily: uiTheme.typography.fontFamily,
-      fontSize: '13px',
-      align: 'center',
-      wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-      lineSpacing: 3,
-    }));
+    const reducedMotionNote = this.add.text(
+      0,
+      lastBlock.y + lastBlock.height + uiTheme.spacing.md,
+      `${previewConfig.capabilities.reducedMotion.title}: ${previewConfig.capabilities.reducedMotion.description}`,
+      withTextResolution({
+        color: uiTheme.colors.textMuted,
+        fontFamily: uiTheme.typography.fontFamily,
+        fontSize: '13px',
+        align: 'center',
+        wordWrap: { width: cardWidth - uiTheme.spacing.xl * 2, useAdvancedWrap: true },
+        lineSpacing: 3,
+      }),
+    );
     reducedMotionNote.setOrigin(0.5, 0);
     cardContent.add(reducedMotionNote);
 
     const cardContentHeight = reducedMotionNote.y + reducedMotionNote.height;
-    const availableCardContentHeight = Math.max(1, card.height - (sectionSpacing * 2));
+    const availableCardContentHeight = Math.max(1, card.height - sectionSpacing * 2);
     if (cardContentHeight > availableCardContentHeight) {
       cardContent.setScale(availableCardContentHeight / cardContentHeight);
     }

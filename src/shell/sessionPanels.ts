@@ -1,15 +1,15 @@
-import type { SoftFocusGame } from '../game/Game';
 import { getEffectiveThemePreference, toggleThemePreference } from '../dom/themePreference';
+import type { SoftFocusGame } from '../game/Game';
 import { sceneKeys } from '../game/sceneKeys';
 import { createPracticeConfigFromSettings } from '../practice/practiceConfig';
 import {
+  type AmbientAudioPresetId,
   ambientAudioVolumeBounds,
+  type BreathingPresetId,
   exerciseIds,
   normalizeReflection,
-  sanitizeAmbientAudioVolume,
   reflectionMaxLength,
-  type AmbientAudioPresetId,
-  type BreathingPresetId,
+  sanitizeAmbientAudioVolume,
 } from '../state/types';
 import {
   chooseAnotherExercise,
@@ -93,17 +93,19 @@ const preferencesSnapshotsMatch = (
     return false;
   }
 
-  return Object.entries(next).every(([key, value]) => (
-    previous[key as keyof PreferencesRenderSnapshot] === value
-  ));
+  return Object.entries(next).every(
+    ([key, value]) => previous[key as keyof PreferencesRenderSnapshot] === value,
+  );
 };
 
 const dispatchAmbientVolumePreview = (volume: number): void => {
-  window.dispatchEvent(new CustomEvent(ambientAudioVolumePreviewEventName, {
-    detail: {
-      volume: sanitizeAmbientAudioVolume(volume),
-    },
-  }));
+  window.dispatchEvent(
+    new CustomEvent(ambientAudioVolumePreviewEventName, {
+      detail: {
+        volume: sanitizeAmbientAudioVolume(volume),
+      },
+    }),
+  );
 };
 
 const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => {
@@ -126,7 +128,9 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
     `Phase: ${practiceConfig.exercise.phaseLabel}`,
     `Exercise: ${practiceConfig.exercise.title}`,
     ...(practiceConfig.movingBall ? [`Preset: ${practiceConfig.movingBall.title}`] : []),
-    ...(practiceConfig.exercise.requiresPhrase ? [phrase ? `Phrase: "${phrase}"` : 'Phrase: not available'] : []),
+    ...(practiceConfig.exercise.requiresPhrase
+      ? [phrase ? `Phrase: "${phrase}"` : 'Phrase: not available']
+      : []),
     `Length: ${formatDuration(latestSummary.durationSeconds ?? null)}`,
     `Mode: ${latestSummary.outcome === 'stopped' ? 'Stopped early' : 'Completed'}`,
   ];
@@ -142,10 +146,16 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   copy.className = 'session-overlay__copy';
   copy.append(
     createEyebrow(practiceConfig.exercise.phaseLabel),
-    createTitle(latestSummary.outcome === 'stopped' ? `${practiceConfig.exercise.phaseLabel} round paused early` : `${practiceConfig.exercise.phaseLabel} round complete`),
-    createBody(latestSummary.outcome === 'stopped'
-      ? `You ended this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round cleanly. Let your attention come back to the room before reflecting.`
-      : `You reached the end of this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round. Let the steadier parts of the round land before reflecting.`),
+    createTitle(
+      latestSummary.outcome === 'stopped'
+        ? `${practiceConfig.exercise.phaseLabel} round paused early`
+        : `${practiceConfig.exercise.phaseLabel} round complete`,
+    ),
+    createBody(
+      latestSummary.outcome === 'stopped'
+        ? `You ended this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round cleanly. Let your attention come back to the room before reflecting.`
+        : `You reached the end of this ${practiceConfig.exercise.phaseLabel.toLowerCase()} round. Let the steadier parts of the round land before reflecting.`,
+    ),
   );
   hero.append(completionMark, copy);
 
@@ -159,11 +169,7 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   const integrationNote = createBody(practiceConfig.copy.completionNote);
   integrationNote.className = 'session-overlay__body session-overlay__body--framed';
 
-  panel.append(
-    hero,
-    summary,
-    integrationNote,
-  );
+  panel.append(hero, summary, integrationNote);
 
   const support = createBody(supportCopy);
   support.className = 'session-overlay__support';
@@ -176,7 +182,9 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
   const chooseAnotherButton = createSecondaryButton('Choose another exercise', () => {
     chooseAnotherExercise(game);
   });
-  const helper = createBody('Reflection is optional. Choose another exercise if you want to return to the practice shore for now.');
+  const helper = createBody(
+    'Reflection is optional. Choose another exercise if you want to return to the practice shore for now.',
+  );
   helper.className = 'session-overlay__helper';
   actions.append(continueButton, chooseAnotherButton);
   panel.append(helper, actions, support);
@@ -188,8 +196,15 @@ const renderCompletionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
 
 const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => {
   const state = game.sessionStore.getState();
-  const practiceConfig = createPracticeConfigFromSettings(state.selectedExercise, state.phrase, state.settings);
-  const savedReflection = state.currentSession?.reflection ?? game.sessionStore.getLatestSessionSummary()?.reflection ?? '';
+  const practiceConfig = createPracticeConfigFromSettings(
+    state.selectedExercise,
+    state.phrase,
+    state.settings,
+  );
+  const savedReflection =
+    state.currentSession?.reflection ??
+    game.sessionStore.getLatestSessionSummary()?.reflection ??
+    '';
 
   const panel = createPanel();
   const hero = document.createElement('div');
@@ -206,9 +221,7 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
     createBody(practiceConfig.copy.reflectionSubtitle),
   );
   hero.append(reflectionMark, copy);
-  panel.append(
-    hero,
-  );
+  panel.append(hero);
 
   const prompt = createBody(practiceConfig.copy.reflectionPrompt);
   prompt.className = 'session-overlay__prompt';
@@ -226,15 +239,17 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
 
   const helper = document.createElement('p');
   helper.className = 'session-overlay__helper';
-  helper.textContent = savedReflection.length > 0
-    ? `${savedReflection.length}/${reflectionMaxLength} characters`
-    : practiceConfig.copy.reflectionHelper;
+  helper.textContent =
+    savedReflection.length > 0
+      ? `${savedReflection.length}/${reflectionMaxLength} characters`
+      : practiceConfig.copy.reflectionHelper;
 
   textarea.addEventListener('input', () => {
     const normalized = normalizeReflection(textarea.value);
-    helper.textContent = normalized.length > 0
-      ? `${normalized.length}/${reflectionMaxLength} characters`
-      : practiceConfig.copy.reflectionHelper;
+    helper.textContent =
+      normalized.length > 0
+        ? `${normalized.length}/${reflectionMaxLength} characters`
+        : practiceConfig.copy.reflectionHelper;
   });
 
   field.append(textarea, helper);
@@ -251,7 +266,9 @@ const renderReflectionPanel = (root: HTMLElement, game: SoftFocusGame): void => 
 
   const support = createBody(supportCopy);
   support.className = 'session-overlay__support';
-  const nextStepNote = createBody('Choosing another exercise saves your note and returns you to the practice shore instead of restarting this same practice.');
+  const nextStepNote = createBody(
+    'Choosing another exercise saves your note and returns you to the practice shore instead of restarting this same practice.',
+  );
   nextStepNote.className = 'session-overlay__helper';
 
   panel.append(field, nextStepNote, actions, support);
@@ -276,7 +293,11 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
 
     const state = game.sessionStore.getState();
     const nextSnapshot = createPreferencesRenderSnapshot(game, preferencesOpen);
-    const practiceConfig = createPracticeConfigFromSettings(state.selectedExercise, state.phrase, state.settings);
+    const practiceConfig = createPracticeConfigFromSettings(
+      state.selectedExercise,
+      state.phrase,
+      state.settings,
+    );
 
     const launcher = createSecondaryButton('Preferences', () => {
       preferencesOpen = !preferencesOpen;
@@ -288,9 +309,13 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     const panel = document.createElement('section');
     panel.className = `preferences-shell__panel wellness-reduced-motion${preferencesOpen ? '' : ' preferences-shell__panel--hidden'}`;
     panel.setAttribute('aria-label', 'Practice preferences');
-    panel.addEventListener('scroll', () => {
-      preferencesScrollTop = panel.scrollTop;
-    }, { passive: true });
+    panel.addEventListener(
+      'scroll',
+      () => {
+        preferencesScrollTop = panel.scrollTop;
+      },
+      { passive: true },
+    );
 
     const header = document.createElement('div');
     header.className = 'preferences-shell__header';
@@ -328,7 +353,8 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
 
     const body = document.createElement('p');
     body.className = 'preferences-shell__body';
-    body.textContent = 'These settings persist locally and shape the current practice flow without changing your saved notes or safe harbor pace.';
+    body.textContent =
+      'These settings persist locally and shape the current practice flow without changing your saved notes or safe harbor pace.';
 
     const toggles = document.createElement('div');
     toggles.className = 'preferences-shell__toggles';
@@ -343,7 +369,8 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
       comfortGroup,
       createPreferenceToggle({
         label: 'Low intensity',
-        description: 'Keeps settle, practice, and recovery pacing gentler across the selected exercise.',
+        description:
+          'Keeps settle, practice, and recovery pacing gentler across the selected exercise.',
         checked: state.settings.lowIntensityMode,
         onChange: (checked) => {
           game.sessionStore.setLowIntensityMode(checked);
@@ -351,7 +378,8 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
       }),
       createPreferenceToggle({
         label: 'Reduced motion',
-        description: 'Uses gentler family-specific motion settings so animated reset practices feel slower and smaller.',
+        description:
+          'Uses gentler family-specific motion settings so animated reset practices feel slower and smaller.',
         checked: state.settings.reducedMotionEnabled,
         onChange: (checked) => {
           game.sessionStore.setReducedMotionEnabled(checked);
@@ -370,9 +398,10 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
       guidanceGroup,
       createPreferenceToggle({
         label: 'Gaze guidance',
-        description: state.selectedExercise === exerciseIds.phraseAnchor
-          ? 'Adds a soft gaze reminder during phrase anchor rounds.'
-          : 'Gaze guidance currently applies only to phrase anchor rounds.',
+        description:
+          state.selectedExercise === exerciseIds.phraseAnchor
+            ? 'Adds a soft gaze reminder during phrase anchor rounds.'
+            : 'Gaze guidance currently applies only to phrase anchor rounds.',
         checked: state.settings.gazeGuidanceEnabled,
         disabled: state.selectedExercise !== exerciseIds.phraseAnchor,
         onChange: (checked) => {
@@ -422,8 +451,10 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
       }),
       createPreferenceSelect({
         label: 'Ambient preset',
-        description: practiceConfig.ambientAudio.availablePresets.find(({ id }) => id === practiceConfig.ambientAudio.presetId)?.summary
-          ?? 'Choose the ambient music character for practice.',
+        description:
+          practiceConfig.ambientAudio.availablePresets.find(
+            ({ id }) => id === practiceConfig.ambientAudio.presetId,
+          )?.summary ?? 'Choose the ambient music character for practice.',
         value: practiceConfig.ambientAudio.presetId,
         options: practiceConfig.ambientAudio.availablePresets,
         onChange: (nextValue) => {

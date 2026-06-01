@@ -32,15 +32,16 @@ export const createMovingBallGuidance = ({
   lowIntensity,
 }: CreateMovingBallGuidanceOptions): MovingBallGuidanceController => {
   const guideLines = laneHeights.map((laneHeight) => {
-    const laneY = y + ((laneHeight - 0.5) * laneBandHeight);
+    const laneY = y + (laneHeight - 0.5) * laneBandHeight;
 
-    return scene.add.rectangle(x, laneY, width, 2, hexToNumber(uiTheme.colors.border), lowIntensity ? 0.12 : 0.18)
+    return scene.add
+      .rectangle(x, laneY, width, 2, hexToNumber(uiTheme.colors.border), lowIntensity ? 0.12 : 0.18)
       .setOrigin(0.5);
   });
 
   const ball = scene.add.circle(
-    x - (width / 2) + radius,
-    y + ((laneHeights[0] - 0.5) * laneBandHeight),
+    x - width / 2 + radius,
+    y + (laneHeights[0] - 0.5) * laneBandHeight,
     radius,
     hexToNumber(uiTheme.colors.accent),
     lowIntensity ? 0.72 : 0.9,
@@ -71,7 +72,7 @@ export const createMovingBallGuidance = ({
     }
 
     laneIndex = (laneIndex + 1) % laneHeights.length;
-    const nextY = y + ((laneHeights[laneIndex] - 0.5) * laneBandHeight);
+    const nextY = y + (laneHeights[laneIndex] - 0.5) * laneBandHeight;
 
     laneTween?.stop();
     laneTween = scene.tweens.add({
@@ -88,7 +89,7 @@ export const createMovingBallGuidance = ({
 
   const tween = scene.tweens.add({
     targets: ball,
-    x: x + (width / 2) - radius,
+    x: x + width / 2 - radius,
     duration: cycleMs,
     ease: 'Sine.InOut',
     yoyo: true,
@@ -112,7 +113,9 @@ export const createMovingBallGuidance = ({
     destroy(): void {
       laneTween?.stop();
       tween.stop();
-      guideLines.forEach((line) => line.destroy());
+      guideLines.forEach((line) => {
+        line.destroy();
+      });
       ball.destroy();
     },
   };

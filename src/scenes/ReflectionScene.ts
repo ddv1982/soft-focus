@@ -11,6 +11,5 @@ export class ReflectionScene extends Phaser.Scene {
   create(): void {
     const sessionStore = getSessionStore(this);
     sessionStore.updateCurrentScene(sceneKeys.reflection);
-
   }
 }

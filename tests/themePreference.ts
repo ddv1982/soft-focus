@@ -48,7 +48,9 @@ const createDocumentElement = () => ({
   style: {} as Record<string, string>,
 });
 
-const installDom = (prefersLight = false): { documentElement: ReturnType<typeof createDocumentElement>; events: string[] } => {
+const installDom = (
+  prefersLight = false,
+): { documentElement: ReturnType<typeof createDocumentElement>; events: string[] } => {
   const documentElement = createDocumentElement();
   const events: string[] = [];
   Object.defineProperty(globalThis, 'document', {
@@ -102,12 +104,21 @@ const runInvalidAndStorageFailureScenario = (): void => {
   const storage = new MemoryStorage();
   installDom(true);
   storage.setItem('soft-focus/theme-preference', 'solarized');
-  assert(readStoredThemePreference(storage) === null, 'expected invalid stored theme to be ignored');
+  assert(
+    readStoredThemePreference(storage) === null,
+    'expected invalid stored theme to be ignored',
+  );
   assert(applyPreferredTheme(storage) === 'light', 'expected system light fallback');
 
   const { documentElement } = installDom(false);
-  assert(setThemePreference('dark', new ThrowingStorage()) === 'dark', 'expected theme set to survive persistence failure');
-  assert(documentElement.dataset.theme === 'dark', 'expected DOM theme update despite storage failure');
+  assert(
+    setThemePreference('dark', new ThrowingStorage()) === 'dark',
+    'expected theme set to survive persistence failure',
+  );
+  assert(
+    documentElement.dataset.theme === 'dark',
+    'expected DOM theme update despite storage failure',
+  );
 };
 
 runStoredPreferenceScenario();

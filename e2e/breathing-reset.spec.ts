@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-test('breathing preset selection persists and choose-another-exercise returns to the library', async ({ page }) => {
+test('breathing preset selection persists and choose-another-exercise returns to the library', async ({
+  page,
+}) => {
   await page.goto('/');
 
   await page.getByRole('button', { name: 'Open Soft Focus' }).click();
@@ -22,9 +24,10 @@ test('breathing preset selection persists and choose-another-exercise returns to
   await expect(breathingPresetSelect).toBeVisible();
   await breathingPresetSelect.selectOption('coherent-5-5');
 
-  await page.waitForFunction(() => (
-    window.__softFocusGame?.sessionStore.getState().settings.breathingPresetId === 'coherent-5-5'
-  ));
+  await page.waitForFunction(
+    () =>
+      window.__softFocusGame?.sessionStore.getState().settings.breathingPresetId === 'coherent-5-5',
+  );
 
   await page.evaluate(async () => {
     const game = window.__softFocusGame;
@@ -54,11 +57,13 @@ test('breathing preset selection persists and choose-another-exercise returns to
     const game = window.__softFocusGame;
 
     return Boolean(
-      game
-      && game.sessionStore.getState().currentSession === null
-      && game.sessionStore.getState().selectedExercise === 'breathing-reset'
+      game &&
+        game.sessionStore.getState().currentSession === null &&
+        game.sessionStore.getState().selectedExercise === 'breathing-reset',
     );
   });
 
-  await page.waitForFunction(() => window.__softFocusGame?.scene.isActive('exercise-selection') === true);
+  await page.waitForFunction(
+    () => window.__softFocusGame?.scene.isActive('exercise-selection') === true,
+  );
 });

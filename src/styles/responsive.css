@@ -10,7 +10,24 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .setup-shell :where(main, header, section, article, form, label, div, p, h1, h2, h3, button, input, select, textarea) {
+  .setup-shell
+    :where(
+      main,
+      header,
+      section,
+      article,
+      form,
+      label,
+      div,
+      p,
+      h1,
+      h2,
+      h3,
+      button,
+      input,
+      select,
+      textarea
+    ) {
     box-sizing: border-box;
     max-width: 100%;
   }
@@ -31,6 +48,7 @@
   .session-overlay__panel {
     width: 100%;
     max-height: calc(100vh - 28px);
+    /* biome-ignore lint/suspicious/noDuplicateProperties: viewport custom property intentionally overrides the vh fallback. */
     max-height: calc(var(--app-viewport-height) - 28px);
     border-radius: 30px 30px 24px 24px;
   }
@@ -90,7 +108,9 @@
 
   .preferences-shell__toggle {
     background: rgba(255, 255, 255, 0.055);
-    transition: border-color 180ms ease, background 180ms ease;
+    transition:
+      border-color 180ms ease,
+      background 180ms ease;
   }
 }
 

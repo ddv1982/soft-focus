@@ -9,10 +9,16 @@
   },
   "scripts": {
     "dev": "vite",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "check:ci": "biome check .",
+    "check:write": "biome check --write .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "smoke:test": "node --import tsx tests/fullFlowSmoke.ts && node --import tsx tests/ambientAudio.ts && node --import tsx tests/sessionPersistence.ts && node --import tsx tests/sessionRestartLifecycle.ts && node --import tsx tests/sessionPanelActions.ts && node --import tsx tests/themePreference.ts && node --import tsx tests/practiceRunner.ts && node --import tsx tests/practiceSceneImmediateComplete.ts",
     "build": "bun run typecheck && vite build",
-    "validate": "bun run typecheck && bun run smoke:test && vite build",
+    "validate": "bun run check:ci && bun run typecheck && bun run smoke:test && vite build",
     "validate:full": "bun run validate && bun run e2e:test",
     "preview": "vite preview",
     "e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install chromium",
@@ -23,6 +29,7 @@
     "phaser": "^4.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.4",
     "@types/node": "^24.12.2",

@@ -43,14 +43,18 @@ export const loadPracticeStagePresenter = async ({
   readableWidth,
   movingBallInset,
   createIdleController,
-}: PracticeStagePresenterLoadOptions): Promise<PracticeStagePresenterController> => loadStagePresenterFromRegistry({
-  scene,
-  practiceConfig,
-  x,
-  y,
-  stageWidth,
-  stageHeight,
-  readableWidth,
-  movingBallInset,
-  createIdleController,
-}, practiceConfig.stagePresenter);
+}: PracticeStagePresenterLoadOptions): Promise<PracticeStagePresenterController> =>
+  loadStagePresenterFromRegistry(
+    {
+      scene,
+      practiceConfig,
+      x,
+      y,
+      stageWidth,
+      stageHeight,
+      readableWidth,
+      movingBallInset,
+      createIdleController,
+    },
+    practiceConfig.stagePresenter,
+  );

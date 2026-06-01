@@ -1,18 +1,21 @@
+import { type AmbientCompositionPreset, ambientCompositionPresets } from '../audio/ambientAudio';
 import {
-  ambientAudioPresetOrder,
-  practiceDurationPresetIds,
-  sanitizeCustomPracticeDurationMinutes,
   type AmbientAudioPresetId,
+  ambientAudioPresetOrder,
   type BreathingPresetId,
   type ExerciseId,
   type MovingBallPresetId,
   type PracticeDurationPresetId,
   type PracticeSettings,
+  practiceDurationPresetIds,
   type SessionState,
+  sanitizeCustomPracticeDurationMinutes,
 } from '../state/types';
-
-import { ambientCompositionPresets, type AmbientCompositionPreset } from '../audio/ambientAudio';
-import { defaultLowIntensityConfig, getPracticeDurationPresetDefinition, practiceDurationPresetCatalog } from './defaultPracticeConfig';
+import {
+  defaultLowIntensityConfig,
+  getPracticeDurationPresetDefinition,
+  practiceDurationPresetCatalog,
+} from './defaultPracticeConfig';
 import { getExerciseDefinition } from './exercises';
 import { buildPracticeFamilyConfig } from './practiceFamilies';
 
@@ -131,19 +134,19 @@ export interface PracticeAmbientAudioConfig {
 
 export type PracticeAuxiliaryControl =
   | {
-    kind: 'toggle';
-    label: string;
-    description: string;
-  }
+      kind: 'toggle';
+      label: string;
+      description: string;
+    }
   | {
-    kind: 'selector';
-    label: string;
-  }
+      kind: 'selector';
+      label: string;
+    }
   | {
-    kind: 'info';
-    label: string;
-    description: string;
-  };
+      kind: 'info';
+      label: string;
+      description: string;
+    };
 
 export interface PracticeCapabilities {
   auxiliaryControl: PracticeAuxiliaryControl;
@@ -152,50 +155,50 @@ export interface PracticeCapabilities {
 
 export type PracticeStagePresenterConfig =
   | {
-    key: 'idle';
-    reducedMotion: PracticeReducedMotionPolicy;
-  }
+      key: 'idle';
+      reducedMotion: PracticeReducedMotionPolicy;
+    }
   | {
-    key: 'phrase-anchor';
-    phrase: string;
-    lowIntensity: boolean;
-    reducedMotion: PracticeReducedMotionPolicy;
-  }
+      key: 'phrase-anchor';
+      phrase: string;
+      lowIntensity: boolean;
+      reducedMotion: PracticeReducedMotionPolicy;
+    }
   | {
-    key: 'gaze-guidance';
-    prompt: string;
-    lowIntensity: boolean;
-    reducedMotion: PracticeReducedMotionPolicy;
-  }
+      key: 'gaze-guidance';
+      prompt: string;
+      lowIntensity: boolean;
+      reducedMotion: PracticeReducedMotionPolicy;
+    }
   | {
-    key: 'moving-ball';
-    movingBall: PracticeMovingBallConfig;
-    lowIntensity: boolean;
-    reducedMotion: PracticeReducedMotionPolicy;
-  }
+      key: 'moving-ball';
+      movingBall: PracticeMovingBallConfig;
+      lowIntensity: boolean;
+      reducedMotion: PracticeReducedMotionPolicy;
+    }
   | {
-    key: 'breathing-reset';
-    pattern: PracticeBreathingConfig['pattern'];
-    inhaleMs: number;
-    inhaleTopUpMs: number | null;
-    holdAfterInhaleMs: number | null;
-    exhaleMs: number;
-    holdAfterExhaleMs: number | null;
-    lowIntensity: boolean;
-    reducedMotion: PracticeReducedMotionPolicy;
-  }
+      key: 'breathing-reset';
+      pattern: PracticeBreathingConfig['pattern'];
+      inhaleMs: number;
+      inhaleTopUpMs: number | null;
+      holdAfterInhaleMs: number | null;
+      exhaleMs: number;
+      holdAfterExhaleMs: number | null;
+      lowIntensity: boolean;
+      reducedMotion: PracticeReducedMotionPolicy;
+    }
   | {
-    key: 'bilateral-rhythm';
-    cycleMs: number;
-    lowIntensity: boolean;
-    reducedMotion: PracticeReducedMotionPolicy;
-  }
+      key: 'bilateral-rhythm';
+      cycleMs: number;
+      lowIntensity: boolean;
+      reducedMotion: PracticeReducedMotionPolicy;
+    }
   | {
-    key: 'orienting';
-    cycleMs: number;
-    lowIntensity: boolean;
-    reducedMotion: PracticeReducedMotionPolicy;
-  };
+      key: 'orienting';
+      cycleMs: number;
+      lowIntensity: boolean;
+      reducedMotion: PracticeReducedMotionPolicy;
+    };
 
 export interface PracticeLowIntensityConfig {
   enabled: boolean;
@@ -255,42 +258,48 @@ export interface PracticeConfig {
   ambientAudio: PracticeAmbientAudioConfig;
 }
 
-export const ambientAudioPresetCatalog: readonly PracticeAmbientAudioConfig['availablePresets'][number][] = [
-  ...ambientAudioPresetOrder,
-].map((id) => {
-  const preset = ambientCompositionPresets[id];
+export const ambientAudioPresetCatalog: readonly PracticeAmbientAudioConfig['availablePresets'][number][] =
+  [...ambientAudioPresetOrder].map((id) => {
+    const preset = ambientCompositionPresets[id];
 
-  return {
-    id: preset.id,
-    title: preset.title,
-    summary: preset.summary,
-    description: preset.description,
-    musicTheory: preset.musicTheory,
-    layers: preset.layers,
-    soundDesign: preset.soundDesign,
-    spatialProfile: preset.spatialProfile,
-    practiceFit: preset.practiceFit,
-  };
-});
+    return {
+      id: preset.id,
+      title: preset.title,
+      summary: preset.summary,
+      description: preset.description,
+      musicTheory: preset.musicTheory,
+      layers: preset.layers,
+      soundDesign: preset.soundDesign,
+      spatialProfile: preset.spatialProfile,
+      practiceFit: preset.practiceFit,
+    };
+  });
 
-export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pick<SessionState, 'selectedExercise' | 'phrase' | 'settings'>): PracticeConfig => {
+export const createPracticeConfig = ({
+  selectedExercise,
+  phrase,
+  settings,
+}: Pick<SessionState, 'selectedExercise' | 'phrase' | 'settings'>): PracticeConfig => {
   const exercise = getExerciseDefinition(selectedExercise);
   const durationPreset = getPracticeDurationPresetDefinition(settings.practiceDurationPresetId);
-  const customMinutes = sanitizeCustomPracticeDurationMinutes(settings.customPracticeDurationMinutes);
+  const customMinutes = sanitizeCustomPracticeDurationMinutes(
+    settings.customPracticeDurationMinutes,
+  );
   const isCustomDuration = durationPreset.id === practiceDurationPresetIds.custom;
   const practiceSeconds = isCustomDuration ? customMinutes * 60 : durationPreset.practiceSeconds;
   const duration: PracticeDurationConfig = {
     presetId: durationPreset.id,
     label: 'Practice duration',
-    description: isCustomDuration ? `${customMinutes} minute custom practice window.` : durationPreset.summary,
+    description: isCustomDuration
+      ? `${customMinutes} minute custom practice window.`
+      : durationPreset.summary,
     practiceSeconds,
     customMinutes,
     availablePresets: practiceDurationPresetCatalog.map(({ id, title, summary }) => ({
       id,
       title: id === practiceDurationPresetIds.custom ? `Custom · ${customMinutes} min` : title,
-      summary: id === practiceDurationPresetIds.custom
-        ? 'Use the custom duration value below.'
-        : summary,
+      summary:
+        id === practiceDurationPresetIds.custom ? 'Use the custom duration value below.' : summary,
     })),
   };
   const lowIntensity: PracticeLowIntensityConfig = {
@@ -304,7 +313,9 @@ export const createPracticeConfig = ({ selectedExercise, phrase, settings }: Pic
     lowIntensity,
     settings,
   });
-  const ambientPreset = ambientAudioPresetCatalog.find(({ id }) => id === settings.ambientAudioPresetId) ?? ambientAudioPresetCatalog[0];
+  const ambientPreset =
+    ambientAudioPresetCatalog.find(({ id }) => id === settings.ambientAudioPresetId) ??
+    ambientAudioPresetCatalog[0];
   const ambientAudio: PracticeAmbientAudioConfig = {
     enabled: settings.ambientAudioEnabled,
     presetId: ambientPreset.id,
@@ -339,8 +350,9 @@ export const createPracticeConfigFromSettings = (
   selectedExercise: ExerciseId,
   phrase: string,
   settings: PracticeSettings,
-): PracticeConfig => createPracticeConfig({
-  selectedExercise,
-  phrase,
-  settings,
-});
+): PracticeConfig =>
+  createPracticeConfig({
+    selectedExercise,
+    phrase,
+    settings,
+  });

@@ -19,10 +19,11 @@ interface PracticePhaseDefinition {
 
 const toMilliseconds = (seconds: number): number => Math.max(0, seconds * 1000);
 
-const getPhaseDefinitions = (practiceConfig: PracticeConfig): PracticePhaseDefinition[] => practiceConfig.phases.map(({ key, seconds }) => ({
-  key,
-  seconds,
-}));
+const getPhaseDefinitions = (practiceConfig: PracticeConfig): PracticePhaseDefinition[] =>
+  practiceConfig.phases.map(({ key, seconds }) => ({
+    key,
+    seconds,
+  }));
 
 export class PracticeRunner {
   private readonly phases: PracticePhaseDefinition[];
@@ -33,9 +34,10 @@ export class PracticeRunner {
 
   constructor(practiceConfig: PracticeConfig, initialSnapshot?: PracticeRunnerSnapshot) {
     this.phases = getPhaseDefinitions(practiceConfig);
-    this.phaseIndex = initialSnapshot && initialSnapshot.phaseIndex >= 0
-      ? Math.min(initialSnapshot.phaseIndex, this.phases.length)
-      : 0;
+    this.phaseIndex =
+      initialSnapshot && initialSnapshot.phaseIndex >= 0
+        ? Math.min(initialSnapshot.phaseIndex, this.phases.length)
+        : 0;
 
     if (this.phaseIndex >= this.phases.length || initialSnapshot?.complete) {
       this.timer = null;
@@ -43,7 +45,9 @@ export class PracticeRunner {
     }
 
     this.timer = new PracticeTimer(
-      initialSnapshot ? toMilliseconds(initialSnapshot.secondsRemaining) : toMilliseconds(this.phases[this.phaseIndex].seconds),
+      initialSnapshot
+        ? toMilliseconds(initialSnapshot.secondsRemaining)
+        : toMilliseconds(this.phases[this.phaseIndex].seconds),
       Boolean(initialSnapshot?.paused),
     );
     this.normalizeCompletePhases();
