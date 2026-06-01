@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 
+import { withTextResolution } from '../../ui/textResolution';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -41,13 +42,13 @@ export const createPhraseAnchorStagePresenter = ({
   const haloRestScale = motionEnabled ? 0.92 : 1;
   const haloInhaleScale = lowIntensity ? 1.02 : 1.18;
 
-  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase anchor practice', {
+  const title = scene.add.text(x, y - haloRadius - 38, 'Phrase anchor practice', withTextResolution({
     color: uiTheme.colors.seaGlass,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
     fontStyle: '700',
     align: 'center',
-  });
+  }));
   title.setOrigin(0.5);
 
   const halo = scene.add.circle(x, y, haloRadius, accent, lowIntensity ? 0.05 : 0.08)
@@ -58,41 +59,41 @@ export const createPhraseAnchorStagePresenter = ({
     .setOrigin(0.5)
     .setStrokeStyle(1, border, lowIntensity ? 0.14 : 0.2);
 
-  const phrasePreview = scene.add.text(x, y - 10, `“${displayPhrase}”`, {
+  const phrasePreview = scene.add.text(x, y - 10, `“${displayPhrase}”`, withTextResolution({
     color: uiTheme.colors.foam,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
     fontStyle: '700',
     align: 'center',
     wordWrap: { width: phraseCardWidth - 28, useAdvancedWrap: true },
-  });
+  }));
   phrasePreview.setOrigin(0.5);
 
-  const phraseHint = scene.add.text(x, y + 18, 'Repeat it silently at an easy pace.', {
+  const phraseHint = scene.add.text(x, y + 18, 'Repeat it silently at an easy pace.', withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '12px',
     align: 'center',
     wordWrap: { width: phraseCardWidth - 24, useAdvancedWrap: true },
-  });
+  }));
   phraseHint.setOrigin(0.5);
 
-  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Notice what is here', {
+  const breathLabel = scene.add.text(x, y + haloRadius + 24, 'Notice what is here', withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
     fontStyle: '600',
     align: 'center',
-  });
+  }));
   breathLabel.setOrigin(0.5);
 
-  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Feel the body, then return to the phrase.', {
+  const returnLabel = scene.add.text(x, y + haloRadius + 48, 'Feel the body, then return to the phrase.', withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
     align: 'center',
     wordWrap: { width: readableWidth, useAdvancedWrap: true },
-  });
+  }));
   returnLabel.setOrigin(0.5);
 
   let active = false;

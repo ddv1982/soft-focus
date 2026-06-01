@@ -7,6 +7,7 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
+import { withTextResolution } from '../ui/textResolution';
 import { uiTheme } from '../ui/theme';
 
 const introCopy = [
@@ -29,13 +30,13 @@ export class EntryScene extends Phaser.Scene {
     const contentCenterX = frame.contentX + (frame.contentWidth / 2);
     const cardWidth = clampContentWidth(frame.contentWidth);
 
-    const eyebrow = this.add.text(contentCenterX, frame.contentY, 'Soft Focus', {
+    const eyebrow = this.add.text(contentCenterX, frame.contentY, 'Soft Focus', withTextResolution({
       color: uiTheme.colors.accent,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       fontStyle: '600',
       align: 'center',
-    });
+    }));
     eyebrow.setOrigin(0.5, 0);
 
     const title = createScreenTitle(this, {
@@ -59,23 +60,23 @@ export class EntryScene extends Phaser.Scene {
       height: cardHeight,
     });
 
-    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, introCopy, {
+    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, introCopy, withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: `${uiTheme.typography.bodySize}px`,
       align: 'left',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
       lineSpacing: uiTheme.typography.bodyLineHeight - uiTheme.typography.bodySize,
-    });
+    }));
     intro.setOrigin(0.5, 0);
 
-    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Adjust settings before practice begins.', {
+    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Adjust settings before practice begins.', withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       align: 'center',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    });
+    }));
     note.setOrigin(0.5, 1);
 
     createPrimaryButton(this, {

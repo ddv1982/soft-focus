@@ -25,6 +25,7 @@ import { sanitizeAmbientAudioVolume } from '../state/types';
 import { createPracticeControls, getPracticeControlsLayout, type PracticeControls } from '../ui/components/PracticeControls';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { getLayoutFrame } from '../ui/layout';
+import { withTextResolution } from '../ui/textResolution';
 import { hexToNumber, uiTheme } from '../ui/theme';
 
 import { completeImmediatePracticeIfNeeded } from './practiceImmediateComplete';
@@ -254,23 +255,23 @@ export class PracticeScene extends Phaser.Scene {
     const guideGap = compactPractice ? uiTheme.spacing.sm : uiTheme.spacing.md;
     const guideMinHeight = compactPractice ? 120 : 184;
 
-    this.phaseText = this.add.text(contentCenterX, practiceTop + uiTheme.spacing.xs, '', {
+    this.phaseText = this.add.text(contentCenterX, practiceTop + uiTheme.spacing.xs, '', withTextResolution({
       color: uiTheme.colors.seaGlass,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '12px',
       fontStyle: '700',
       align: 'center',
-    });
+    }));
     this.phaseText.setOrigin(0.5, 0);
     this.phaseText.setAlpha(0.72);
 
-    this.timerText = this.add.text(contentCenterX, this.phaseText.y + this.phaseText.height + uiTheme.spacing.sm, '', {
+    this.timerText = this.add.text(contentCenterX, this.phaseText.y + this.phaseText.height + uiTheme.spacing.sm, '', withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       fontStyle: '600',
       align: 'center',
-    });
+    }));
     this.timerText.setOrigin(0.5, 0);
     this.timerText.setAlpha(0.7);
     this.focusHeaderObjects = [title, this.phaseText, this.timerText];
@@ -284,31 +285,31 @@ export class PracticeScene extends Phaser.Scene {
       guideCenterY - (compactPractice ? 72 : 104),
     );
     const phraseHeading = practiceConfig.exercise.requiresPhrase && practiceConfig.phrase
-      ? this.add.text(contentCenterX, phraseHeadingY, `“${practiceConfig.phrase}”`, {
+      ? this.add.text(contentCenterX, phraseHeadingY, `“${practiceConfig.phrase}”`, withTextResolution({
         color: uiTheme.colors.foam,
         fontFamily: uiTheme.typography.fontFamily,
         fontSize: compactPractice ? '18px' : '24px',
         fontStyle: '700',
         align: 'center',
         wordWrap: { width: readableWidth, useAdvancedWrap: true },
-      })
+      }))
       : null;
     phraseHeading?.setOrigin(0.5, 0.5);
     phraseHeading?.setAlpha(0.96);
 
-    this.statusText = this.add.text(contentCenterX, practiceBottom, '', {
+    this.statusText = this.add.text(contentCenterX, practiceBottom, '', withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '12px',
       align: 'center',
       wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
       lineSpacing: 4,
-    });
+    }));
     this.statusText.setOrigin(0.5, 1);
     this.focusControlsTextVisibleAlpha = compactPractice ? 0 : 0.55;
     this.statusText.setAlpha(this.focusControlsTextVisibleAlpha);
 
-    this.ambientAudioNoticeText = this.add.text(contentCenterX, practiceBottom - (compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl), '', {
+    this.ambientAudioNoticeText = this.add.text(contentCenterX, practiceBottom - (compactPractice ? uiTheme.spacing.md : uiTheme.spacing.xl), '', withTextResolution({
       color: uiTheme.colors.coral,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '12px',
@@ -316,7 +317,7 @@ export class PracticeScene extends Phaser.Scene {
       align: 'center',
       wordWrap: { width: Math.min(stageWidth, 820), useAdvancedWrap: true },
       lineSpacing: 4,
-    });
+    }));
     this.ambientAudioNoticeText.setOrigin(0.5, 1);
     this.ambientAudioNoticeText.setAlpha(0.92);
     this.ambientAudioNoticeText.setVisible(false);
@@ -333,21 +334,21 @@ export class PracticeScene extends Phaser.Scene {
     const overlayBackground = this.add.rectangle(0, 0, Math.min(stageWidth, 680), 132, hexToNumber(uiTheme.colors.surface), 0.74)
       .setOrigin(0.5)
       .setStrokeStyle(1, hexToNumber(uiTheme.colors.border), 0.3);
-    const overlayTitle = this.add.text(0, -18, 'Paused', {
+    const overlayTitle = this.add.text(0, -18, 'Paused', withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '22px',
       fontStyle: '600',
       align: 'center',
-    });
+    }));
     overlayTitle.setOrigin(0.5, 0.5);
-    const overlayCopy = this.add.text(0, 20, practiceConfig.display.pausedOverlayCopy, {
+    const overlayCopy = this.add.text(0, 20, practiceConfig.display.pausedOverlayCopy, withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '13px',
       align: 'center',
       wordWrap: { width: Math.min(stageWidth, 680) - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    });
+    }));
     overlayCopy.setOrigin(0.5, 0.5);
     this.pauseOverlay = this.add.container(contentCenterX, guideCenterY, [overlayBackground, overlayTitle, overlayCopy]);
     this.pauseOverlay.setVisible(false);

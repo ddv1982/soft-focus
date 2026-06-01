@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { hexToNumber, uiTheme } from '../theme';
+import { withTextResolution } from '../textResolution';
 
 export interface PracticeControls {
   container: Phaser.GameObjects.Container;
@@ -76,13 +77,13 @@ const createControlButton = (
   const highlight = scene.add.rectangle(0, -((height / 2) - 1), width - 18, 1, hexToNumber(uiTheme.colors.foam), variant === 'primary' ? 0.26 : 0.08);
   highlight.setOrigin(0.5);
 
-  const text = scene.add.text(0, 0, label, {
+  const text = scene.add.text(0, 0, label, withTextResolution({
     color: variant === 'primary' ? uiTheme.colors.accentText : uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '16px',
     fontStyle: '600',
     align: 'center',
-  });
+  }));
   text.setOrigin(0.5);
 
   const container = scene.add.container(x, 0, [shadow, background, highlight, text]);

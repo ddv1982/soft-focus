@@ -10,6 +10,7 @@ import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } fr
 import { customPracticeDurationBounds, isValidPhrase, practiceDurationPresetIds } from '../state/types';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
+import { withTextResolution } from '../ui/textResolution';
 import { hexToNumber, uiTheme } from '../ui/theme';
 
 type SelectorOption = {
@@ -33,21 +34,21 @@ const createInfoBlock = (
   const border = hexToNumber(uiTheme.colors.border);
   const surface = hexToNumber(uiTheme.colors.surfaceRaised);
 
-  const title = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, {
+  const title = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '16px',
     fontStyle: '600',
-  });
+  }));
   title.setOrigin(0, 0);
 
-  const body = scene.add.text((-width / 2) + uiTheme.spacing.md, title.height + uiTheme.spacing.sm, description, {
+  const body = scene.add.text((-width / 2) + uiTheme.spacing.md, title.height + uiTheme.spacing.sm, description, withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
     wordWrap: { width: width - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
     lineSpacing: 4,
-  });
+  }));
   body.setOrigin(0, 0);
 
   const height = body.y + body.height + uiTheme.spacing.md;
@@ -78,21 +79,21 @@ const createToggle = (
   const toggleHeight = 28;
   let value = initialValue;
 
-  const labelText = scene.add.text((-width / 2) + uiTheme.spacing.md, -10, label, {
+  const labelText = scene.add.text((-width / 2) + uiTheme.spacing.md, -10, label, withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '16px',
     fontStyle: '600',
-  });
+  }));
   labelText.setOrigin(0, 0.5);
 
-  const descriptionText = scene.add.text((-width / 2) + uiTheme.spacing.md, 18, description, {
+  const descriptionText = scene.add.text((-width / 2) + uiTheme.spacing.md, 18, description, withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
     wordWrap: { width: width - toggleWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
     lineSpacing: 4,
-  });
+  }));
   descriptionText.setOrigin(0, 0);
 
   const track = scene.add.rectangle((width / 2) - uiTheme.spacing.md - (toggleWidth / 2), 4, toggleWidth, toggleHeight, surface, 0.56)
@@ -146,12 +147,12 @@ const createOptionSelector = (
   const optionGap = uiTheme.spacing.sm;
   let value = initialValue;
 
-  const labelText = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, {
+  const labelText = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, label, withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '16px',
     fontStyle: '600',
-  });
+  }));
   labelText.setOrigin(0, 0);
 
   const optionViews = options.map((option, index) => {
@@ -160,22 +161,22 @@ const createOptionSelector = (
       .setOrigin(0.5)
       .setStrokeStyle(1, border, 0.42);
 
-    const title = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY - 14, option.title, {
+    const title = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY - 14, option.title, withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '15px',
       fontStyle: '600',
       wordWrap: { width: width - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    });
+    }));
     title.setOrigin(0, 0.5);
 
-    const summary = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY + 10, option.summary, {
+    const summary = scene.add.text((-width / 2) + uiTheme.spacing.md, optionCenterY + 10, option.summary, withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '13px',
       wordWrap: { width: width - (uiTheme.spacing.xl * 2) - 24, useAdvancedWrap: true },
       lineSpacing: 3,
-    });
+    }));
     summary.setOrigin(0, 0.5);
 
     const indicator = scene.add.circle((width / 2) - uiTheme.spacing.md - 9, optionCenterY, 9, border, 0.85);
@@ -230,42 +231,42 @@ const createCustomDurationControl = (
   const buttonSize = 42;
   let minutes = initialMinutes;
 
-  const label = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, 'Custom duration', {
+  const label = scene.add.text((-width / 2) + uiTheme.spacing.md, 0, 'Custom duration', withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '16px',
     fontStyle: '600',
-  });
+  }));
   label.setOrigin(0, 0);
 
-  const helper = scene.add.text((-width / 2) + uiTheme.spacing.md, label.height + uiTheme.spacing.xs, `Tap − / + to set ${customPracticeDurationBounds.minMinutes}-${customPracticeDurationBounds.maxMinutes} minutes. Changing this selects Custom.`, {
+  const helper = scene.add.text((-width / 2) + uiTheme.spacing.md, label.height + uiTheme.spacing.xs, `Tap − / + to set ${customPracticeDurationBounds.minMinutes}-${customPracticeDurationBounds.maxMinutes} minutes. Changing this selects Custom.`, withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '13px',
     wordWrap: { width: width - (uiTheme.spacing.xl * 2) - 136, useAdvancedWrap: true },
-  });
+  }));
   helper.setOrigin(0, 0);
 
-  const valueText = scene.add.text(0, label.height + 21, '', {
+  const valueText = scene.add.text(0, label.height + 21, '', withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
     fontStyle: '700',
     align: 'center',
-  });
+  }));
   valueText.setOrigin(0.5);
 
   const createStepButton = (buttonX: number, labelText: string, delta: number): Phaser.GameObjects.Container => {
     const background = scene.add.rectangle(0, 0, buttonSize, buttonSize, surface, 0.54)
       .setOrigin(0.5)
       .setStrokeStyle(1, border, 0.48);
-    const text = scene.add.text(0, -1, labelText, {
+    const text = scene.add.text(0, -1, labelText, withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '22px',
       fontStyle: '700',
       align: 'center',
-    });
+    }));
     text.setOrigin(0.5);
 
     const button = scene.add.container(buttonX, label.height + 21, [background, text]);
@@ -366,13 +367,13 @@ export class InstructionsScene extends Phaser.Scene {
 
     const cardContent = this.add.container(card.x, card.y + sectionSpacing);
 
-    const phraseLabel = this.add.text(0, 0, previewConfig.copy.instructionsSelectionLabel, {
+    const phraseLabel = this.add.text(0, 0, previewConfig.copy.instructionsSelectionLabel, withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       fontStyle: '600',
       align: 'center',
-    });
+    }));
     phraseLabel.setOrigin(0.5, 0);
     cardContent.add(phraseLabel);
 
@@ -382,52 +383,52 @@ export class InstructionsScene extends Phaser.Scene {
       previewConfig.exercise.requiresPhrase
         ? (phrase ? `"${phrase}"` : 'No phrase was saved.')
         : (previewConfig.movingBall?.title ?? previewConfig.display.phraseText),
-      {
+      withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '24px',
       fontStyle: '600',
       align: 'center',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    });
+    }));
     selectionText.setOrigin(0.5, 0);
     cardContent.add(selectionText);
 
     let expectationsStartY = selectionText.y + selectionText.height + sectionSpacing;
 
     if (previewConfig.movingBall) {
-      const presetSummary = this.add.text(0, selectionText.y + selectionText.height + uiTheme.spacing.xs, previewConfig.movingBall.summary, {
+      const presetSummary = this.add.text(0, selectionText.y + selectionText.height + uiTheme.spacing.xs, previewConfig.movingBall.summary, withTextResolution({
         color: uiTheme.colors.textMuted,
         fontFamily: uiTheme.typography.fontFamily,
         fontSize: '14px',
         align: 'center',
         wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
         lineSpacing: 4,
-      });
+      }));
       presetSummary.setOrigin(0.5, 0);
       cardContent.add(presetSummary);
       expectationsStartY = presetSummary.y + presetSummary.height + sectionSpacing;
     }
 
     const expectations = previewConfig.expectations;
-    const expectationsTitle = this.add.text(0, expectationsStartY, previewConfig.copy.expectationsTitle, {
+    const expectationsTitle = this.add.text(0, expectationsStartY, previewConfig.copy.expectationsTitle, withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '16px',
       fontStyle: '600',
       align: 'center',
-    });
+    }));
     expectationsTitle.setOrigin(0.5, 0);
     cardContent.add(expectationsTitle);
 
-    const expectationsText = this.add.text(0, expectationsTitle.y + expectationsTitle.height + uiTheme.spacing.sm, getExpectationsText(expectations), {
+    const expectationsText = this.add.text(0, expectationsTitle.y + expectationsTitle.height + uiTheme.spacing.sm, getExpectationsText(expectations), withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       align: 'left',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
       lineSpacing: 4,
-    });
+    }));
     expectationsText.setOrigin(0.5, 0);
     cardContent.add(expectationsText);
 
@@ -558,14 +559,14 @@ export class InstructionsScene extends Phaser.Scene {
         );
     cardContent.add(lastBlock);
 
-    const reducedMotionNote = this.add.text(0, lastBlock.y + lastBlock.height + uiTheme.spacing.md, `${previewConfig.capabilities.reducedMotion.title}: ${previewConfig.capabilities.reducedMotion.description}`, {
+    const reducedMotionNote = this.add.text(0, lastBlock.y + lastBlock.height + uiTheme.spacing.md, `${previewConfig.capabilities.reducedMotion.title}: ${previewConfig.capabilities.reducedMotion.description}`, withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '13px',
       align: 'center',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
       lineSpacing: 3,
-    });
+    }));
     reducedMotionNote.setOrigin(0.5, 0);
     cardContent.add(reducedMotionNote);
 

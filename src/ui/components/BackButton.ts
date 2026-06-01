@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 
+import { withTextResolution } from '../textResolution';
 import { hexToNumber, uiTheme } from '../theme';
 
 export type BackButtonOptions = {
@@ -14,20 +15,20 @@ export const createBackButton = (
   options: BackButtonOptions,
 ): Phaser.GameObjects.Container => {
   const label = options.label ?? 'Back';
-  const icon = scene.add.text(uiTheme.spacing.sm, 0, '←', {
+  const icon = scene.add.text(uiTheme.spacing.sm, 0, '←', withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '18px',
     fontStyle: '600',
-  });
+  }));
   icon.setOrigin(0, 0.5);
 
-  const text = scene.add.text(uiTheme.spacing.sm + icon.width + uiTheme.spacing.xs, 0, label, {
+  const text = scene.add.text(uiTheme.spacing.sm + icon.width + uiTheme.spacing.xs, 0, label, withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '15px',
     fontStyle: '600',
-  });
+  }));
   text.setOrigin(0, 0.5);
 
   const hitWidth = icon.width + uiTheme.spacing.xs + text.width + (uiTheme.spacing.sm * 2);

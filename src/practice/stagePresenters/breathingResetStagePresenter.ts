@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 
+import { withTextResolution } from '../../ui/textResolution';
 import { hexToNumber, uiTheme } from '../../ui/theme';
 import type { PracticeReducedMotionPolicy } from '../practiceConfig';
 import type { PracticeStagePresenterController } from '../stagePresenter';
@@ -80,12 +81,12 @@ export const createBreathingResetStagePresenter = ({
         : pattern === 'balanced'
           ? 'Balanced inhale'
           : 'Easy inhale',
-    {
+    withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${guideFontSize}px`,
     align: 'center',
-  });
+  }));
   inhaleLabel.setOrigin(0.5);
   inhaleLabel.setVisible(showBreathGuideLabels);
 
@@ -99,22 +100,22 @@ export const createBreathingResetStagePresenter = ({
       : pattern === 'balanced'
         ? 'Balanced exhale'
         : 'Long easy exhale',
-    {
+    withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${guideFontSize}px`,
     align: 'center',
-  });
+  }));
   exhaleLabel.setOrigin(0.5);
   exhaleLabel.setVisible(showBreathGuideLabels);
 
-  const phaseLabel = scene.add.text(x, y, pattern === 'box' ? 'Inhale' : 'Easy inhale', {
+  const phaseLabel = scene.add.text(x, y, pattern === 'box' ? 'Inhale' : 'Easy inhale', withTextResolution({
     color: uiTheme.colors.text,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${lowIntensity ? Math.max(17, phaseFontSize - 2) : phaseFontSize}px`,
     fontStyle: '600',
     align: 'center',
-  });
+  }));
   phaseLabel.setOrigin(0.5);
 
   ring.setScale(exhaleScale);

@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { appViewport, clampContentWidth } from '../layout';
+import { withTextResolution } from '../textResolution';
 import { hexToNumber, uiTheme } from '../theme';
 
 export type PrimaryButtonOptions = {
@@ -32,13 +33,13 @@ export const createPrimaryButton = (
     .setOrigin(0.5)
     .setStrokeStyle(2, hexToNumber(uiTheme.colors.foam), 0.34);
 
-  const label = scene.add.text(0, 0, options.label, {
+  const label = scene.add.text(0, 0, options.label, withTextResolution({
     color: uiTheme.colors.accentText,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${uiTheme.typography.buttonSize}px`,
     fontStyle: '700',
     align: 'center',
-  });
+  }));
   label.setOrigin(0.5);
 
   const container = scene.add.container(options.x, options.y, [background, label]);

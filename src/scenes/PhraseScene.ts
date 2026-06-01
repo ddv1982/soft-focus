@@ -10,6 +10,7 @@ import { createCard } from '../ui/components/Card';
 import { createPrimaryButton, getPrimaryButtonSize, setPrimaryButtonEnabled } from '../ui/components/PrimaryButton';
 import { createScreenTitle } from '../ui/components/ScreenTitle';
 import { clampContentWidth, getLayoutFrame } from '../ui/layout';
+import { withTextResolution } from '../ui/textResolution';
 import { uiTheme } from '../ui/theme';
 import { isValidPhrase, normalizePhrase, phraseMinLength } from '../state/types';
 
@@ -83,22 +84,22 @@ export class PhraseScene extends Phaser.Scene {
       alpha: 0.7,
     });
 
-    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, 'Choose a phrase that feels steady, simple, and easy to pair with a natural breath.', {
+    const intro = this.add.text(card.x, card.y + uiTheme.spacing.lg, 'Choose a phrase that feels steady, simple, and easy to pair with a natural breath.', withTextResolution({
       color: uiTheme.colors.text,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: `${uiTheme.typography.bodySize}px`,
       align: 'center',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
       lineSpacing: uiTheme.typography.bodyLineHeight - uiTheme.typography.bodySize,
-    });
+    }));
     intro.setOrigin(0.5, 0);
 
-    const label = this.add.text(card.x - ((cardWidth - (uiTheme.spacing.xl * 2)) / 2), intro.y + intro.height + uiTheme.spacing.lg, 'Phrase', {
+    const label = this.add.text(card.x - ((cardWidth - (uiTheme.spacing.xl * 2)) / 2), intro.y + intro.height + uiTheme.spacing.lg, 'Phrase', withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       fontStyle: '600',
-    });
+    }));
     label.setOrigin(0, 0);
 
     const inputHeight = 56;
@@ -106,22 +107,22 @@ export class PhraseScene extends Phaser.Scene {
     const inputLeft = contentCenterX - (inputWidth / 2);
     const inputTop = label.y + label.height + uiTheme.spacing.sm;
 
-    const helper = this.add.text(card.x, inputTop + inputHeight + uiTheme.spacing.sm, getHelperCopy(draftPhrase), {
+    const helper = this.add.text(card.x, inputTop + inputHeight + uiTheme.spacing.sm, getHelperCopy(draftPhrase), withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       align: 'center',
       wordWrap: { width: inputWidth, useAdvancedWrap: true },
-    });
+    }));
     helper.setOrigin(0.5, 0);
 
-    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.', {
+    const note = this.add.text(card.x, card.y + card.height - uiTheme.spacing.lg, 'Keep it simple. During practice you will notice wandering, return to the phrase, and soften the effort.', withTextResolution({
       color: uiTheme.colors.textMuted,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: '14px',
       align: 'center',
       wordWrap: { width: cardWidth - (uiTheme.spacing.xl * 2), useAdvancedWrap: true },
-    });
+    }));
     note.setOrigin(0.5, 1);
 
     const continueWithPhrase = (): void => {

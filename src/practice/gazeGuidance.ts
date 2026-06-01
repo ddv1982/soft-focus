@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 
+import { withTextResolution } from '../ui/textResolution';
 import { hexToNumber, uiTheme } from '../ui/theme';
 
 export interface GazeGuidanceController {
@@ -26,13 +27,13 @@ export const createGazeGuidance = ({
   lowIntensity,
   prompt,
 }: CreateGazeGuidanceOptions): GazeGuidanceController => {
-  const label = scene.add.text(x, y, prompt, {
+  const label = scene.add.text(x, y, prompt, withTextResolution({
     color: uiTheme.colors.textMuted,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: '14px',
     align: 'center',
     wordWrap: { width, useAdvancedWrap: true },
-  });
+  }));
   label.setOrigin(0.5, 0.5);
   label.setAlpha(lowIntensity ? 0.78 : 0.9);
 

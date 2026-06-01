@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { clampContentWidth } from '../layout';
+import { withTextResolution } from '../textResolution';
 import { uiTheme } from '../theme';
 
 export type ScreenTitleOptions = {
@@ -16,7 +17,7 @@ export const createScreenTitle = (
   options: ScreenTitleOptions,
 ): Phaser.GameObjects.Container => {
   const width = clampContentWidth(options.width ?? 320);
-  const title = scene.add.text(0, 0, options.title, {
+  const title = scene.add.text(0, 0, options.title, withTextResolution({
     color: uiTheme.colors.textOnDark,
     fontFamily: uiTheme.typography.fontFamily,
     fontSize: `${uiTheme.typography.titleSize}px`,
@@ -24,21 +25,21 @@ export const createScreenTitle = (
     align: 'center',
     wordWrap: { width, useAdvancedWrap: true },
     lineSpacing: uiTheme.typography.titleLineHeight - uiTheme.typography.titleSize,
-  });
+  }));
   title.setOrigin(0.5, 0);
 
   const children: Phaser.GameObjects.GameObject[] = [title];
   let height = title.height;
 
   if (options.subtitle) {
-    const subtitle = scene.add.text(0, title.height + uiTheme.spacing.sm, options.subtitle, {
+    const subtitle = scene.add.text(0, title.height + uiTheme.spacing.sm, options.subtitle, withTextResolution({
       color: uiTheme.colors.textMutedOnDark,
       fontFamily: uiTheme.typography.fontFamily,
       fontSize: `${uiTheme.typography.bodySize}px`,
       align: 'center',
       wordWrap: { width, useAdvancedWrap: true },
       lineSpacing: uiTheme.typography.bodyLineHeight - uiTheme.typography.bodySize,
-    });
+    }));
     subtitle.setOrigin(0.5, 0);
     children.push(subtitle);
     height = subtitle.y + subtitle.height;
