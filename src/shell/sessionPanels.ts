@@ -11,6 +11,7 @@ import {
   reflectionMaxLength,
   sanitizeAmbientAudioVolume,
 } from '../state/types';
+import { playEnterTransition } from '../ui/transitions';
 import {
   chooseAnotherExercise,
   continueToReflection,
@@ -502,22 +503,29 @@ export const mountSessionPanels = (parent: HTMLElement, game: SoftFocusGame): ((
     renderPreferences();
   };
 
+  let lastRenderedSceneKey: string | null = null;
+
   const render = (): void => {
     const state = game.sessionStore.getState();
     const sceneKey = state.currentSession?.sceneKey ?? null;
+    const sceneChanged = sceneKey !== lastRenderedSceneKey;
+    lastRenderedSceneKey = sceneKey;
 
     if (sceneKey === sceneKeys.completion) {
       renderCompletionPanel(root, game);
-      return;
-    }
-
-    if (sceneKey === sceneKeys.reflection) {
+    } else if (sceneKey === sceneKeys.reflection) {
       renderReflectionPanel(root, game);
+    } else {
+      root.classList.add('session-overlay--hidden');
+      root.replaceChildren();
       return;
     }
 
-    root.classList.add('session-overlay--hidden');
-    root.replaceChildren();
+    // Fade the panel in only when arriving on this screen, not on incidental
+    // re-renders (e.g. a preference change) while it is already showing.
+    if (sceneChanged && root.firstElementChild) {
+      playEnterTransition(root.firstElementChild, game.sessionStore);
+    }
   };
 
   render();

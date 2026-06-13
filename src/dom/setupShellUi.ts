@@ -4,7 +4,7 @@ export const shellClass = [
 ].join(' ');
 
 export const panelClass =
-  'rounded-[2rem] border border-[var(--line)] bg-[var(--surface-panel-setup)] shadow-wellness-glass backdrop-blur-2xl';
+  'setup-panel rounded-[2rem] border border-[var(--line)] bg-[var(--surface-panel-setup)] shadow-wellness-glass backdrop-blur-2xl';
 export const eyebrowClass = 'text-xs font-black uppercase tracking-[0.2em] text-wellness-mist';
 export const titleClass =
   'text-balance text-4xl font-semibold leading-tight text-wellness-foam sm:text-5xl';

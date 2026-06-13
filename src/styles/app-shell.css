@@ -37,7 +37,8 @@
     border: 1px solid var(--line);
     background: var(--surface-panel);
     box-shadow: var(--shadow-wellness-glass);
-    backdrop-filter: blur(22px) saturate(1.15);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
   }
 
   .app-shell__card {
@@ -110,22 +111,29 @@
     font: inherit;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: var(--button-primary-shadow);
+    box-shadow:
+      var(--button-primary-shadow),
+      inset 0 1px 0 rgb(255 255 255 / 0.42);
     transition:
-      transform 180ms ease,
-      box-shadow 180ms ease,
-      filter 180ms ease;
+      transform var(--motion-normal) var(--ease-soft),
+      box-shadow var(--motion-normal) var(--ease-soft),
+      filter var(--motion-normal) var(--ease-soft);
   }
 
   .wellness-button:hover,
   .app-shell__button:hover {
-    filter: brightness(1.05) saturate(1.04);
-    transform: translateY(-1px);
+    filter: brightness(1.05) saturate(1.05);
+    transform: translateY(-2px);
+    box-shadow:
+      var(--button-primary-shadow),
+      inset 0 1px 0 rgb(255 255 255 / 0.5),
+      0 18px 36px -18px rgb(1 8 14 / 0.5);
   }
 
   .wellness-button:active,
   .app-shell__button:active {
-    transform: translateY(0) scale(0.99);
+    transform: translateY(0) scale(0.985);
+    transition-duration: var(--motion-fast);
   }
 
   .app-shell__button:focus-visible,
@@ -161,6 +169,8 @@
     min-height: 100vh;
     min-height: var(--app-viewport-height);
     overflow: hidden;
+    opacity: 1;
+    transition: opacity var(--motion-normal) var(--ease-soft);
   }
 
   .app-shell__runtime--setup {

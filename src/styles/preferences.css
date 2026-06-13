@@ -35,11 +35,12 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: var(--button-secondary-shadow);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
     transition:
-      transform 180ms ease,
-      border-color 180ms ease,
-      background 180ms ease;
+      transform var(--motion-normal) var(--ease-soft),
+      border-color var(--motion-normal) var(--ease-soft),
+      background var(--motion-normal) var(--ease-soft);
   }
 
   .preferences-shell__launcher:hover,

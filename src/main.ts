@@ -53,6 +53,17 @@ const startSoftFocus = async (): Promise<void> => {
 
     const game = new SoftFocusGame(runtimeHost);
     window.__softFocusGame = game;
+
+    const syncReducedMotionAttribute = (): void => {
+      document.documentElement.toggleAttribute(
+        'data-soft-focus-reduced-motion',
+        game.sessionStore.getState().settings.reducedMotionEnabled,
+      );
+    };
+
+    syncReducedMotionAttribute();
+    game.sessionStore.subscribe(syncReducedMotionAttribute);
+
     mountSessionPanels(container, game);
 
     const refreshInputBounds = (): void => {

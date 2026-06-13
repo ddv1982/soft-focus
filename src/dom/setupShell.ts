@@ -34,6 +34,7 @@ import {
   practiceDurationPresetIds,
   sanitizeAmbientAudioVolume,
 } from '../state/types';
+import { playEnterTransition } from '../ui/transitions';
 import {
   bodyClass,
   createBackButton,
@@ -119,6 +120,15 @@ export const mountSetupShell = ({
     );
   };
 
+  // Animate each glass panel individually rather than the shell root: fading an
+  // ancestor's opacity transiently disables the panels' backdrop-filter, which
+  // flashes the raw background through the glass before it "snaps" back in.
+  const playScreenEntrance = (): void => {
+    for (const panel of root.querySelectorAll<HTMLElement>('.setup-panel')) {
+      playEnterTransition(panel, game.sessionStore);
+    }
+  };
+
   const showSetup = (
     sceneKey: SetupSceneKey,
     { focusAutofocus = true }: { focusAutofocus?: boolean } = {},
@@ -130,6 +140,7 @@ export const mountSetupShell = ({
     runtimeHost.classList.add('app-shell__runtime--setup');
     root.hidden = false;
     render();
+    playScreenEntrance();
 
     if (focusAutofocus) {
       focusAutofocusTarget();
@@ -161,6 +172,7 @@ export const mountSetupShell = ({
     runtimeHost.classList.add('app-shell__runtime--setup');
     root.hidden = false;
     render();
+    playScreenEntrance();
     focusAutofocusTarget();
   };
 

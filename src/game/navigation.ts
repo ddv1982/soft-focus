@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { getExerciseInstructionsBackScene } from '../practice/exercises';
 import { SessionStore } from '../state/sessionStore';
 import type { ExerciseId } from '../state/types';
+import { fadeOutElement, prefersReducedMotion } from '../ui/transitions';
 import { orderedSceneKeys, type SceneKey, sceneKeys } from './sceneKeys';
 import { sessionStoreRegistryKey } from './serviceKeys';
 
@@ -63,12 +64,34 @@ export const navigateToScene = (scene: Phaser.Scene, request: NavigationRequest)
     }
 
     const sessionStore = scene.registry.get(sessionStoreRegistryKey);
+    const store = sessionStore instanceof SessionStore ? sessionStore : null;
 
-    if (sessionStore instanceof SessionStore) {
-      sessionStore.updateCurrentScene(request.to);
+    const startTarget = (): void => {
+      // Re-check after any async fade: the user may have navigated again mid-transition.
+      if (request.from && !scene.scene.isActive(request.from)) {
+        return;
+      }
+
+      store?.updateCurrentScene(request.to);
+      scene.scene.start(request.to, request.data);
+    };
+
+    // The canvas parent also hosts the DOM-text overlays, so fading it dissolves
+    // both the rendered scene and its labels together before the next screen.
+    const host = scene.game.canvas?.parentElement ?? null;
+
+    if (!host || prefersReducedMotion(store)) {
+      startTarget();
+      return;
     }
 
-    scene.scene.start(request.to, request.data);
+    await fadeOutElement(host);
+    startTarget();
+    // Clear the inline fade so the now-empty canvas is ready for the next scene.
+    window.requestAnimationFrame(() => {
+      host.style.opacity = '';
+      host.style.transition = '';
+    });
   })();
 };
 
